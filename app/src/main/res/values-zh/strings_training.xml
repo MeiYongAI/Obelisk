@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="training_ui_at_cap">已达上限</string>
+    <string name="training_ui_unavailable">暂不可训练</string>
+    <string name="training_ui_in_progress">训练中</string>
+    <string name="training_ui_start">训练</string>
+    <string name="training_ui_start_cost">训练%1$s，%2$s</string>
+    <string name="training_ui_level">等级 %1$s</string>
+    <string name="training_ui_remaining">剩余 %1$s</string>
+    <string name="training_ui_cancel">取消训练</string>
+</resources>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!-- Derived from user-supplied The HentaiVerse（非ALT）.html; persona names anonymized. -->
+<html><body>
+<div id="mainpane">
+<div id="eqch_outer">
+	<div id="eqch_left">
+		<div id="persona_outer">
+			<div id="persona_select">
+				<div><div class="fc4 fac fcb"><div>Active persona:</div></div></div>
+				<div>
+					<form id="persona_form" action="https://hentaiverse.org/" method="post">
+						<input type="hidden" id="persona_rename" name="persona_rename" value="">
+						<input type="hidden" id="persona_create" name="persona_create" value="">
+						<select name="persona_set" onchange="do_persona_post()"><option value="1">Persona 1</option><option value="2" selected="selected">Persona 2</option><option value="3">Persona 3</option></select>
+					</form>
+				</div>
+				<div><img src="./The HentaiVerse（非ALT）_files/rename.png" onclick="do_persona_rename()"></div>
+			</div>
+			
+			<div id="persona_new">
+				<img src="./The HentaiVerse（非ALT）_files/persona_create_clone_d.png"><img src="./The HentaiVerse（非ALT）_files/persona_create_blank_d.png">
+			</div>
+
+			<div id="persona_used">
+				<div class="fc2 fac fcb"><div>Used persona slots:   3 / 3</div></div>
+			</div>
+		</div>
+
+		<div id="attr_outer">
+			<div><div class="fc4 fac fcb"><div>Primary attributes</div></div></div>
+			<table id="attr_table"><tbody><tr>
+<td><div class="fc4 fal fcb"><div>Strength</div></div></td>
+<td id="str_display"><div class="fc4 far fcb"><div>405</div></div></td>
+<td><div class="fc4 far fcr"><div>+45</div></div></td>
+<td><div class="fc4 far fca"><div>+0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/dec.png" id="str_dec" onclick="decrease_pa('str', event)"></td>
+<td id="str_text"><div class="fc4 far fcb"><div>0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/inc.png" id="str_inc" onclick="increase_pa('str', event)"></td>
+<td id="str_left"><div class="fc4 far fcb"><div>256,912,513</div></div></td></tr><tr>
+<td><div class="fc4 fal fcb"><div>Dexterity</div></div></td>
+<td id="dex_display"><div class="fc4 far fcb"><div>455</div></div></td>
+<td><div class="fc4 far fcr"><div>+46</div></div></td>
+<td><div class="fc4 far fca"><div>+0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/dec.png" id="dex_dec" onclick="decrease_pa('dex', event)"></td>
+<td id="dex_text"><div class="fc4 far fcb"><div>0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/inc.png" id="dex_inc" onclick="increase_pa('dex', event)"></td>
+<td id="dex_left"><div class="fc4 far fcb"><div>1,329,873,651</div></div></td></tr><tr>
+<td><div class="fc4 fal fcb"><div>Agility</div></div></td>
+<td id="agi_display"><div class="fc4 far fcb"><div>568</div></div></td>
+<td><div class="fc4 far fcr"><div>+42</div></div></td>
+<td><div class="fc4 far fca"><div>+503</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/dec.png" id="agi_dec" onclick="decrease_pa('agi', event)"></td>
+<td id="agi_text"><div class="fc4 far fcb"><div>0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/inc_d.png" id="agi_inc" onclick="increase_pa('agi', event)"></td>
+<td id="agi_left"><div class="fc4 far fcb"><div>68,677,671,952</div></div></td></tr><tr>
+<td><div class="fc4 fal fcb"><div>Endurance</div></div></td>
+<td id="end_display"><div class="fc4 far fcb"><div>567</div></div></td>
+<td><div class="fc4 far fcr"><div>+42</div></div></td>
+<td><div class="fc4 far fca"><div>+0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/dec.png" id="end_dec" onclick="decrease_pa('end', event)"></td>
+<td id="end_text"><div class="fc4 far fcb"><div>0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/inc_d.png" id="end_inc" onclick="increase_pa('end', event)"></td>
+<td id="end_left"><div class="fc4 far fcb"><div>66,218,002,795</div></div></td></tr><tr>
+<td><div class="fc4 fal fcb"><div>Intelligence</div></div></td>
+<td id="int_display"><div class="fc4 far fcb"><div>568</div></div></td>
+<td><div class="fc4 far fcr"><div>+38</div></div></td>
+<td><div class="fc4 far fca"><div>+737</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/dec.png" id="int_dec" onclick="decrease_pa('int', event)"></td>
+<td id="int_text"><div class="fc4 far fcb"><div>0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/inc_d.png" id="int_inc" onclick="increase_pa('int', event)"></td>
+<td id="int_left"><div class="fc4 far fcb"><div>68,677,671,952</div></div></td></tr><tr>
+<td><div class="fc4 fal fcb"><div>Wisdom</div></div></td>
+<td id="wis_display"><div class="fc4 far fcb"><div>568</div></div></td>
+<td><div class="fc4 far fcr"><div>+43</div></div></td>
+<td><div class="fc4 far fca"><div>+754</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/dec.png" id="wis_dec" onclick="decrease_pa('wis', event)"></td>
+<td id="wis_text"><div class="fc4 far fcb"><div>0</div></div></td>
+<td><img src="./The HentaiVerse（非ALT）_files/inc_d.png" id="wis_inc" onclick="increase_pa('wis', event)"></td>
+<td id="wis_left"><div class="fc4 far fcb"><div>68,677,671,952</div></div></td></tr><tr><td colspan="4"></td><td colspan="3"><img src="./The HentaiVerse（非ALT）_files/apply.png" onclick="do_attr_post()"></td><td id="remaining_exp"><div class="fc4 far fcb"><div>61,496,539,988</div></div></td></tr></tbody></table>
+			<form id="attr_form" action="https://hentaiverse.org/" method="post"><input type="hidden" name="attr_apply" value="1"><input type="hidden" id="str_delta" name="str_delta" value="0"><input type="hidden" id="dex_delta" name="dex_delta" value="0"><input type="hidden" id="agi_delta" name="agi_delta" value="0"><input type="hidden" id="end_delta" name="end_delta" value="0"><input type="hidden" id="int_delta" name="int_delta" value="0"><input type="hidden" id="wis_delta" name="wis_delta" value="0"></form>
+		</div>
+
+		<div id="pabonus"><div class="fc4 fac fcb"><div>Isekai bonus: +6</div></div></div>
+
+		<div id="prof_outer">
+			<div>
+				<div><div class="fc4 fac fcb"><div>Equipment proficiency</div></div></div>
+				<table><tbody><tr><td><div class="fc4 fal fcb"><div>One-handed</div></div></td><td><div class="fc4 far fcb"><div>517.244</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Two-handed</div></div></td><td><div class="fc4 far fcb"><div>458.237</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Dual-wielding</div></div></td><td><div class="fc4 far fcb"><div>460.172</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Cloth armor</div></div></td><td><div class="fc4 far fcb"><div>525.948</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Light armor</div></div></td><td><div class="fc4 far fcb"><div>468.036</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Heavy armor</div></div></td><td><div class="fc4 far fcb"><div>516.242</div></div></td></tr></tbody></table>
+			</div>
+
+			<div>
+				<div><div class="fc4 fac fcb"><div>Magic proficiency</div></div></div>
+				<table><tbody><tr><td><div class="fc4 fal fcb"><div>Staff</div></div></td><td><div class="fc4 far fcb"><div>525.871</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Elemental</div></div></td><td><div class="fc4 far fcb"><div>525.949</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Divine</div></div></td><td><div class="fc4 far fcb"><div>459.306</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Forbidden</div></div></td><td><div class="fc4 far fcb"><div>459.349</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Deprecating</div></div></td><td><div class="fc4 far fcb"><div>537.165</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Supportive</div></div></td><td><div class="fc4 far fcb"><div>537.587</div></div></td></tr></tbody></table>
+			</div>
+		</div>
+	</div>
+
+	<div id="eqch_stats">
+	<div id="stats_scrollable">
+<div class="spc"><div class="fc2 fal fcb"><div>Mainhand Attack</div></div></div>
+<table>
+	<tbody><tr><td>4629</td><td>Crushing Damage</td></tr>
+	<tr><td>584.8</td><td>Accuracy</td></tr>
+	<tr><td>1.50x</td><td>Crit Multiplier</td></tr><tr><td>10.0%</td><td>Attack Speed Bonus</td></tr><tr><td>35.0%</td><td>Coalesced Mana on spell hit</td></tr>
+</tbody></table>
+<div class="spc"><div class="fc2 fal fcb"><div>Magic Attack</div></div></div>
+<table>
+	<tbody><tr><td>5158</td><td>Damage Bonus</td></tr>
+	<tr><td>1495</td><td>Accuracy</td></tr>
+	<tr><td>2.19x</td><td>Crit Multiplier</td></tr>
+	<tr><td>-14.2%</td><td>Mana Cost Modifier</td></tr>
+	<tr><td>27.5%</td><td>Cast Speed Bonus</td></tr>
+</tbody></table>
+
+<div class="spc"><div class="fc2 fal fcb"><div>Vitals</div></div></div>
+<table>
+	<tbody><tr><td>25080</td><td>Base Health</td></tr>
+	<tr><td>5576</td><td>Base Mana</td></tr>
+	<tr><td>2168</td><td>Base Spirit</td></tr>
+	<tr><td>87</td><td>Mana Regen</td></tr>
+	<tr><td>14</td><td>Spirit Regen</td></tr>
+</tbody></table>
+
+<div class="spc"><div class="fc2 fal fcb"><div>Avoidance</div></div></div>
+<table>
+	<tbody><tr><td>867.1</td><td>Evade</td></tr>
+	<tr><td>0.0</td><td>Block</td></tr>
+	<tr><td>202.8</td><td>Parry</td></tr>
+	<tr><td>1143</td><td>Resist</td></tr>
+</tbody></table>
+
+<div class="spc"><div class="fc2 fal fcb"><div>Compromise</div></div></div>
+<table>
+	<tbody><tr><td>0.0</td><td>Interference</td></tr>
+	<tr><td>5.4</td><td>Burden</td></tr>
+</tbody></table>
+
+<div class="spc"><div class="fc2 fal fcb"><div>Damage Mitigation</div></div></div>
+<table>
+	<tbody><tr><td>67.1%</td><td>Physical</td></tr>
+	<tr><td>70.6%</td><td>Magical</td></tr><tr><td>0.0%</td><td>Fire</td></tr><tr><td>0.0%</td><td>Cold</td></tr><tr><td>0.0%</td><td>Elec</td></tr><tr><td>0.0%</td><td>Wind</td></tr><tr><td>0.0%</td><td>Holy</td></tr><tr><td>0.0%</td><td>Dark</td></tr><tr><td>14.5%</td><td>Crushing</td></tr><tr><td>0.0%</td><td>Slashing</td></tr><tr><td>0.0%</td><td>Piercing</td></tr>
+</tbody></table>
+
+<div class="spc"><div class="fc2 fal fcb"><div>Spell Damage Bonus</div></div></div>
+<table><tbody><tr><td>0.0%</td><td>Fire</td></tr><tr><td>0.0%</td><td>Cold</td></tr><tr><td>38.6%</td><td>Elec</td></tr><tr><td>399.8%</td><td>Wind</td></tr><tr><td>0.0%</td><td>Holy</td></tr><tr><td>77.0%</td><td>Dark</td></tr>
+</tbody></table>
+
+<div class="spc"><div class="fc2 fal fcb"><div>Effective Primary Stats</div></div></div>
+<table><tbody><tr><td>456.0</td><td>Strength</td></tr><tr><td>507.0</td><td>Dexterity</td></tr><tr><td>1119</td><td>Agility</td></tr><tr><td>615.0</td><td>Endurance</td></tr><tr><td>1349</td><td>Intelligence</td></tr><tr><td>1371</td><td>Wisdom</td></tr>
+</tbody></table>
+
+<div class="spc"><div class="fc2 fal fcb"><div>Effective Proficiency</div></div></div>
+<table><tbody><tr><td>517.2</td><td>One-handed</td></tr><tr><td>458.2</td><td>Two-handed</td></tr><tr><td>460.2</td><td>Dual-wielding</td></tr><tr><td>525.9</td><td>Staff</td></tr><tr><td>525.9</td><td>Cloth Armor</td></tr><tr><td>468.0</td><td>Light Armor</td></tr><tr><td>516.2</td><td>Heavy Armor</td></tr><tr><td>849.1</td><td>Elemental</td></tr><tr><td>459.3</td><td>Divine</td></tr><tr><td>590.7</td><td>Forbidden</td></tr><tr><td>778.5</td><td>Deprecating</td></tr><tr><td>537.6</td><td>Supportive</td></tr>
+</tbody></table></div>
+</div>
+</div>
+
+<script type="text/javascript">
+
+var attr_keys = ["str","dex","agi","end","int","wis"];
+var attr_current = {"str":405,"dex":455,"agi":568,"end":567,"int":568,"wis":568};
+var attr_delta = {"str":0,"dex":0,"agi":0,"end":0,"int":0,"wis":0};
+var total_exp = 7607691046990;
+var usable_exp = 61496539988;
+var current_persona_name = "Fixture Persona";
+
+function get_total_expcost(stat_level) {
+	return stat_level == 0 ? 0 : Math.round(Math.pow(stat_level + 1, Math.pow(2.5475566751265, 1 + (stat_level / 950))));
+}
+
+function get_next_expcost(stat_level) {
+	return get_total_expcost(stat_level + 1) - get_total_expcost(stat_level);
+}
+
+function update_usable_exp() {
+	usable_exp = total_exp;
+	
+	for(i in attr_keys) {
+		var current_level = attr_current[attr_keys[i]] + attr_delta[attr_keys[i]];
+		usable_exp -= get_total_expcost(current_level);
+	}
+}
+
+function update_display(which) {
+	document.getElementById(which + "_display").innerHTML = common.get_dynamic_digit_string(attr_current[which] + attr_delta[which]);
+	document.getElementById(which + "_text").innerHTML = common.get_dynamic_digit_string(attr_delta[which]);
+	document.getElementById("remaining_exp").innerHTML = common.get_dynamic_digit_string(usable_exp);
+
+	for(i in attr_keys) {
+		var current_level = attr_current[attr_keys[i]] + attr_delta[attr_keys[i]];
+		var next_exp = get_next_expcost(current_level);
+		var enable_inc = next_exp <= usable_exp;
+		var enable_dec = attr_delta[attr_keys[i]] > 0 || current_level > 0;
+		
+		document.getElementById(attr_keys[i] + "_inc").src = "/y/character/inc" + (enable_inc ? "" : "_d") + ".png";
+		document.getElementById(attr_keys[i] + "_dec").src = "/y/character/dec" + (enable_dec ? "" : "_d") + ".png";
+		document.getElementById(attr_keys[i] + "_left").innerHTML = common.get_dynamic_digit_string(next_exp);
+	}
+}
+
+function increase_pa(which, event) {
+	var increase_count = 1;
+
+	if( event.shiftKey ) {
+		increase_count = 10;
+	}
+	else if( event.ctrlKey ) {
+		increase_count = 100;
+	}
+	
+	do {
+		if( get_next_expcost(attr_current[which] + attr_delta[which]) <= usable_exp ) {
+			++attr_delta[which];
+			update_usable_exp();
+		}
+		else {
+			break;
+		}
+	} while( --increase_count > 0 );
+	
+	update_display(which);
+}
+
+function decrease_pa(which, event) {
+	var decrease_count = 1;
+
+	if( event.shiftKey ) {
+		decrease_count = 10;
+	}
+	else if( event.ctrlKey ) {
+		decrease_count = 100;
+	}
+	
+	do {
+		if( attr_delta[which] > 0 || (attr_current[which] + attr_delta[which] > 0) ) {
+			--attr_delta[which];
+			update_usable_exp();
+		}
+		else {
+			break;
+		}
+	} while( --decrease_count > 0 );
+
+	update_display(which);
+}
+
+function do_attr_post() {
+	for(i in attr_keys) {
+		document.getElementById(attr_keys[i] + "_delta").value = attr_delta[attr_keys[i]];
+	}
+
+	document.getElementById('attr_form').submit();
+}
+
+function do_persona_post() {
+	document.getElementById("persona_form").submit();
+}
+
+function do_persona_rename() {
+	var name = prompt("Enter a new name for this persona.", current_persona_name);
+	if( name != null ) {
+		document.getElementById("persona_rename").value = name;
+		do_persona_post();
+	}
+}
+
+function do_persona_create_clone() {
+	if( confirm("Are you sure you wish to create a new persona with the same attribute, slot, equipment and ability assignments as \"" + current_persona_name +"\"? This action is irreversible, and created personas cannot be deleted.") ) {
+		document.getElementById("persona_create").value = "clone";
+		do_persona_post();
+	}
+}
+
+function do_persona_create_blank() {
+	if( confirm("Are you sure you wish to create a blank persona? This action is irreversible, and created personas cannot be deleted.") ) {
+		document.getElementById("persona_create").value = "blank";
+		do_persona_post();
+	}
+}
+
+</script>
+</div></body></html>

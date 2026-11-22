@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="training_ui_at_cap">At current cap</string>
+    <string name="training_ui_unavailable">Currently unavailable</string>
+    <string name="training_ui_in_progress">Training</string>
+    <string name="training_ui_start">Train</string>
+    <string name="training_ui_start_cost">Train %1$s, %2$s</string>
+    <string name="training_ui_level">Level %1$s</string>
+    <string name="training_ui_remaining">%1$s remaining</string>
+    <string name="training_ui_cancel">Cancel training</string>
+</resources>

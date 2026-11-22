@@ -1,0 +1,49 @@
+<html><body>
+<div id="monster_outer">
+<div id="monstercreate_left"><div><img src="/fixture/arthropod_a.png"/></div><div><img onclick="select_class(2)" src="/fixture/avion.png"/></div><div><img onclick="select_class(3)" src="/fixture/beast.png"/></div><div><img onclick="select_class(4)" src="/fixture/celestial.png"/></div><div><img onclick="select_class(5)" src="/fixture/daimon.png"/></div><div><img onclick="select_class(6)" src="/fixture/dragonkin.png"/></div><div><img onclick="select_class(7)" src="/fixture/elemental.png"/></div><div><img onclick="select_class(8)" src="/fixture/giant.png"/></div><div><img onclick="select_class(10)" src="/fixture/humanoid.png"/></div><div><img onclick="select_class(12)" src="/fixture/mechanoid.png"/></div><div><img onclick="select_class(13)" src="/fixture/reptilian.png"/></div><div><img onclick="select_class(14)" src="/fixture/sprite.png"/></div><div><img onclick="select_class(15)" src="/fixture/undead.png"/></div>
+</div>
+<div id="monstercreate_right">
+<div id="monstercreate_info">
+<p>Arthropods are a diverse phylum of invertebrate animals distinguished by having a segmented body with jointed appendages, encased in a hard exoskeleton. Variants include insects, spiders and scorpions, and they exist in many different forms and sizes. Remains of humanoid arthropods have been discovered in old ruins, but it is unknown whether such animals still exist, and whether or not they are intelligent.</p>
+<p>Arthropods are typically equipped with crushing melee attacks using claws and similar appendages, or piercing attacks with stingers. There are rumors of massive mutated members of the species, large enough to crush other creatures with the sheer bulk of their bodies.</p>
+<p>Their natural armor provides a high degree of resistance against slashing attacks, but they are vulnerable to blunt weapons. The exoskeleton provides a heightened defense against most elemental attacks.</p></div>
+<div id="monstercreate_stats">
+<div>
+<div><div class="fc4 fac fcb"><div>Primary</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Strength</div></div></td><td><div class="fc4 far fcb"><div>80</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Dexterity</div></div></td><td><div class="fc4 far fcb"><div>50</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Agility</div></div></td><td><div class="fc4 far fcb"><div>70</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Endurance</div></div></td><td><div class="fc4 far fcb"><div>100</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Intelligence</div></div></td><td><div class="fc4 far fcb"><div>40</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Wisdom</div></div></td><td><div class="fc4 far fcb"><div>40</div></div></td></tr>
+</tbody></table>
+</div>
+<div>
+<div><div class="fc4 fac fcb"><div>Element</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Fire</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Cold</div></div></td><td><div class="fc4 far fcb"><div>-25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Elec</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Wind</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Holy</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Dark</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr>
+</tbody></table>
+</div>
+<div>
+<div><div class="fc4 fac fcb"><div>Defense</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Crushing</div></div></td><td><div class="fc4 far fcb"><div>-25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Slashing</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Piercing</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr>
+</tbody></table>
+</div>
+</div>
+<div id="monstercreate_patk">
+<div><div class="fc4 fac fcb"><div>Create new monster with base damage type of: </div></div></div>
+<div style="width:184px"><div><img id="patk_crsh" onclick="create_monster('crsh')" src="/fixture/crsh_a.png"/></div><div><img id="patk_prcg" onclick="create_monster('prcg')" src="/fixture/prcg_a.png"/></div>
+</div>
+</div>
+</div>
+</div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;create=new" id="create_form" method="post">
+<input id="selected_class" name="selected_class" type="hidden" value="1"/>
+<input id="selected_patk" name="selected_patk" type="hidden" value=""/>
+</form>
+<script>
+function select_class(mclass) {
+	e("selected_class").value = mclass;
+	e("create_form").submit();
+}
+
+function create_monster(patk) {
+	e("selected_patk").value = patk;
+	e("create_form").submit();
+}
+</script>
+</body></html>

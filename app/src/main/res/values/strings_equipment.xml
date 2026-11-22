@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="equipment_ui_loadout">Gear</string>
+    <string name="equipment_ui_stats">Stats</string>
+    <string name="equipment_ui_set">Equipment set</string>
+    <string name="equipment_ui_current">Current</string>
+    <string name="equipment_ui_back">Back to equipment</string>
+    <string name="equipment_ui_equip">Equip</string>
+    <string name="equipment_ui_unequip">Unequip</string>
+    <string name="equipment_ui_equipped">Equipped</string>
+    <string name="equipment_ui_protected">Protected</string>
+    <string name="equipment_ui_damaged">Damaged</string>
+    <string name="equipment_ui_unusable">Unusable</string>
+    <string name="equipment_ui_stored">Stored</string>
+    <string name="equipment_ui_pinned">Pinned</string>
+    <string name="equipment_ui_locked">Locked</string>
+    <string name="equipment_ui_high_level">Above player level</string>
+</resources>

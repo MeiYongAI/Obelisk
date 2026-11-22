@@ -1,0 +1,187 @@
+<html><body>
+<div id="monster_outer">
+	<div id="monster_nav">
+		<div><img src="/fixture/prev.png" onclick="document.location=&#x27;https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=58&#x27;"></div>
+		<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59"><img src="/fixture/ml_monstats.png"></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59&amp;pane=skills"><img src="/fixture/ml_skilledit_a.png"></a></div>
+		<div><img src="/fixture/next.png" onclick="document.location=&#x27;https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=1&#x27;"></div>
+	</div>
+
+	<div id="monster_head">
+<div class="msl" onclick="document.location=&#x27;https://hentaiverse.org/?s=Bazaar&amp;ss=ml&#x27;">
+	<div><div class="fc4 far fcb"><div>59</div></div></div>
+	<div><div class="fc4 fal fcb"><div>Unnamed Celestial</div></div></div>
+	<div><div class="fc4 fal fcb"><div>Lvl 0</div></div></div>
+	<div><div class="fc4 far fcb"><div>Celestial</div></div></div>
+	<div class="msn"><div><img src="/fixture/bar_red.png" style="width:10px"></div></div>
+	<div class="msn"><div><img src="/fixture/bar_red.png" style="width:0px"></div></div>
+</div></div><div id="monsterstats_rename"><div class="fc2 fac fcr"><div>You still have to feed this monsters enough crystals to reach powerlevel 25 and give it a name to activate it.</div></div></div>
+<div id="monsterstats_left">
+	<div id="monsterstats_top">
+		<div>
+			<div>
+				<div><img src="/fixture/feedmonster.png" onclick="do_feed(&#x27;food&#x27;)"></div>
+				<div>Needs: 22 Chow</div>
+				<div>Stock: 27110</div>
+			</div>
+
+			<div>
+				<div><img src="/fixture/drugmonster.png" onclick="do_feed(&#x27;drugs&#x27;)"></div>
+				<div>Needs: 4 Happy Pills</div>
+				<div>Stock: 1134</div>
+			</div><div id="monsterstats_rendel"><img src="/fixture/delete.png" onclick="do_delete()"></div>
+		</div>
+
+		<div class="mcr" onmouseout="show_upgrade_text()">
+			<div><div class="fc4 fac fcb"><div>Primary attributes</div></div></div>
+			<table><tbody><tr><td><img src="/fixture/str_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Vigor   Cost: 50   Stock: 8103&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;pa_str&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>50</div></div></td></tr><tr><td><img src="/fixture/dex_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Finesse   Cost: 50   Stock: 37348&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;pa_dex&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>50</div></div></td></tr><tr><td><img src="/fixture/agi_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Swiftness   Cost: 50   Stock: 3765&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;pa_agi&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>100</div></div></td></tr><tr><td><img src="/fixture/end_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Fortitude   Cost: 50   Stock: 35226&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;pa_end&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>50</div></div></td></tr><tr><td><img src="/fixture/int_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Cunning   Cost: 50   Stock: 20194&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;pa_int&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>100</div></div></td></tr><tr><td><img src="/fixture/wis_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Knowledge   Cost: 50   Stock: 14633&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;pa_wis&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>80</div></div></td></tr>
+			</tbody></table>
+		</div>
+
+		<div class="mcr" onmouseout="show_upgrade_text()">
+			<div><div class="fc4 fac fcb"><div>Elemental mitigation</div></div></div>
+			<table><tbody><tr><td><img src="/fixture/fire_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Flames   Cost: 10   Stock: 44112&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;er_fire&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><img src="/fixture/cold_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Frost   Cost: 10   Stock: 33012&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;er_cold&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><img src="/fixture/elec_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Lightning   Cost: 10   Stock: 23792&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;er_elec&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><img src="/fixture/wind_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Tempest   Cost: 10   Stock: 53529&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;er_wind&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><img src="/fixture/holy_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Devotion   Cost: 10   Stock: 1204&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;er_holy&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><img src="/fixture/dark_a.png" onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade With: Crystal of Corruption   Cost: 10   Stock: 11160&lt;/div&gt;&lt;/div&gt;&#x27;)" onclick="do_crystal_upgrade(&#x27;er_dark&#x27;, event)"></td><td><div class="fc4 far fcb"><div>+0</div></div></td><td><div class="fc4 far fcb"><div>-50</div></div></td></tr>
+			</tbody></table>
+		</div>
+	</div>
+
+	<div id="upgrade_text"></div>
+
+	<div id="monsterstats_chaos" onmouseout="show_upgrade_text()">
+		<table id="chaosupg">
+			<tbody><tr>
+				<td><div class="fc4 far fcb"><div>Scavenging</div></div></td>
+				<td><div class="mcu1"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Upgrade Cost: 1 Chaos Token     Stock: 127&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc.png" onclick="do_chaos_upgrade(&#x27;affect&#x27;, event)"></td>
+				<td><div class="fc2 fal fcb"><div>Increases the gift factor by 2.5%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Fortitude</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 5&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster health by 5%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Brutality</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 10&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster damage by 2.5%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Accuracy</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 15&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster accuracy by 1%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Precision</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 20&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Decreases effective target evade/block by 1%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Overpower</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 25&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Decreases effective target parry/resist by 1%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Interception</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 30&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster natural parry by 5%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Dissipation</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 35&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster natural resist by 5%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Evasion</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 40&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster natural evade by 5%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Defense</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 45&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster physical mitigation by 1%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Warding</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 50&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster magical mitigation by 1%</div></div></td>
+			</tr>
+			<tr>
+				<td><div class="fc4 far fcb"><div>Swiftness</div></div></td>
+				<td><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div><div class="mcu0"></div></td>
+				<td><img onmouseover="show_upgrade_text(&#x27;&lt;div class=&quot;fc4 fac fcb&quot;&gt;&lt;div&gt;Next upgrade available at powerlevel 55&lt;/div&gt;&lt;/div&gt;&#x27;)" src="/fixture/inc_d.png"></td>
+				<td><div class="fc2 fal fcb"><div>Increases monster attack speed by 2.5%.</div></div></td>
+			</tr>
+		</tbody></table>
+	</div>
+</div>
+
+<div id="monsterstats_right">
+	<div><div class="fc4 fac fcb"><div>Other stats</div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Battles Won</div></div></div><div><div class="fc2 far fcb"><div>0</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Killing Blows</div></div></div><div><div class="fc2 far fcb"><div>0</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Gift Factor</div></div></div><div><div class="fc2 far fcb"><div>100%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Phys. Attack</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Mag. Attack</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Attack Speed</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Accuracy</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Health</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Phys. Defense</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Mag. Defense</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Slashing Mit</div></div></div><div><div class="fc2 far fcb"><div>-25%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Piercing Mit</div></div></div><div><div class="fc2 far fcb"><div>-25%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Crushing Mit</div></div></div><div><div class="fc2 far fcb"><div>-25%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Evade Bonus</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Parry Bonus</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Resist Bonus</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Anti-Block</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Anti-Evade</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Anti-Parry</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div><div class="mst"><div><div class="fc2 far fcb"><div>Anti-Resist</div></div></div><div><div class="fc2 far fcb"><div>0%</div></div></div></div>
+</div>
+
+<form id="delete_form" action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59" method="post"><input type="hidden" id="delete_monster" name="delete_monster" value=""></form>
+<form id="rename_form" action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59" method="post"><input type="hidden" id="rename_monster" name="rename_monster" value=""></form>
+<form id="chaos_form" action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59" method="post"><input type="hidden" id="chaos_upgrade" name="chaos_upgrade" value=""><input type="hidden" id="chaos_count" name="chaos_count" value="1"></form>
+<form id="crystal_form" action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59" method="post"><input type="hidden" id="crystal_upgrade" name="crystal_upgrade" value=""><input type="hidden" id="crystal_count" name="crystal_count" value="1"></form>
+<form id="food_form" action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59" method="post"><input type="hidden" id="food_action" name="food_action" value=""></form>
+
+</div>
+<script type="text/javascript">
+function do_crystal_upgrade(stat, event) {
+	if( event.shiftKey ) {
+		e("crystal_count").value = 5;
+	}
+	else if( event.ctrlKey ) {
+		e("crystal_count").value = 10;
+	}
+	
+	e("crystal_upgrade").value = stat;
+	e("crystal_form").submit();
+}
+
+function do_chaos_upgrade(upgrade, event) {
+	if( event.shiftKey ) {
+		e("chaos_count").value = 5;
+	}
+	else if( event.ctrlKey ) {
+		e("chaos_count").value = 10;
+	}
+	
+	e("chaos_upgrade").value = upgrade;
+	e("chaos_form").submit();
+}
+
+function do_feed(action) {
+	e("food_action").value = action;
+	e("food_form").submit();
+}
+
+function do_rename() {
+	var monstername = prompt("Enter a new name for this monster.", "");
+	if(monstername) {
+		e("rename_monster").value = monstername;
+		e("rename_form").submit();
+	}
+}
+
+function do_delete() {
+	if(confirm("Are you sure you wish to delete the monster ? This action cannot be reversed.")) {
+		e("delete_monster").value = "fixture-delete-token";
+		e("delete_form").submit();
+	}
+}
+
+function show_upgrade_text(text) {
+	e("upgrade_text").innerHTML = text ? text : "";
+}
+</script>
+</body></html>

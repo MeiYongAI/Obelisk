@@ -1,0 +1,25 @@
+<!-- Sanitized from supplied gr page. Tokens and equipment identifiers are fixtures. -->
+<div id="mainpane">
+<div class="v" id="grindfest">
+<p>Welcome to the Grindfest.
+	</p><p>A Grindfest consists of up to 1000 rounds of battle.</p>
+<p>Starting a Grindfest will consume 1 point of Stamina.</p>
+<p>There is a small credit reward at the end,<br/> if you make it all the way through.</p>
+<div><div><img onclick="init_battle(1)" src="./The HentaiVerse（gr）_files/startgrindfest.png"/></div></div>
+</div>
+<form action="https://hentaiverse.org/?s=Battle&amp;ss=gr" id="initform" method="post">
+<input id="initid" name="initid" type="hidden" value=""/>
+<input name="postoken" type="hidden" value="fixture-post-token"/>
+</form>
+<script type="text/javascript">
+function init_battle(id) {
+	e("initid").value = id;
+	e("initform").submit();
+}
+</script></div>
+<script>
+function init_battle(id) {
+	e("initid").value = id;
+	e("initform").submit();
+}
+</script>

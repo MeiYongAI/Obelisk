@@ -1,0 +1,65 @@
+<html><body>
+<!-- Source: The HentaiVerse（怪物技能页）.html; https://hentaiverse.org/?s=Bazaar&ss=ml&slot=59&pane=skills -->
+<div id="monster_outer">
+	<div id="monster_nav">
+		<div><img src="/fixture/prev.png" onclick="document.location='https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=58'"></div>
+		<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59"><img src="/fixture/ml_monstats_a.png"></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59&amp;pane=skills"><img src="/fixture/ml_skilledit.png"></a></div>
+		<div><img src="/fixture/next.png" onclick="document.location='https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=1'"></div>
+	</div>
+
+	<div id="monster_head">
+<div class="msl" onclick="document.location='https://hentaiverse.org/?s=Bazaar&amp;ss=ml'">
+	<div><div class="fc4 far fcb"><div>59</div></div></div>
+	<div><div class="fc4 fal fcb"><div>Unnamed Celestial</div></div></div>
+	<div><div class="fc4 fal fcb"><div>Lvl 28</div></div></div>
+	<div><div class="fc4 far fcb"><div>Celestial</div></div></div>
+	<div class="msn"><div><img src="/fixture/bar_red.png" style="width:10px"></div></div>
+	<div class="msn"><div><img src="/fixture/bar_green.png" style="width:120px"></div></div>
+</div></div>
+<form id="skillform" action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=59&amp;pane=skills" method="post">
+	<input id="update_skills" name="update_skills" type="hidden" value="1">
+
+	<table id="monsterskills">
+		<tbody><tr>
+			<th><div class="fc4 fac fcb"><div>Skill name</div></div></th>
+			<th><div class="fc4 fac fcb"><div>Skill type</div></div></th>
+			<th><div class="fc4 fac fcb"><div>Damage</div></div></th>
+			<th><div class="fc4 fac fcb"><div>Special</div></div></th>
+			<th><div class="fc4 fac fcb"><div>Power</div></div></th>
+			<th><div class="fc4 fac fcb"><div>Cost</div></div></th>
+		</tr>
+		<tr>
+			<td><input name="skill_name_0" value="" placeholder="Judgement Strike" type="text" size="20" maxlength="30"></td>
+			<td>
+				<div class="msp"><div id="skill_select_type_0" style="width:125px; left:0px; display:none"><div onclick="set_property(this, 'type_0', 'p')"><div class="fc4 fac fca"><div>Physical</div></div></div></div>
+					<input id="skill_type_0" name="skill_type_0" type="hidden" value="p">
+					<div id="skill_display_type_0"><div class="fc4 fac fcb"><div>Physical</div></div></div>
+				</div>
+			</td>
+			<td>
+				<div class="msp"><div id="skill_select_elem_0" style="width:125px; left:0px; display:none"><div onclick="set_property(this, 'elem_0', 'patk')"><div class="fc4 fac fca"><div>Slashing</div></div></div></div>
+					<input id="skill_elem_0" name="skill_elem_0" type="hidden" value="patk">
+					<div id="skill_display_elem_0"><div class="fc4 fac fcb"><div>Slashing</div></div></div>
+				</div>
+			</td>
+			<td><div class="fc4 fac fcb"><div>None</div></div></td>
+			<td><div class="fc4 fac fcb"><div>50</div></div></td>
+			<td><div class="fc4 fac fcb"><div>50% MP</div></div></td>
+		</tr>
+	</tbody></table>
+
+	<img src="/fixture/saveskills.png" onclick="e('skillform').submit()">
+</form>
+
+<script type="text/javascript">
+function show_properties(which) {
+	e("skill_select_" + which).style.display = "";
+}
+
+function set_property(elem, which, selection) {
+	e("skill_" + which).value = selection;
+	e("skill_display_" + which).innerHTML = elem.innerHTML;
+	e("skill_select_" + which).style.display = "none";
+}
+</script></div></div></div>
+</body></html>

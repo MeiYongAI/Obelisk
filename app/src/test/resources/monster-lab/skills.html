@@ -1,0 +1,97 @@
+<html><body>
+<div id="monster_outer">
+<div id="monster_nav">
+<div><img onclick="document.location='https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;pane=skills&amp;slot=58'" src="/fixture/prev.png"/></div>
+<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=1"><img src="/fixture/ml_monstats_a.png"/></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=1&amp;pane=skills"><img src="/fixture/ml_skilledit.png"/></a></div>
+<div><img onclick="document.location='https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;pane=skills&amp;slot=2'" src="/fixture/next.png"/></div>
+</div>
+<div id="monster_head">
+<div class="msl" onclick="document.location='https://hentaiverse.org/?s=Bazaar&amp;ss=ml'">
+<div><div class="fc4 far fcb"><div>1</div></div></div>
+<div>Fixture Monster 1</div>
+<div><div class="fc4 fal fcb"><div>Lvl 1067</div></div></div>
+<div><div class="fc4 far fcb"><div><hv-ml-text data-hv-ml-display="魔灵" style="--hv-ml-font-size: 16px;">Daimon</hv-ml-text></div></div></div>
+<div class="msn"><div title="饥饿"><img src="/fixture/bar_green.png" style="width:87px"/></div></div>
+<div class="msn"><div title="情绪"><img src="/fixture/bar_green.png" style="width:91px"/></div></div>
+</div></div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;slot=1&amp;pane=skills" id="skillform" method="post">
+<input id="update_skills" name="update_skills" type="hidden" value="1"/>
+<table id="monsterskills">
+<tbody><tr>
+<th><div class="fc4 fac fcb"><div>技能名</div></div></th>
+<th><div class="fc4 fac fcb"><div>技能攻击类型</div></div></th>
+<th><div class="fc4 fac fcb"><div>伤害类型</div></div></th>
+<th><div class="fc4 fac fcb"><div>特殊</div></div></th>
+<th><div class="fc4 fac fcb"><div>伤害</div></div></th>
+<th><div class="fc4 fac fcb"><div>消耗</div></div></th>
+</tr>
+<tr>
+<td><input maxlength="30" name="skill_name_0" placeholder="Savage Strike" size="20" type="text" value=""/></td>
+<td>
+<div class="msp"><div id="skill_select_type_0" style="width:125px; left:0px; display:none"><div onclick="set_property(this, 'type_0', 'p')"><div class="fc4 fac fca"><div>物理</div></div></div></div>
+<input id="skill_type_0" name="skill_type_0" type="hidden" value="p"/>
+<div id="skill_display_type_0"><div class="fc4 fac fcb"><div>物理</div></div></div>
+</div>
+</td>
+<td>
+<div class="msp"><div id="skill_select_elem_0" style="width:125px; left:0px; display:none"><div onclick="set_property(this, 'elem_0', 'patk')"><div class="fc4 fac fca"><div>斩击</div></div></div></div>
+<input id="skill_elem_0" name="skill_elem_0" type="hidden" value="patk"/>
+<div id="skill_display_elem_0"><div class="fc4 fac fcb"><div>斩击</div></div></div>
+</div>
+</td>
+<td><div class="fc4 fac fcb"><div>无</div></div></td>
+<td><div class="fc4 fac fcb"><div>30</div></div></td>
+<td><div class="fc4 fac fcb"><div>50% MP</div></div></td>
+</tr>
+<tr>
+<td><input maxlength="30" name="skill_name_200" placeholder="Impaling Strike" size="20" type="text" value=""/></td>
+<td>
+<div class="msp"><div id="skill_select_type_200" style="width:125px; left:0px; display:none"><div onclick="set_property(this, 'type_200', 'p')"><div class="fc4 fac fca"><div>物理</div></div></div></div>
+<input id="skill_type_200" name="skill_type_200" type="hidden" value="p"/>
+<div id="skill_display_type_200"><div class="fc4 fac fcb"><div>物理</div></div></div>
+</div>
+</td>
+<td>
+<div class="msp"><div id="skill_select_elem_200" style="width:250px; left:-62px; display:none"><div onclick="set_property(this, 'elem_200', 'prcg')"><div class="fc4 fac fca"><div>刺击</div></div></div><div onclick="set_property(this, 'elem_200', 'slsh')"><div class="fc4 fac fca"><div>斩击</div></div></div></div>
+<input id="skill_elem_200" name="skill_elem_200" type="hidden" value="prcg"/>
+<div id="skill_display_elem_200" onclick="show_properties('elem_200')"><div class="fc4 fac fca"><div>刺击</div></div></div>
+</div>
+</td>
+<td><div class="fc4 fac fcb"><div>无</div></div></td>
+<td><div class="fc4 fac fcb"><div>60</div></div></td>
+<td><div class="fc4 fac fcb"><div>50% MP</div></div></td>
+</tr>
+<tr>
+<td><input maxlength="30" name="skill_name_400" placeholder="Shadow Blade" size="20" type="text" value=""/></td>
+<td>
+<div class="msp"><div id="skill_select_type_400" style="width:250px; left:-62px; display:none"><div onclick="set_property(this, 'type_400', 'p')"><div class="fc4 fac fca"><div>物理</div></div></div><div onclick="set_property(this, 'type_400', 'm')"><div class="fc4 fac fca"><div>魔法</div></div></div></div>
+<input id="skill_type_400" name="skill_type_400" type="hidden" value="p"/>
+<div id="skill_display_type_400" onclick="show_properties('type_400')"><div class="fc4 fac fca"><div>物理</div></div></div>
+</div>
+</td>
+<td>
+<div class="msp"><div id="skill_select_elem_400" style="width:250px; left:-62px; display:none"><div onclick="set_property(this, 'elem_400', 'dark')"><div class="fc4 fac fca"><div>黑暗</div></div></div><div onclick="set_property(this, 'elem_400', 'phys')"><div class="fc4 fac fca"><div>虚空</div></div></div></div>
+<input id="skill_elem_400" name="skill_elem_400" type="hidden" value="dark"/>
+<div id="skill_display_elem_400" onclick="show_properties('elem_400')"><div class="fc4 fac fca"><div>黑暗</div></div></div>
+</div>
+</td>
+<td><div class="fc4 fac fcb"><div>无</div></div></td>
+<td><div class="fc4 fac fcb"><div>120</div></div></td>
+<td><div class="fc4 fac fcb"><div>100% SP</div></div></td>
+</tr>
+</tbody></table>
+<img onclick="e('skillform').submit()" src="/fixture/saveskills.png"/>
+</form>
+</div>
+<script>
+function show_properties(which) {
+	e("skill_select_" + which).style.display = "";
+}
+
+function set_property(elem, which, selection) {
+	e("skill_" + which).value = selection;
+	e("skill_display_" + which).innerHTML = elem.innerHTML;
+	e("skill_select_" + which).style.display = "none";
+}
+</script>
+</body></html>

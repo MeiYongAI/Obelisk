@@ -1,0 +1,35 @@
+<html><body>
+<div id="monster_outer">
+<div id="monstercreate_left"><div><img onclick="select_class(1)" src="/fixture/arthropod.png"/></div><div><img onclick="select_class(2)" src="/fixture/avion.png"/></div><div><img onclick="select_class(3)" src="/fixture/beast.png"/></div><div><img onclick="select_class(4)" src="/fixture/celestial.png"/></div><div><img onclick="select_class(5)" src="/fixture/daimon.png"/></div><div><img onclick="select_class(6)" src="/fixture/dragonkin.png"/></div><div><img onclick="select_class(7)" src="/fixture/elemental.png"/></div><div><img onclick="select_class(8)" src="/fixture/giant.png"/></div><div><img onclick="select_class(10)" src="/fixture/humanoid.png"/></div><div><img onclick="select_class(12)" src="/fixture/mechanoid.png"/></div><div><img onclick="select_class(13)" src="/fixture/reptilian.png"/></div><div><img onclick="select_class(14)" src="/fixture/sprite.png"/></div><div><img onclick="select_class(15)" src="/fixture/undead.png"/></div>
+</div>
+<div id="monstercreate_right">
+<div id="monstercreate_info">
+<p>You can use the Monster Lab to create monsters that will roam free in the HentaiVerse. The monsters you create will be mixed in with the normal battles in all forms of play.</p>
+<p>The monsters you create will start out weak, but can be upgraded by infusing them with Power Crystals, and by unlocking special perks with Chaos Tokens.</p>
+<p>To get started, select a monster class from the list to the left.</p>
+<p>The class determines a number of factors:</p>
+<ul>
+<li>The starting primary stats</li>
+<li>The starting damage resistances</li>
+<li>Which melee attack types the monster can do</li>
+<li>(Future) Upgrade paths and specializations</li>
+</ul>
+<p>After selecting a class, select the desired primary attack type of the monster to create it. You will then be able to feed it some crystals and name it to make it active in the game.</p></div>
+</div>
+</div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;create=new" id="create_form" method="post">
+<input id="selected_class" name="selected_class" type="hidden" value="0"/>
+<input id="selected_patk" name="selected_patk" type="hidden" value=""/>
+</form>
+<script>
+function select_class(mclass) {
+	e("selected_class").value = mclass;
+	e("create_form").submit();
+}
+
+function create_monster(patk) {
+	e("selected_patk").value = patk;
+	e("create_form").submit();
+}
+</script>
+</body></html>

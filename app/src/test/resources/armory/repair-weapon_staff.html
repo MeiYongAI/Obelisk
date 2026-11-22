@@ -1,0 +1,81 @@
+<!doctype html><html><body><div id="armory_outer">
+	<div id="armory_left" onmouseover="if(typeof reset_infopane === 'function') reset_infopane()"><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=organize&amp;filter=weapon_staff"><div class="armory_tab">Organize</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_staff"><div class="armory_tab">Modify</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=weapon_staff"><div class="armory_tab armory_cur">Repair</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=soulbind&amp;filter=weapon_staff"><div class="armory_tab">Soulbind</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=purchase&amp;filter=weapon_staff"><div class="armory_tab">Purchase</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=sell&amp;filter=weapon_staff"><div class="armory_tab">Sell</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=salvage&amp;filter=weapon_staff"><div class="armory_tab">Salvage</div></a>
+		<div></div>
+	</div>
+	<div id="armory_right"><div id="filterbar" onmouseover="if(typeof reset_infopane === 'function') reset_infopane()"><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=equipped"><div class="cfb">Equipped</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=new"><div class="cfb">New</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=weapon_1handed"><div class="cfb">One-Handed</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=weapon_2handed"><div class="cfb">Two-Handed</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=weapon_staff"><div class="cfbs">Staffs</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=shield"><div class="cfb">Shield</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=armor_cloth"><div class="cfb">Cloth</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=armor_light"><div class="cfb">Light</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=armor_heavy"><div class="cfb">Heavy</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=salvaged"><div class="cfb">Salvaged</div></a></div><form id="equipform" method="post"><input type="hidden" name="postoken" value="test-armory-token">
+<div id="equipselect_outer">
+	<div id="equipselect_left">
+		<div id="equiplist" onmouseleave="rehover_last_checked()">
+			<table><tbody><tr class="eqselall"><th onmouseover="reset_infopane()" colspan="2"><label class="lc" id="equipcount"><input type="checkbox" onclick="select_all()"><span></span> Selected 0 of 5 matching equipment available to repair</label></th></tr><tr class="eqtplabel"><td colspan="2">Redwood Staff</td></tr><tr onmouseover="hover_equip(315468440)" onmouseout="unhover_equip(315468440)" onclick="return select_equip(315468440,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e315468440" value="315468440"><span></span>  Legendary Arctic Redwood Staff of Niflheim</label></td><td>53%</td></tr><tr class="eqtplabel"><td colspan="2">Oak Staff</td></tr><tr onmouseover="hover_equip(317904780)" onmouseout="unhover_equip(317904780)" onclick="return select_equip(317904780,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e317904780" value="317904780"><span></span> 🛡️ Legendary Tempestuous Oak Staff of Focus</label></td><td>54%</td></tr><tr onmouseover="hover_equip(317324885)" onmouseout="unhover_equip(317324885)" onclick="return select_equip(317324885,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e317324885" value="317324885"><span></span>  Legendary Tempestuous Oak Staff of Destruction</label></td><td>85%</td></tr><tr class="eqtplabel"><td colspan="2">Katalox Staff</td></tr><tr onmouseover="hover_equip(313892293)" onmouseout="unhover_equip(313892293)" onclick="return select_equip(313892293,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e313892293" value="313892293"><span></span>  Legendary Demonic Katalox Staff of the Owl</label></td><td>98%</td></tr><tr class="eqtplabel"><td colspan="2">Willow Staff</td></tr><tr onmouseover="hover_equip(318271172)" onmouseout="unhover_equip(318271172)" onclick="return select_equip(318271172,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e318271172" value="318271172"><span></span>  Legendary Ethereal Willow Staff of the Fox</label></td><td>70%</td></tr>
+			</tbody></table>
+		</div>
+	</div>
+
+	<div id="equipselect_right" onmouseenter="rehover_last_checked()">
+		<div id="equipinfo"><div id="equipblurb">
+<p>All equipment has a Condition value which degrades when you are defeated in battle, as well as at a fixed rate depending on the equipment Durability and the number of cleared rounds. Repairs require different Scrap Material corresponding to the equipment type; these can be salvaged from low-grade equipment, or bought from the Item Store or The Market.</p>
+<p>Magitech equipment and equipment with attached charms will also have an Energy value. Energy is consumed at a fixed rate depending on the number of cleared rounds. Recharging energy requires Energy Cells; these can be salvaged from magitech equipment, or bought from the Item Store or The Market. Attached charms affect the required number of energy cells and can also require other upkeep materials.</p>
+<p>Charms attached to your equipment may take condition damage, depending on its Pouch; if the condition reaches zero, it will tear, rendering it useless. If you are defeated, some pouches can be destroyed, exposing their charms to additional damage. Torn charms and destroyed pouches can be replaced with spare charms and pouches from your inventory; these can be obtained in the Item World or by offering trophies in The Shrine, or bought from other players in The Market.</p></div></div>
+		<div id="itemlist" class="eqilm"></div>
+		<div id="equipaction">
+			<div class="eqaction"><label class="lc"><input id="replace_charms" name="replace_charms" type="checkbox" onchange="update_selected_count()" checked="checked"><span></span> Replace Charms &amp; Pouches</label></div>
+			
+			<div><input id="equipsubmit" type="submit" value="Repair Equipment" disabled="disabled"></div>
+		</div>
+	</div>
+</div>
+<div id="confirm_outer" style="visibility:hidden">
+	<div id="confirm_inner">
+		<div id="confirm_header"><div>Confirm Action</div><div id="confirm_close" onclick="confirm_close()">✖</div></div>
+		<div id="confirm_body"></div>
+	</div>
+</div></form><script type="text/javascript" src="./The HentaiVerse（repair&amp;filter=weapon_staff）_files/equip-8992066.js.下载"></script>
+<script type="text/javascript">
+const title = "repair";
+const baseurl = "https://hentaiverse.org/?s=Bazaar&amp;ss=am";
+const multiselect = true;
+const credit_balance = 1393259;
+let last_hover_eqid = curr_hover_eqid = last_clicked_eqid = last_checked_eqid = 0;
+let last_statechange = last_hover_key = hoverow = infotext = confirm_info = undefined;
+let block_submit = hide_delta = false;
+let selectable_count = 5;
+const equipinfo = document.getElementById("equipinfo");
+const itemlist = document.getElementById("itemlist");
+const eqcredits = document.getElementById("eqcredits");
+const eqcrsum = document.getElementById("eqcrsum");
+const eqcrdiff = document.getElementById("eqcrdiff");
+const equipform = document.getElementById("equipform");
+
+
+
+const eqitems={"315468440":{"t":"Legendary Arctic Redwood Staff of Niflheim","m":{"60054":43}},"317904780":{"t":"Legendary Tempestuous Oak Staff of Focus","m":{"60054":42}},"317324885":{"t":"Legendary Tempestuous Oak Staff of Destruction","m":{"60054":16}},"313892293":{"t":"Legendary Demonic Katalox Staff of the Owl","m":{"60054":9}},"318271172":{"t":"Legendary Ethereal Willow Staff of the Fox","m":{"60054":27}}}; const itemdata={"60054":{"n":"Scrap Wood","c":0}};
+
+
+
+for(i = 0; i < equipform.elements.length; i++) {
+	if(equipform.elements[i].name == "eqids[]") {
+		if(equipform.elements[i].checked) {
+			equipform.elements[i].checked = false;
+		}
+	}
+}
+
+if(typeof initselect != "undefined" && initselect.length > 0) {
+	hide_delta = true;
+
+	initselect.forEach((eqid) => {
+		let cb = e("e" + eqid);
+		if(cb != undefined) {
+			cb.checked = "checked";
+		}
+	});
+
+	update_selected_count();
+	hover_equip(initselect[0]);
+
+	hide_delta = false;
+}
+
+</script>
+	</div>
+</div></body></html>

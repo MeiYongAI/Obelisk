@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="armory_operation">军械库操作</string>
+    <string name="armory_inventory">背包</string>
+    <string name="armory_storage">仓库</string>
+    <string name="armory_fusion_target">融合至</string>
+    <string name="armory_pinning">收藏</string>
+    <string name="armory_location">存放位置</string>
+    <string name="armory_protection">保护</string>
+    <string name="armory_pin">收藏</string>
+    <string name="armory_unpin">取消收藏</string>
+    <string name="armory_protect">保护</string>
+    <string name="armory_lock">锁定</string>
+    <string name="armory_unprotect">解除</string>
+    <string name="armory_unchanged">不变</string>
+</resources>

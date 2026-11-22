@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shop_category">Category</string>
+    <string name="shop_balance">Balance %1$s C</string>
+    <string name="shop_owned">Owned %1$s</string>
+    <string name="shop_owned_label">Owned</string>
+    <string name="shop_stock">In stock</string>
+    <string name="shop_unit_price">Unit price</string>
+    <string name="shop_maximum">Maximum %1$s</string>
+    <string name="shop_max">Max</string>
+    <string name="shop_out_of_stock">Out of stock</string>
+    <string name="shop_insufficient_credits">Insufficient credits</string>
+</resources>

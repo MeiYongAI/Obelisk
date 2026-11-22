@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="character_ui_slot">槽位 %1$s</string>
+    <string name="character_ui_set">套装 %1$s</string>
+    <string name="character_ui_major_slot">主要技能槽 %1$s</string>
+    <string name="character_ui_supportive_slot">辅助技能槽 %1$s</string>
+    <string name="character_ui_protection_slot">守护强化槽 %1$s</string>
+    <string name="character_ui_drain_slot">枯竭强化槽 %1$s</string>
+    <string name="character_ui_empty">空</string>
+    <string name="character_ui_battle_item">战斗道具</string>
+    <string name="character_ui_next_tier">下一等级：%1$s</string>
+</resources>

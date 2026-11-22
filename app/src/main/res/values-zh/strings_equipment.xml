@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="equipment_ui_loadout">装备</string>
+    <string name="equipment_ui_stats">属性</string>
+    <string name="equipment_ui_set">装备套装</string>
+    <string name="equipment_ui_current">当前装备</string>
+    <string name="equipment_ui_back">返回装备</string>
+    <string name="equipment_ui_equip">装备</string>
+    <string name="equipment_ui_unequip">卸下</string>
+    <string name="equipment_ui_equipped">已装备</string>
+    <string name="equipment_ui_protected">受保护</string>
+    <string name="equipment_ui_damaged">已损坏</string>
+    <string name="equipment_ui_unusable">不可使用</string>
+    <string name="equipment_ui_stored">已入库</string>
+    <string name="equipment_ui_pinned">已收藏</string>
+    <string name="equipment_ui_locked">已锁定</string>
+    <string name="equipment_ui_high_level">超出角色等级</string>
+</resources>

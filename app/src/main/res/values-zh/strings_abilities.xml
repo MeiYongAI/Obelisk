@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ability_ui_slots">槽位</string>
+    <string name="ability_ui_major">主要</string>
+    <string name="ability_ui_supportive">辅助</string>
+    <string name="ability_ui_protection">守护</string>
+    <string name="ability_ui_drain">枯竭</string>
+    <string name="ability_ui_tree">技能分类</string>
+    <string name="ability_ui_upgradable">可升级</string>
+    <string name="ability_ui_empty">暂无技能</string>
+    <string name="ability_ui_equipped_change">已装入 · 更换槽位</string>
+    <string name="ability_ui_choose_slot">选择槽位</string>
+    <string name="ability_ui_locked">未解锁</string>
+    <string name="ability_ui_hide_details">收起详情</string>
+    <string name="ability_ui_no_tree_choices">当前分类没有适用于此槽位的已习得技能。</string>
+    <string name="ability_ui_no_slots">尚无已解锁的兼容槽位。</string>
+    <string name="ability_ui_point_cost">%1$s 技能点</string>
+    <string name="ability_ui_rank">技能等级 %1$d/%2$d</string>
+    <string name="ability_ui_rank_compact">%1$d/%2$d</string>
+    <string name="ability_ui_current_rank">当前 · 第 %1$d 级</string>
+    <string name="ability_ui_next_rank">下一级 · 第 %1$d 级</string>
+    <string name="ability_ui_tier_state">第 %1$d 级：%2$s</string>
+    <string name="ability_ui_maxed">已满级</string>
+    <string name="ability_ui_learned">已习得</string>
+    <string name="ability_ui_pending">待升级</string>
+    <string name="ability_ui_next_short">下一级</string>
+    <string name="ability_ui_player_level">角色%1$d级</string>
+    <string name="ability_ui_condition_met">已满足</string>
+    <string name="ability_ui_condition_unmet">未满足</string>
+    <string name="ability_ui_upgrade_unavailable">暂不可升级</string>
+</resources>

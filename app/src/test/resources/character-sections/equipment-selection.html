@@ -1,0 +1,33 @@
+<!doctype html><html><body><form action="https://hentaiverse.org/?s=Character&amp;ss=eq" id="equipform" method="post"><input name="postoken" type="hidden" value="fixture-token"/>
+<div id="equipselect_outer" style="height:670px">
+<div id="equipselect_left">
+<div class="eqb" onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=eq'">
+<div><div class="fc f4b"><div class="c5m"></div><div class="c5a"></div><div class="c5i"></div><div class="c5n"></div><div class="c59"></div><div class="c5h"></div><div class="c5a"></div><div class="c5n"></div><div class="c5d"></div></div></div>
+<div class="eqempty">(empty)</div>
+</div>
+<div>
+<input name="equip_slot" type="hidden" value="1"/>
+<button disabled="disabled" name="action" type="submit" value="unequip">Unequip Current</button>
+<button disabled="disabled" id="equipsubmit" name="action" type="submit" value="equip">Equip Selected</button>
+</div>
+<div id="equiplist" onmouseleave="rehover_last_checked()">
+<table><tr class="eqselall"><th><p>There are no available equipment of this type.</p></th></tr>
+</table>
+</div>
+</div>
+<div id="equipselect_right" onmouseenter="rehover_last_checked()">
+<div id="equipcompare">
+<p><strong>(No Current Equipment)</strong></p>
+</div>
+<div id="equipinfo"><div id="equipblurb"></div></div>
+<div class="eqils" id="itemlist"></div>
+<div id="equipaction">
+</div>
+</div>
+</div>
+<div id="confirm_outer" style="visibility:hidden">
+<div id="confirm_inner">
+<div id="confirm_header"><div>Confirm Action</div><div id="confirm_close" onclick="confirm_close()">✖</div></div>
+<div id="confirm_body"></div>
+</div>
+</div></form></body></html>

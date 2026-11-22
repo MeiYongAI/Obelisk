@@ -1,0 +1,50 @@
+<html><body>
+<div id="monster_outer">
+<div id="monstercreate_left"><div><img onclick="select_class(1)" src="/fixture/arthropod.png"/></div><div><img onclick="select_class(2)" src="/fixture/avion.png"/></div><div><img onclick="select_class(3)" src="/fixture/beast.png"/></div><div><img onclick="select_class(4)" src="/fixture/celestial.png"/></div><div><img onclick="select_class(5)" src="/fixture/daimon.png"/></div><div><img onclick="select_class(6)" src="/fixture/dragonkin.png"/></div><div><img onclick="select_class(7)" src="/fixture/elemental.png"/></div><div><img onclick="select_class(8)" src="/fixture/giant.png"/></div><div><img onclick="select_class(10)" src="/fixture/humanoid.png"/></div><div><img src="/fixture/mechanoid_a.png"/></div><div><img onclick="select_class(13)" src="/fixture/reptilian.png"/></div><div><img onclick="select_class(14)" src="/fixture/sprite.png"/></div><div><img onclick="select_class(15)" src="/fixture/undead.png"/></div>
+</div>
+<div id="monstercreate_right">
+<div id="monstercreate_info">
+<p>Mechanoids are essentially living machines, remnants of ancient and highly advanced civilizations. The art of making such machinations has been long lost, but many still roam the world, oblivious of the fate that has befallen their deceased masters.</p>
+<p>Many variants of Mechanoids exist, from large bipedal machines forged for destruction to smaller humanoid builds created for peaceful purposes. Some were originally fitted with a wide variety of weaponry, but due to wear and lack of maintenance, most of the Mechanoids that are still functional equip themselves with simple melee weapons.These are typically blade- and spike-shaped attachments in place of a limb or other tool.</p>
+<p>There are however rumors of terrible machines that are capable of searing a creature to the bones with a stream of fire, or shatter their bodies with a torrent of deadly metal.</p>
+<p>Mechanoids are highly resistant to wind and cold-based magicks, and due to their artificial nature, they are almost imprevious to divine attacks. Their internal systems are however highly vulnerable to electrical shocks. Most have armor worn brittle with age, but stories of preserved heavily armored variants are told by the few who are fortunate enough to survive such an encounter.</p></div>
+<div id="monstercreate_stats">
+<div>
+<div><div class="fc4 fac fcb"><div>Primary</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Strength</div></div></td><td><div class="fc4 far fcb"><div>100</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Dexterity</div></div></td><td><div class="fc4 far fcb"><div>70</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Agility</div></div></td><td><div class="fc4 far fcb"><div>40</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Endurance</div></div></td><td><div class="fc4 far fcb"><div>70</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Intelligence</div></div></td><td><div class="fc4 far fcb"><div>40</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Wisdom</div></div></td><td><div class="fc4 far fcb"><div>30</div></div></td></tr>
+</tbody></table>
+</div>
+<div>
+<div><div class="fc4 fac fcb"><div>Element</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Fire</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Cold</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Elec</div></div></td><td><div class="fc4 far fcb"><div>-50</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Wind</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Holy</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Dark</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr>
+</tbody></table>
+</div>
+<div>
+<div><div class="fc4 fac fcb"><div>Defense</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Crushing</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Slashing</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Piercing</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr>
+</tbody></table>
+</div>
+</div>
+<div id="monstercreate_patk">
+<div><div class="fc4 fac fcb"><div>Create new monster with base damage type of: </div></div></div>
+<div style="width:184px"><div><img id="patk_prcg" onclick="create_monster('prcg')" src="/fixture/prcg_a.png"/></div><div><img id="patk_slsh" onclick="create_monster('slsh')" src="/fixture/slsh_a.png"/></div>
+</div>
+</div>
+</div>
+</div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;create=new" id="create_form" method="post">
+<input id="selected_class" name="selected_class" type="hidden" value="12"/>
+<input id="selected_patk" name="selected_patk" type="hidden" value=""/>
+</form>
+<script>
+function select_class(mclass) {
+	e("selected_class").value = mclass;
+	e("create_form").submit();
+}
+
+function create_monster(patk) {
+	e("selected_patk").value = patk;
+	e("create_form").submit();
+}
+</script>
+</body></html>

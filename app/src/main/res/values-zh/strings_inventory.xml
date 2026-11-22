@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inventory_ui_general">常规</string>
+    <string name="inventory_ui_scrolls">卷轴</string>
+    <string name="inventory_ui_infusions">魔药</string>
+    <string name="inventory_ui_equip">装入</string>
+    <string name="inventory_ui_remove">移除</string>
+    <string name="inventory_ui_quantity">数量：%1$s</string>
+    <string name="inventory_ui_equipped">已装入</string>
+</resources>

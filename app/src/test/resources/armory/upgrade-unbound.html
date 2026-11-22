@@ -1,0 +1,146 @@
+<!doctype html><html><body><div id="armory_outer">
+	<div id="armory_left" onmouseover="if(typeof reset_infopane === 'function') reset_infopane()"><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=organize&amp;filter=weapon_2handed"><div class="armory_tab">Organize</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_2handed"><div class="armory_tab armory_cur">Modify</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=weapon_2handed"><div class="armory_tab">Repair</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=soulbind&amp;filter=weapon_2handed"><div class="armory_tab">Soulbind</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=purchase&amp;filter=weapon_2handed"><div class="armory_tab">Purchase</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=sell&amp;filter=weapon_2handed"><div class="armory_tab">Sell</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=salvage&amp;filter=weapon_2handed"><div class="armory_tab">Salvage</div></a>
+		<div></div>
+	</div>
+	<div id="armory_right"><div id="filterbar" onmouseover="if(typeof reset_infopane === 'function') reset_infopane()"><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=equipped"><div class="cfb">Equipped</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=new"><div class="cfb">New</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_1handed"><div class="cfb">One-Handed</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_2handed"><div class="cfbs">Two-Handed</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_staff"><div class="cfb">Staffs</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=shield"><div class="cfb">Shield</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=armor_cloth"><div class="cfb">Cloth</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=armor_light"><div class="cfb">Light</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=armor_heavy"><div class="cfb">Heavy</div></a></div>
+<form id="equipform" method="post">
+<input type="hidden" name="postoken" value="test-armory-token">
+<input type="hidden" name="eqids[]" value="311410613">
+<div id="equipmodify_outer">
+	<div id="equipmodify_left">
+		<div id="charmslots">
+<div class="eqcharm eqdisabled">
+	<div><div class="fc4 fac fcg"><div>Charm Slot 1</div></div></div>
+	<div class="eqce">(empty)</div>
+</div>
+<div class="eqcharm eqdisabled">
+	<div><div class="fc4 fac fcg"><div>Charm Slot 2</div></div></div>
+	<div class="eqce">(empty)</div>
+</div>
+<div class="eqcharm eqdisabled">
+	<div><div class="fc4 fac fcg"><div>Charm Slot 3</div></div></div>
+	<div class="eqce">(empty)</div>
+</div>
+<div class="eqcharm eqdisabled">
+	<div><div class="fc4 fac fcg"><div>Charm Slot 4</div></div></div>
+	<div class="eqce">(empty)</div>
+</div>
+<div class="eqcharm eqdisabled">
+	<div><div class="fc4 fac fcg"><div>Charm Slot 5</div></div></div>
+	<div class="eqce">(empty)</div>
+</div>
+<div class="eqcharm eqdisabled">
+	<div><div class="fc4 fac fcg"><div>Charm Slot 6</div></div></div>
+	<div class="eqce">(empty)</div>
+</div></div>
+		<p id="cpreadout">(Soulbinding Required)</p>
+	</div>
+	<div id="equipmodify_middle">
+<div id="equpgrade">
+	<p>Upgrade Tier: 0 / 0 / 25</p><p>Next Tier Materials:</p><table id="upgrmats" class="upgrmats"><tbody><tr><td>100x</td><td>Mid-Grade Metals</td><td>(229)</td></tr><tr><td>5x</td><td>High-Grade Metals</td><td>(39)</td></tr><tr><td colspan="3" style="text-align:center">45,000 Credits</td></tr></tbody></table><input type="hidden" name="targetlevel" value="1"><button type="submit" disabled="disabled" title="You can only upgrade soulbound equipment.">Upgrade Equipment</button><button type="submit" disabled="disabled" title="You can only enter the item world of soulbound equipment.">Challenge Item World</button><p>(Soulbinding Required)</p>
+</div>
+
+<script type="text/javascript">
+const info_itemworld = false;
+let confirm_info = undefined;
+
+function armory_itemworld(elem) {
+	title = "itemworld";
+	confirm_info = info_itemworld;
+	confirm_info.eqname = "Legendary Arctic Scythe of Balance";
+	confirm_action(elem, `Start Battle`, `<p>Are you sure you want to enter this Item World?</p>`, false, `?s=Battle&ss=iw&filter=weapon_2handed&eqids[]=311410613`);
+}
+
+function armory_soulbind() {
+	e("confirm_body").innerHTML = `
+<p>Are you sure you want to soulbind this equipment? This will enable charms and upgrades, but makes it permanently untradeable.</p>
+<p><strong>Legendary Arctic Scythe of Balance</strong></p>
+<p>Cost: <strong>500 Soul Fragments (8844)</strong></p>
+<button id="confirm_button" type="submit" name="action" value="soulbind">Confirm Soulbind</button>`;
+
+	confirm_open();
+}
+
+const needs_repair_base = true;
+const missing_repair_base = true;
+const missing_repair_charm = false;
+
+function armory_repair() {
+	e("confirm_body").innerHTML = `
+<p>Are you sure you want to repair this equipment?</p>
+<p><strong>Legendary Arctic Scythe of Balance</strong></p>
+<p>Required Repair Materials:</p>
+<table id="armory_repaircosts" class="eqilm"><tr class="eqred"><td>25x</td><td>Scrap Metal</td><td>(0)</td></tr></table>
+
+<button id="confirm_button" type="submit" name="action" value="repair" disabled="disabled" title="You need additional materials to repair this equipment.">Confirm Repair</button>`;
+
+	confirm_open();
+}
+
+function armory_update_repair(elem) {
+	e("armory_repaircosts").querySelectorAll("tr").forEach((row, index) => {
+		row.style.color = !elem.checked && row.getAttribute("data-charmitem") ? "#cccccc" : "";
+	});
+	
+	let disable_repair = missing_repair_base || (missing_repair_charm && elem.checked) || (!needs_repair_base && !elem.checked);
+
+	e("confirm_button").disabled = disable_repair;
+	e("confirm_button").title = disable_repair ? "You need additional materials to repair this equipment." : "";
+}
+
+
+</script>
+
+<div id="eqbaserolls">
+	<p>Base Stat Rolls</p>
+	<table><tbody><tr><td>Attack Damage:</td><td>191</td></tr><tr><td>Attack Accuracy:</td><td>173</td></tr><tr><td>Attack Crit Damage:</td><td>192</td></tr><tr><td>Strength:</td><td>170</td></tr><tr><td>Dexterity:</td><td>173</td></tr><tr><td>Parry:</td><td>193</td></tr><tr><td>Block:</td><td>185</td></tr></tbody></table><button type="submit" disabled="disabled" title="You can only fuse soulbound equipment">Fuse Equipment Stats</button><p>(Soulbinding Required)</p>
+</div></div>
+	<div id="equipmodify_right">
+		<div id="equipinfo">
+			<div class="showequip">
+				<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_2handed&amp;eqids[]=311410613">Legendary Arctic Scythe of Balance</a></div>
+				<div id="eqstats"><div class="eq"><div class="eqt">Two-handed Weapon &nbsp; &nbsp; Level 464 &nbsp; &nbsp; <span>Tradeable</span></div><div class="eqr"><span>Condition: 76%</span> &nbsp; &nbsp; <span>Energy: N/A</span></div><div class="eqc">Burden: 15.3 &nbsp; &nbsp; Interference: 15.3</div><div><span>Bleeding Wound</span>: <span>24.1% chance</span></div><div title="Base: 191">+<span>2379 Slashing Damage</span></div><div><span>Cold Strike (50%)</span></div><div class="ex"><div title="Base: 173"><div>Attack Accuracy</div><div>+<span>172.4</span></div></div><div title="Base: 192"><div>Attack Crit Damage</div><div>+<span>0.56</span></div><div> x</div></div><div title="Base: 193"><div>Parry</div><div>+<span>115.6</span></div></div><div title="Base: 185"><div>Block</div><div>+<span>126.2</span></div></div></div><div class="ep ep1"><div>Spell Damage</div><div><div>Cold</div><div>+<span>35.16</span></div></div></div><div class="ep ep2"><div>Primary Attributes</div><div title="Base: 170"><div>Strength</div><div>+<span>156.0</span></div></div><div title="Base: 173"><div>Dexterity</div><div>+<span>118.5</span></div></div></div></div></div>
+			</div>
+		</div>
+		<div id="equipaction" class="eqmodify"><table>
+<tbody><tr>
+	<td></td>
+	<td><button type="submit" name="action" value="soulbind" onclick="armory_soulbind(); return false">Soulbind Equipment</button></td>
+</tr>
+<tr>
+	<td data-inactive="1">⚠️</td>
+	<td><button type="submit" name="action" value="repair" onclick="armory_repair(); return false">Repair Equipment</button></td>
+</tr>
+<tr>
+	<td data-inactive="1">📌</td>
+	<td><button type="submit" name="action" value="pin">Pin Equipment</button></td>
+</tr>
+<tr>
+	<td data-inactive="1">🔒</td>
+	<td><button type="submit" name="action" value="lock">Set To Locked</button></td>
+</tr>
+<tr>
+	<td data-inactive="1">🛡️</td>
+	<td><button type="submit" name="action" value="protect">Set To Protected</button></td>
+</tr>
+<tr>
+	<td data-inactive="1">📦</td>
+	<td><button type="submit" name="action" value="store">Move To Storage</button></td>
+</tr></tbody></table></div>
+	</div>
+</div>
+
+<div id="confirm_outer" style="visibility:hidden">
+	<div id="confirm_inner">
+		<div id="confirm_header"><div>Confirm Action</div><div id="confirm_close" onclick="confirm_close()">✖</div></div>
+		<div id="confirm_body"></div>
+	</div>
+</div>
+</form>
+
+<script type="text/javascript">
+const last_hover_eqid = 311410613;
+const last_hover_key = "test-equipment-key";
+</script>
+	</div>
+</div></body></html>

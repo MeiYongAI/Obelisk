@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="character_ui_slot">Slot %1$s</string>
+    <string name="character_ui_set">Set %1$s</string>
+    <string name="character_ui_major_slot">Major slot %1$s</string>
+    <string name="character_ui_supportive_slot">Supportive slot %1$s</string>
+    <string name="character_ui_protection_slot">Protection augment slot %1$s</string>
+    <string name="character_ui_drain_slot">Drain augment slot %1$s</string>
+    <string name="character_ui_empty">Empty</string>
+    <string name="character_ui_battle_item">Battle item</string>
+    <string name="character_ui_next_tier">Next tier: %1$s</string>
+</resources>

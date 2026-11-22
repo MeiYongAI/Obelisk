@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="armory_detail_upgrade">升级</string>
+    <string name="armory_detail_charms">护符</string>
+    <string name="armory_detail_rolls">基础属性</string>
+</resources>

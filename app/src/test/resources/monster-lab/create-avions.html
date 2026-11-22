@@ -1,0 +1,49 @@
+<html><body>
+<div id="monster_outer">
+<div id="monstercreate_left"><div><img onclick="select_class(1)" src="/fixture/arthropod.png"/></div><div><img src="/fixture/avion_a.png"/></div><div><img onclick="select_class(3)" src="/fixture/beast.png"/></div><div><img onclick="select_class(4)" src="/fixture/celestial.png"/></div><div><img onclick="select_class(5)" src="/fixture/daimon.png"/></div><div><img onclick="select_class(6)" src="/fixture/dragonkin.png"/></div><div><img onclick="select_class(7)" src="/fixture/elemental.png"/></div><div><img onclick="select_class(8)" src="/fixture/giant.png"/></div><div><img onclick="select_class(10)" src="/fixture/humanoid.png"/></div><div><img onclick="select_class(12)" src="/fixture/mechanoid.png"/></div><div><img onclick="select_class(13)" src="/fixture/reptilian.png"/></div><div><img onclick="select_class(14)" src="/fixture/sprite.png"/></div><div><img onclick="select_class(15)" src="/fixture/undead.png"/></div>
+</div>
+<div id="monstercreate_right">
+<div id="monstercreate_info">
+<p>Avions, also known as Aves or simply Birds, are a class of vertebrate endothermic animals distinguished by having wings. Variations exists, but typical Avions are bipedal with strong talons on their feet, covered in feathers, and equipped with a powerful beak. All Avions in the HentaiVerse have the ability to fly; non-flying birdlike creatures are classified as Beasts.</p>
+<p>Avions can specialize into using their beak for piercing attacks or talons for slashing attacks. The superior mobility and keen eyesight of higher level avions let them accurately target weak or unprotected parts of their opponent, giving them a high chance of scoring critical hits or temporarily cripple the target. The naturally high mobility also makes it particularly hard to land good hits with piercing weapons.</p>
+<p>While fast and agile, they do not have strong physical defenses. Due to their feather-covered body and flying nature, they are weak to fire and wind-based magicks. The fact that they are not grounded does however mean that they are resistant to electrical attacks.</p></div>
+<div id="monstercreate_stats">
+<div>
+<div><div class="fc4 fac fcb"><div>Primary</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Strength</div></div></td><td><div class="fc4 far fcb"><div>50</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Dexterity</div></div></td><td><div class="fc4 far fcb"><div>80</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Agility</div></div></td><td><div class="fc4 far fcb"><div>140</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Endurance</div></div></td><td><div class="fc4 far fcb"><div>40</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Intelligence</div></div></td><td><div class="fc4 far fcb"><div>60</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Wisdom</div></div></td><td><div class="fc4 far fcb"><div>50</div></div></td></tr>
+</tbody></table>
+</div>
+<div>
+<div><div class="fc4 fac fcb"><div>Element</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Fire</div></div></td><td><div class="fc4 far fcb"><div>-25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Cold</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Elec</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Wind</div></div></td><td><div class="fc4 far fcb"><div>-50</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Holy</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Dark</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr>
+</tbody></table>
+</div>
+<div>
+<div><div class="fc4 fac fcb"><div>Defense</div></div></div>
+<table class="mcs"><tbody><tr><td><div class="fc4 fal fcb"><div>Crushing</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Slashing</div></div></td><td><div class="fc4 far fcb"><div>0</div></div></td></tr><tr><td><div class="fc4 fal fcb"><div>Piercing</div></div></td><td><div class="fc4 far fcb"><div>25</div></div></td></tr>
+</tbody></table>
+</div>
+</div>
+<div id="monstercreate_patk">
+<div><div class="fc4 fac fcb"><div>Create new monster with base damage type of: </div></div></div>
+<div style="width:184px"><div><img id="patk_prcg" onclick="create_monster('prcg')" src="/fixture/prcg_a.png"/></div><div><img id="patk_slsh" onclick="create_monster('slsh')" src="/fixture/slsh_a.png"/></div>
+</div>
+</div>
+</div>
+</div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=ml&amp;create=new" id="create_form" method="post">
+<input id="selected_class" name="selected_class" type="hidden" value="2"/>
+<input id="selected_patk" name="selected_patk" type="hidden" value=""/>
+</form>
+<script>
+function select_class(mclass) {
+	e("selected_class").value = mclass;
+	e("create_form").submit();
+}
+
+function create_monster(patk) {
+	e("selected_patk").value = patk;
+	e("create_form").submit();
+}
+</script>
+</body></html>

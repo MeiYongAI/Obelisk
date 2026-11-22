@@ -1,0 +1,35 @@
+<div id="mainpane">
+<table id="arena_list">
+<tr>
+<th><div class="fc f2b"><div class="c3c"></div><div class="c3h"></div><div class="c3a"></div><div class="c3l"></div><div class="c3l"></div><div class="c3e"></div><div class="c3n"></div><div class="c3g"></div><div class="c3e"></div></div></th>
+<th><div class="fc f2b"><div class="c3h"></div><div class="c3i"></div><div class="c3g"></div><div class="c3h"></div><div class="c3e"></div><div class="c3s"></div><div class="c3t"></div><div class="c39"></div><div class="c3c"></div><div class="c3l"></div><div class="c3e"></div><div class="c3a"></div><div class="c3r"></div></div></th>
+<th><div class="fc f2b"><div class="c3m"></div><div class="c3i"></div><div class="c3n"></div><div class="c39"></div><div class="c3l"></div><div class="c3e"></div><div class="c3v"></div><div class="c3e"></div><div class="c3l"></div></div></th>
+<th><div class="fc f2b"><div class="c3r"></div><div class="c3o"></div><div class="c3u"></div><div class="c3n"></div><div class="c3d"></div><div class="c3s"></div></div></th>
+<th><div class="fc f2b"><div class="c3e"></div><div class="c3x"></div><div class="c3p"></div><div class="c39"></div><div class="c3m"></div><div class="c3o"></div><div class="c3d"></div></div></th>
+<th><div class="fc f2b"><div class="c3e"></div><div class="c3n"></div><div class="c3t"></div><div class="c3r"></div><div class="c3y"></div><div class="c39"></div><div class="c3c"></div><div class="c3o"></div><div class="c3s"></div><div class="c3t"></div></div></th>
+<th><div class="fc f2b"><div class="c3c"></div><div class="c3l"></div><div class="c3e"></div><div class="c3a"></div><div class="c3r"></div><div class="c39"></div><div class="c3b"></div><div class="c3o"></div><div class="c3n"></div><div class="c3u"></div><div class="c3s"></div></div></th>
+<th></th>
+</tr>
+<tr>
+<td><div class="fc f4b"><div class="c5f"></div><div class="c5i"></div><div class="c5r"></div><div class="c5s"></div><div class="c5t"></div><div class="c59"></div><div class="c5b"></div><div class="c5l"></div><div class="c5o"></div><div class="c5o"></div><div class="c5d"></div></div></td>
+<td><div class="fc f2b"><div class="c2g"></div></div></td>
+<td><div class="fc f2b"><div class="c3l"></div><div class="c3v"></div><div class="c2a"></div><div class="c39"></div><div class="c21"></div></div></td>
+<td><div class="fc f2b"><div class="c22"></div></div></td>
+<td><div class="fc f2b"><div class="c3x"></div><div class="c21"></div><div class="c2a"></div><div class="c20"></div></div></td><td><div class="fc f2b"><div class="c2g"></div></div></td><td><div class="fc f2b"><div class="c21"></div><div class="c20"></div><div class="c20"></div><div class="c39"></div><div class="c3c"></div></div></td>
+<td><img onclick="init_battle(1,0)" src="/y/arena/startchallenge.png"/></td>
+</tr>
+</table>
+<form action="" id="initform" method="post">
+<input id="initid" name="initid" type="hidden" value=""/>
+<input name="postoken" type="hidden" value="fixture-post-token"/>
+</form>
+<script type="text/javascript">
+function init_battle(id, entrycost) {
+	var costtext = entrycost > 0 ? " spend " + entrycost + " token" + (entrycost == 1 ? "" : "s") + " to" : "";
+
+	if(confirm("Are you sure you wish to" + costtext + " start this Arena Challenge?")) {
+		e("initid").value = id;
+		e("initform").submit();
+	}
+}
+</script></div>

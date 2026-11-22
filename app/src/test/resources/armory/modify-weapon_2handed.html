@@ -1,0 +1,84 @@
+<!doctype html><html><body><div id="armory_outer">
+	<div id="armory_left" onmouseover="if(typeof reset_infopane === 'function') reset_infopane()"><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=organize&amp;filter=weapon_2handed"><div class="armory_tab">Organize</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_2handed"><div class="armory_tab armory_cur">Modify</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=repair&amp;filter=weapon_2handed"><div class="armory_tab">Repair</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=soulbind&amp;filter=weapon_2handed"><div class="armory_tab">Soulbind</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=purchase&amp;filter=weapon_2handed"><div class="armory_tab">Purchase</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=sell&amp;filter=weapon_2handed"><div class="armory_tab">Sell</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=salvage&amp;filter=weapon_2handed"><div class="armory_tab">Salvage</div></a>
+		<div></div>
+	</div>
+	<div id="armory_right"><div id="filterbar" onmouseover="if(typeof reset_infopane === 'function') reset_infopane()"><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=equipped"><div class="cfb">Equipped</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=new"><div class="cfb">New</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_1handed"><div class="cfb">One-Handed</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_2handed"><div class="cfbs">Two-Handed</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_staff"><div class="cfb">Staffs</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=shield"><div class="cfb">Shield</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=armor_cloth"><div class="cfb">Cloth</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=armor_light"><div class="cfb">Light</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=armor_heavy"><div class="cfb">Heavy</div></a></div><form id="equipform" method="get"><input type="hidden" name="s" value="Bazaar"><input type="hidden" name="ss" value="am"><input type="hidden" name="screen" value="modify"><input type="hidden" name="filter" value="weapon_2handed">
+<div id="equipselect_outer">
+	<div id="equipselect_left">
+		<div id="equiplist" onmouseleave="rehover_last_checked()">
+			<table><tbody><tr class="eqtplabel"><td colspan="2">Scythe</td></tr><tr onmouseover="hover_equip(311410613)" onmouseout="unhover_equip(311410613)" onclick="return select_equip(311410613,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e311410613" value="311410613"><span></span>  Legendary Arctic Scythe of Balance</label></td><td></td></tr><tr class="eqtplabel"><td colspan="2">Estoc</td></tr><tr onmouseover="hover_equip(312318899)" onmouseout="unhover_equip(312318899)" onclick="return select_equip(312318899,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e312318899" value="312318899"><span></span>  Legendary Ethereal Estoc of the Banshee</label></td><td></td></tr><tr class="eqtplabel"><td colspan="2">Great Mace</td></tr><tr onmouseover="hover_equip(318456890)" onmouseout="unhover_equip(318456890)" onclick="return select_equip(318456890,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e318456890" value="318456890"><span></span>  Legendary Arctic Great Mace of Balance</label></td><td></td></tr><tr onmouseover="hover_equip(312059864)" onmouseout="unhover_equip(312059864)" onclick="return select_equip(312059864,event,this)"><td><label class="lc"><input name="eqids[]" type="checkbox" id="e312059864" value="312059864"><span></span>  Legendary Tempestuous Great Mace of the Illithid</label></td><td></td></tr>
+			</tbody></table>
+		</div>
+	</div>
+
+	<div id="equipselect_right" onmouseenter="rehover_last_checked()">
+		<div id="equipinfo"><div id="equipblurb">
+<p>Here you can manage your equipment, as well as modify them using Upgrades, Charms and Stat Fusion. Modifications all require that the equipment is soulbound first.</p>
+<p>Upgrading equipment will increase the number of Charm Points available, and adds bonues relative to its base stats. The maximum number of upgrades for an equipment is capped by the number of cleared Item Worlds.</p>
+<p>Attaching Charms to your equipment can improve or add new stats, or add special effects and various other boons. Charms and Charm Pouches can be obtained by offering trophies in The Shrine, or purchased from other players in The Market.</p>
+<p>Stat Fusion lets you improve Legendary+ equipment by sacrificing another Legendary+ equipment together with various materials to increase its base stats. (Persistent Only)</p>
+<p>Materials for upgrades and stat fusion can be obtained from salvaging unwanted equipment or raising monsters in the Monster Lab, or purchased from other players in The Market.</p>
+<p>Select an equipment first to show the available options.</p></div></div>
+		<div id="itemlist" class="eqils"></div>
+		<div id="equipaction">
+			
+			
+			<div><input id="equipsubmit" type="submit" value="Modify Equipment" disabled="disabled"></div>
+		</div>
+	</div>
+</div>
+<div id="confirm_outer" style="visibility:hidden">
+	<div id="confirm_inner">
+		<div id="confirm_header"><div>Confirm Action</div><div id="confirm_close" onclick="confirm_close()">✖</div></div>
+		<div id="confirm_body"></div>
+	</div>
+</div></form><script type="text/javascript" src="./The HentaiVerse（modify&amp;filter=weapon_2handed）_files/equip-8992066.js.下载"></script>
+<script type="text/javascript">
+const title = "modify";
+const baseurl = "https://hentaiverse.org/?s=Bazaar&amp;ss=am";
+const multiselect = false;
+const credit_balance = 1393259;
+let last_hover_eqid = curr_hover_eqid = last_clicked_eqid = last_checked_eqid = 0;
+let last_statechange = last_hover_key = hoverow = infotext = confirm_info = undefined;
+let block_submit = hide_delta = false;
+let selectable_count = 4;
+const equipinfo = document.getElementById("equipinfo");
+const itemlist = document.getElementById("itemlist");
+const eqcredits = document.getElementById("eqcredits");
+const eqcrsum = document.getElementById("eqcrsum");
+const eqcrdiff = document.getElementById("eqcrdiff");
+const equipform = document.getElementById("equipform");
+
+
+
+
+
+
+
+for(i = 0; i < equipform.elements.length; i++) {
+	if(equipform.elements[i].name == "eqids[]") {
+		if(equipform.elements[i].checked) {
+			equipform.elements[i].checked = false;
+		}
+	}
+}
+
+if(typeof initselect != "undefined" && initselect.length > 0) {
+	hide_delta = true;
+
+	initselect.forEach((eqid) => {
+		let cb = e("e" + eqid);
+		if(cb != undefined) {
+			cb.checked = "checked";
+		}
+	});
+
+	update_selected_count();
+	hover_equip(initselect[0]);
+
+	hide_delta = false;
+}
+
+</script>
+	</div>
+</div></body></html>

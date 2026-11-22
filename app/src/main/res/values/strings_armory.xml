@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="armory_operation">Armory operations</string>
+    <string name="armory_inventory">Inventory</string>
+    <string name="armory_storage">Storage</string>
+    <string name="armory_fusion_target">Fuse into</string>
+    <string name="armory_pinning">Pinning</string>
+    <string name="armory_location">Location</string>
+    <string name="armory_protection">Protection</string>
+    <string name="armory_pin">Pin</string>
+    <string name="armory_unpin">Unpin</string>
+    <string name="armory_protect">Protect</string>
+    <string name="armory_lock">Lock</string>
+    <string name="armory_unprotect">Remove</string>
+    <string name="armory_unchanged">Unchanged</string>
+</resources>

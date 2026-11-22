@@ -1,0 +1,246 @@
+<html><body><div id="mainpane">
+<div id="battle_top">
+<div id="pane_completion"><div id="btcp" onclick="document.location=`https://hentaiverse.org/?s=Bazaar&amp;ss=am&amp;screen=modify&amp;filter=weapon_staff&amp;eqids%5B%5D=100002`" style="height:120px"><div><div class="fc4 fac fcb"><div>You have run away!</div></div></div><div><div class="fc4 fac fcb"><div>You escape from the item world</div></div></div><div><img src="/fixture/finishbattle.png"/></div></div></div>
+<div id="pane_effects"><img onmouseout="battle.clear_infopane()" onmouseover="battle.set_infopane_effect('Protection','Places a shield effect on the target, absorbing 25% of the damage from all attacks.','autocast')" src="/fixture/protection.png"/> <img onmouseout="battle.clear_infopane()" onmouseover="battle.set_infopane_effect('Hastened','The target has been hastened, increasing its action speed by 25%.','autocast')" src="/fixture/haste.png"/> <img onmouseout="battle.clear_infopane()" onmouseover="battle.set_infopane_effect('Shadow Veil','A veil of shadows surround the target, causing monsters to occasionally whiff, and boosting Evade by 10%.','autocast')" src="/fixture/shadowveil.png"/> <img onmouseout="battle.clear_infopane()" onmouseover="battle.set_infopane_effect('Spark of Life','Any attack that would normally kill the target leaves it alive with a small amount of HP. The buff is removed when triggered.','autocast')" src="/fixture/sparklife.png"/> <img onmouseout="battle.clear_infopane()" onmouseover="battle.set_infopane_effect('Spirit Shield','This protective veil activates for powerful blows that damage more than 50% of your max HP, absorbing the remainder as spirit damage.','autocast')" src="/fixture/spiritshield.png"/> <img onmouseout="battle.clear_infopane()" onmouseover="battle.set_infopane_effect('Fleeing','You are running away.','permanent')" src="/fixture/flee.png"/> </div>
+</div>
+<div id="battle_main">
+<div id="battle_left">
+<div id="pane_action" onmouseout="battle.clear_infopane()">
+<div><img id="ckey_attack" src="/fixture/attack_n.png"/></div>
+<div><img id="ckey_skill" src="/fixture/skill_n.png"/></div>
+<div><img id="ckey_items" src="/fixture/items_n.png"/></div>
+<div><img id="ckey_spirit" src="/fixture/spirit_n.png"/></div>
+<div><img id="ckey_defend" src="/fixture/defend_n.png"/></div>
+<div><img id="ckey_focus" src="/fixture/focus_n.png"/></div></div>
+<div class="nosel" id="pane_vitals"><div id="dvbh"><div><img src="/fixture/bar_dgreen.png" style="width:414px"/></div></div><div id="dvbm"><div><img src="/fixture/bar_blue.png" style="width:414px"/></div></div><div id="dvbs"><div><img src="/fixture/bar_red.png" style="width:414px"/></div></div><div id="dvbc"><div><img src="/fixture/bar_orange.png" style="width:1px"/></div></div><div id="dvrhd">25095</div><div id="dvrm">5577</div><div id="dvrs">2168</div><div id="dvrc">0</div></div>
+<div id="pane_quickbar" onmouseout="battle.clear_infopane()"><div id="quickbar"><div class="btqs" id="qb1" onclick="battle.lock_action(this,1,'magic',311); battle.set_friendly_skill(311); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Cure', 'Restores a moderate amount of Health on the target.', '0530', 64, 0, 2)"><img class="btqi" src="/fixture/0530.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb2" onclick="battle.lock_action(this,1,'magic',313); battle.set_friendly_skill(313); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Full-Cure', 'Fully restores the Health of the target.', '0530', 184, 0, 10)"><img class="btqi" src="/fixture/0530.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb3" onclick="battle.lock_action(this,1,'magic',312); battle.set_friendly_skill(312); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Regen', 'Places a heal over time effect on the target.', '1030', 250, 0, 0)"><img class="btqi" src="/fixture/1030.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb4" onclick="battle.lock_action(this,1,'magic',411); battle.set_friendly_skill(411); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Protection', 'Places a shield effect on the target, absorbing 25% of the damage from all attacks.', '0532', 80, 0, 0)"><img class="btqi" src="/fixture/0532.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb5" onclick="battle.lock_action(this,1,'magic',412); battle.set_friendly_skill(412); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Haste', 'Speeds up all actions of the target, allowing it to attack more frequently.', '0533', 96, 0, 0)"><img class="btqi" src="/fixture/0533.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb6" onclick="battle.lock_action(this,1,'magic',413); battle.set_friendly_skill(413); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Shadow Veil', 'Surrounds the target with a veil of shadows, making it harder to hit with attacks and spells.', '0633', 99, 0, 0)"><img class="btqi" src="/fixture/0633.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb7" onclick="battle.lock_action(this,1,'magic',421); battle.set_friendly_skill(421); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Absorb', 'The next magical attack against the target has a chance to be absorbed and partially converted to MP.', '1033', 96, 0, 20)"><img class="btqi" src="/fixture/1033.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb8" onclick="battle.lock_action(this,1,'magic',423); battle.set_friendly_skill(423); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Spirit Shield', 'Powerful attacks against you will be partially absorbed and damage your spirit gauge instead of health.', 'm4040', 91, 0, 0)"><img class="btqi" src="/fixture/m4040.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb9" onclick="battle.lock_action(this,1,'magic',422); battle.set_friendly_skill(422); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Spark of Life', 'Any attack that would one-shot a target with more than 1 HP leaves it alive but on the brink of defeat. The buff is removed when triggered.', '1133', 105, 0, 0)"><img class="btqi" src="/fixture/1133.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb10" onclick="battle.lock_action(this,1,'magic',432); battle.set_friendly_skill(432); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Arcane Focus', 'The target attains a higher level of attunement with the arcane forces, increasing spell and crit damage.', 'm4020', 365, 0, 0)"><img class="btqi" src="/fixture/m4020.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb11" onclick="battle.lock_action(this,1,'magic',211); battle.set_hostile_skill(211)" onmouseover="battle.set_infopane_spell('Drain', 'Inflicts Drain on one target, causing damage over time.', '0133', 48, 0, 20)"><img class="btqi" src="/fixture/0133.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb12" onclick="battle.lock_action(this,1,'magic',213); battle.set_hostile_skill(213)" onmouseover="battle.set_infopane_spell('Imperil', 'The target is imperiled, reducing physical and magical mitigation as well as elemental mitigations.', 'm_imperil', 48, 0, 0)"><img class="btqi" src="/fixture/m_imperil.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb13" onclick="battle.lock_action(this,1,'magic',141); battle.set_hostile_skill(141)" onmouseover="battle.set_infopane_spell('Gale', 'A blast of wind hits the target, causing Wind damage.', '0430', 20, 0, 0)"><img class="btqi" src="/fixture/0430.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb14" onclick="battle.lock_action(this,1,'magic',142); battle.set_hostile_skill(142)" onmouseover="battle.set_infopane_spell('Downburst', 'Wind damage.', '0930', 45, 0, 2)"><img class="btqi" src="/fixture/0930.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb15" onclick="battle.lock_action(this,1,'magic',143); battle.set_hostile_skill(143)" onmouseover="battle.set_infopane_spell('Storms of Njord', 'Wind damage.', 'm1431', 67, 0, 4)"><img class="btqi" src="/fixture/m1431.png"/><img class="btqb" src="/fixture/b.png"/></div><div class="btqs" id="qb16" onclick="battle.lock_action(this,1,'magic',1001); battle.set_friendly_skill(1001); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Flee', 'Run away from the current battle.', 'sflee', 0, 0, 0)"><img class="btqi" src="/fixture/sflee.png"/><img class="btqb" src="/fixture/b.png"/></div></div></div>
+<div id="infopane"><div class="btii">Battle Time</div><div>Choose from the Battle Actions highlighted above, and use them to defeat your enemies listed to the right. When all enemies are reduced to zero Health, you win. If your Health reaches zero, you are defeated.</div></div>
+<div class="bttp" id="pane_log">
+<table id="textlog"><tbody><tr><td class="tlb">You have escaped from the battle.</td></tr><tr><td class="tlb">You gain the effect Fleeing.</td></tr><tr><td class="tls"></td></tr><tr><td class="tlb">You gain the effect Spirit Shield.</td></tr><tr><td class="tlb">You gain the effect Spark of Life.</td></tr><tr><td class="tlb">You gain the effect Shadow Veil.</td></tr><tr><td class="tlb">You gain the effect Hastened.</td></tr><tr><td class="tlb">You gain the effect Protection.</td></tr><tr><td class="tl">Spawned Monster B: MID=149462 (Things Are Getting Spicy) LV=493 HP=243208</td></tr><tr><td class="tl">Spawned Monster A: MID=133080 (Witchblade) LV=493 HP=235506</td></tr><tr><td class="tl">Initializing Item World (Round 1 / 5) ...</td></tr>
+</tbody></table>
+</div>
+<div class="bttp" id="pane_skill" onmouseout="battle.clear_infopane()" style="display:none">
+<div class="btpm1">
+<div class="btpm2"><img src="/fixture/sbsel_skills_s.png"/></div>
+<div class="btpm3"><img onclick="battle.reset_skill(); battle.toggle_magic_pane()" src="/fixture/sbsel_spells_n.png"/></div>
+</div>
+<table class="btp" id="table_skills"><tbody><tr><td colspan="2"><img alt="skills_innate" src="/fixture/skills_innate.png" style="padding-top:10px"/></td></tr><tr><td class="bts"><div class="btsd" id="1001" onclick="battle.lock_action(this,1,'magic',1001); battle.set_friendly_skill(1001); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Flee', 'Run away from the current battle.', 'sflee', 0, 0, 0)"><div class="fc2 fal fcb"><div>Flee</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="1011" onclick="battle.lock_action(this,1,'magic',1011); battle.set_hostile_skill(1011)" onmouseover="battle.set_infopane_spell('Scan', 'Retrieve data on the target.', 'sscan', 0, 0, 0)"><div class="fc2 fal fcb"><div>Scan</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="1101" onmouseover="battle.set_infopane_spell('FUS RO DAH', 'Damages and temporarily staggers all enemies on the battlefield.', 'sfus', 0, 4, 10)" style="opacity:0.5"><div class="fc2 fal fcb"><div>FUS RO DAH</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="1111" onmouseover="battle.set_infopane_spell('Orbital Friendship Cannon', 'Massive AoE damage to all enemies on the battlefield.', 'sofc', 0, 8, 50)" style="opacity:0.5"><div class="fc2 fal fcb"><div>Orbital Friendship Cannon</div></div></div></td></tr><tr><td colspan="2"><img alt="skills_weapon" src="/fixture/skills_weapon.png" style="padding-top:10px"/></td></tr><tr><td class="bts"><div class="btsd" id="2501" onmouseover="battle.set_infopane_spell('Concussive Strike', 'Focus your magical power into your staff for a precision strike towards the head of your enemy, causing major damage and stunning it.', 'sconcussive', 0, 2, 10)" style="opacity:0.5"><div class="fc2 fal fcb"><div>Concussive Strike</div></div></div></td></tr></tbody></table>
+</div>
+<div class="bttp" id="pane_magic" onmouseout="battle.clear_infopane()" style="display:none">
+<div class="btpm1">
+<div class="btpm2"><img onclick="battle.reset_skill(); battle.toggle_skill_pane()" src="/fixture/sbsel_skills_n.png"/></div>
+<div class="btpm3"><img src="/fixture/sbsel_spells_s.png"/></div>
+</div>
+<table class="btp" id="table_magic"><tbody><tr><td colspan="2"><img alt="magic_damage" src="/fixture/magic_damage.png" style="padding-top:10px"/></td></tr><tr><td class="bts"><div class="btsd" id="111" onclick="battle.lock_action(this,1,'magic',111); battle.set_hostile_skill(111)" onmouseover="battle.set_infopane_spell('Fiery Blast', 'A ball of fire is hurled at the target.', '0130', 20, 0, 0)"><div class="fc2 fal fcb"><div>Fiery Blast</div></div></div></td><td class="bts"><div class="btsd" id="112" onclick="battle.lock_action(this,1,'magic',112); battle.set_hostile_skill(112)" onmouseover="battle.set_infopane_spell('Inferno', 'Unleashes an inferno of flames on all hostile targets, causing Fire damage.', '0132', 45, 0, 2)"><div class="fc2 fal fcb"><div>Inferno</div></div></div></td><td class="bts"><div class="btsd" id="113" onclick="battle.lock_action(this,1,'magic',113); battle.set_hostile_skill(113)" onmouseover="battle.set_infopane_spell('Flames of Loki', 'Fire damage.', 'm1130', 67, 0, 4)"><div class="fc2 fal fcb"><div>Flames of Loki</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="121" onclick="battle.lock_action(this,1,'magic',121); battle.set_hostile_skill(121)" onmouseover="battle.set_infopane_spell('Freeze', 'Cold damage.', '0730', 20, 0, 0)"><div class="fc2 fal fcb"><div>Freeze</div></div></div></td><td class="bts"><div class="btsd" id="122" onclick="battle.lock_action(this,1,'magic',122); battle.set_hostile_skill(122)" onmouseover="battle.set_infopane_spell('Blizzard', 'Cold damage.', '0732', 45, 0, 2)"><div class="fc2 fal fcb"><div>Blizzard</div></div></div></td><td class="bts"><div class="btsd" id="123" onclick="battle.lock_action(this,1,'magic',123); battle.set_hostile_skill(123)" onmouseover="battle.set_infopane_spell('Fimbulvetr', 'Cold damage.', 'm1231', 67, 0, 4)"><div class="fc2 fal fcb"><div>Fimbulvetr</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="131" onclick="battle.lock_action(this,1,'magic',131); battle.set_hostile_skill(131)" onmouseover="battle.set_infopane_spell('Shockblast', 'A bolt of lightning strikes the target, causing Elec damage.', '0330', 20, 0, 0)"><div class="fc2 fal fcb"><div>Shockblast</div></div></div></td><td class="bts"><div class="btsd" id="132" onclick="battle.lock_action(this,1,'magic',132); battle.set_hostile_skill(132)" onmouseover="battle.set_infopane_spell('Chained Lightning', 'Elec damage.', '0832', 45, 0, 2)"><div class="fc2 fal fcb"><div>Chained Lightning</div></div></div></td><td class="bts"><div class="btsd" id="133" onclick="battle.lock_action(this,1,'magic',133); battle.set_hostile_skill(133)" onmouseover="battle.set_infopane_spell('Wrath of Thor', 'Elec damage.', 'm1330', 67, 0, 4)"><div class="fc2 fal fcb"><div>Wrath of Thor</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="141" onclick="battle.lock_action(this,1,'magic',141); battle.set_hostile_skill(141)" onmouseover="battle.set_infopane_spell('Gale', 'A blast of wind hits the target, causing Wind damage.', '0430', 20, 0, 0)"><div class="fc2 fal fcb"><div>Gale</div></div></div></td><td class="bts"><div class="btsd" id="142" onclick="battle.lock_action(this,1,'magic',142); battle.set_hostile_skill(142)" onmouseover="battle.set_infopane_spell('Downburst', 'Wind damage.', '0930', 45, 0, 2)"><div class="fc2 fal fcb"><div>Downburst</div></div></div></td><td class="bts"><div class="btsd" id="143" onclick="battle.lock_action(this,1,'magic',143); battle.set_hostile_skill(143)" onmouseover="battle.set_infopane_spell('Storms of Njord', 'Wind damage.', 'm1431', 67, 0, 4)"><div class="fc2 fal fcb"><div>Storms of Njord</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="151" onclick="battle.lock_action(this,1,'magic',151); battle.set_hostile_skill(151)" onmouseover="battle.set_infopane_spell('Smite', 'Holy damage.', '1130', 46, 0, 0)"><div class="fc2 fal fcb"><div>Smite</div></div></div></td><td class="bts"><div class="btsd" id="152" onclick="battle.lock_action(this,1,'magic',152); battle.set_hostile_skill(152)" onmouseover="battle.set_infopane_spell('Banishment', 'Holy damage.', '1132', 76, 0, 4)"><div class="fc2 fal fcb"><div>Banishment</div></div></div></td><td class="bts"><div class="btsd" id="153" onclick="battle.lock_action(this,1,'magic',153); battle.set_hostile_skill(153)" onmouseover="battle.set_infopane_spell('Paradise Lost', 'Holy damage.', 'm1740', 116, 0, 7)"><div class="fc2 fal fcb"><div>Paradise Lost</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="161" onclick="battle.lock_action(this,1,'magic',161); battle.set_hostile_skill(161)" onmouseover="battle.set_infopane_spell('Corruption', 'Dark damage.', '1230', 45, 0, 0)"><div class="fc2 fal fcb"><div>Corruption</div></div></div></td><td class="bts"><div class="btsd" id="162" onclick="battle.lock_action(this,1,'magic',162); battle.set_hostile_skill(162)" onmouseover="battle.set_infopane_spell('Disintegrate', 'Dark damage.', '1330', 71, 0, 4)"><div class="fc2 fal fcb"><div>Disintegrate</div></div></div></td><td class="bts"><div class="btsd" id="163" onclick="battle.lock_action(this,1,'magic',163); battle.set_hostile_skill(163)" onmouseover="battle.set_infopane_spell('Ragnarok', 'Dark damage.', '1332', 110, 0, 7)"><div class="fc2 fal fcb"><div>Ragnarok</div></div></div></td></tr><tr><td colspan="2"><img alt="magic_debuff" src="/fixture/magic_debuff.png" style="padding-top:10px"/></td></tr><tr><td class="bts"><div class="btsd" id="211" onclick="battle.lock_action(this,1,'magic',211); battle.set_hostile_skill(211)" onmouseover="battle.set_infopane_spell('Drain', 'Inflicts Drain on one target, causing damage over time.', '0133', 48, 0, 20)"><div class="fc2 fal fcb"><div>Drain</div></div></div></td><td class="bts"><div class="btsd" id="212" onclick="battle.lock_action(this,1,'magic',212); battle.set_hostile_skill(212)" onmouseover="battle.set_infopane_spell('Weaken', 'The target is weakened, making it deal less damage, and preventing it from scoring critical hits.', '0333', 48, 0, 0)"><div class="fc2 fal fcb"><div>Weaken</div></div></div></td><td class="bts"><div class="btsd" id="213" onclick="battle.lock_action(this,1,'magic',213); battle.set_hostile_skill(213)" onmouseover="battle.set_infopane_spell('Imperil', 'The target is imperiled, reducing physical and magical mitigation as well as elemental mitigations.', 'm_imperil', 48, 0, 0)"><div class="fc2 fal fcb"><div>Imperil</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="221" onclick="battle.lock_action(this,1,'magic',221); battle.set_hostile_skill(221)" onmouseover="battle.set_infopane_spell('Slow', 'The target is slowed by 30%, making it attack less frequently.', '0233', 58, 0, 3)"><div class="fc2 fal fcb"><div>Slow</div></div></div></td><td class="bts"><div class="btsd" id="222" onclick="battle.lock_action(this,1,'magic',222); battle.set_hostile_skill(222)" onmouseover="battle.set_infopane_spell('Sleep', 'The target is lulled to sleep, preventing it from taking any actions.', '0433', 112, 0, 7)"><div class="fc2 fal fcb"><div>Sleep</div></div></div></td><td class="bts"><div class="btsd" id="223" onclick="battle.lock_action(this,1,'magic',223); battle.set_hostile_skill(223)" onmouseover="battle.set_infopane_spell('Confuse', 'Confuses the target, making it lunge out wildly and strike friends and foes alike.', '0733', 112, 0, 10)"><div class="fc2 fal fcb"><div>Confuse</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="231" onclick="battle.lock_action(this,1,'magic',231); battle.set_hostile_skill(231)" onmouseover="battle.set_infopane_spell('Blind', 'Blinds the target, reducing the chance of it landing attacks and hitting with magic spells.', '0933', 58, 0, 7)"><div class="fc2 fal fcb"><div>Blind</div></div></div></td><td class="bts"><div class="btsd" id="232" onclick="battle.lock_action(this,1,'magic',232); battle.set_hostile_skill(232)" onmouseover="battle.set_infopane_spell('Silence', 'The target is silenced, preventing it from using special attacks and magic.', '0833', 58, 0, 5)"><div class="fc2 fal fcb"><div>Silence</div></div></div></td><td class="bts"><div class="btsd" id="233" onclick="battle.lock_action(this,1,'magic',233); battle.set_hostile_skill(233)" onmouseover="battle.set_infopane_spell('Immobilize', 'Immobilize the target, making it unable to evade attacks or spells.', 'm2082', 71, 0, 15)"><div class="fc2 fal fcb"><div>Immobilize</div></div></div></td></tr><tr><td colspan="2"><img alt="magic_curative" src="/fixture/magic_curative.png" style="padding-top:10px"/></td></tr><tr><td class="bts"><div class="btsd" id="311" onclick="battle.lock_action(this,1,'magic',311); battle.set_friendly_skill(311); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Cure', 'Restores a moderate amount of Health on the target.', '0530', 64, 0, 2)"><div class="fc2 fal fcb"><div>Cure</div></div></div></td><td class="bts"><div class="btsd" id="312" onclick="battle.lock_action(this,1,'magic',312); battle.set_friendly_skill(312); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Regen', 'Places a heal over time effect on the target.', '1030', 250, 0, 0)"><div class="fc2 fal fcb"><div>Regen</div></div></div></td><td class="bts"><div class="btsd" id="313" onclick="battle.lock_action(this,1,'magic',313); battle.set_friendly_skill(313); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Full-Cure', 'Fully restores the Health of the target.', '0530', 184, 0, 10)"><div class="fc2 fal fcb"><div>Full-Cure</div></div></div></td></tr><tr><td colspan="2"><img alt="magic_support" src="/fixture/magic_support.png" style="padding-top:10px"/></td></tr><tr><td class="bts"><div class="btsd" id="411" onclick="battle.lock_action(this,1,'magic',411); battle.set_friendly_skill(411); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Protection', 'Places a shield effect on the target, absorbing 25% of the damage from all attacks.', '0532', 80, 0, 0)"><div class="fc2 fal fcb"><div>Protection</div></div></div></td><td class="bts"><div class="btsd" id="412" onclick="battle.lock_action(this,1,'magic',412); battle.set_friendly_skill(412); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Haste', 'Speeds up all actions of the target, allowing it to attack more frequently.', '0533', 96, 0, 0)"><div class="fc2 fal fcb"><div>Haste</div></div></div></td><td class="bts"><div class="btsd" id="413" onclick="battle.lock_action(this,1,'magic',413); battle.set_friendly_skill(413); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Shadow Veil', 'Surrounds the target with a veil of shadows, making it harder to hit with attacks and spells.', '0633', 99, 0, 0)"><div class="fc2 fal fcb"><div>Shadow Veil</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="421" onclick="battle.lock_action(this,1,'magic',421); battle.set_friendly_skill(421); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Absorb', 'The next magical attack against the target has a chance to be absorbed and partially converted to MP.', '1033', 96, 0, 20)"><div class="fc2 fal fcb"><div>Absorb</div></div></div></td><td class="bts"><div class="btsd" id="422" onclick="battle.lock_action(this,1,'magic',422); battle.set_friendly_skill(422); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Spark of Life', 'Any attack that would one-shot a target with more than 1 HP leaves it alive but on the brink of defeat. The buff is removed when triggered.', '1133', 105, 0, 0)"><div class="fc2 fal fcb"><div>Spark of Life</div></div></div></td><td class="bts"><div class="btsd" id="423" onclick="battle.lock_action(this,1,'magic',423); battle.set_friendly_skill(423); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Spirit Shield', 'Powerful attacks against you will be partially absorbed and damage your spirit gauge instead of health.', 'm4040', 91, 0, 0)"><div class="fc2 fal fcb"><div>Spirit Shield</div></div></div></td></tr><tr><td class="bts"><div class="btsd" id="431" onclick="battle.lock_action(this,1,'magic',431); battle.set_friendly_skill(431); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Heartseeker', 'The target attains intimate knowledge of the flow of life in all living beings, increasing attack and crit damage.', 'm4021', 359, 0, 0)"><div class="fc2 fal fcb"><div>Heartseeker</div></div></div></td><td class="bts"><div class="btsd" id="432" onclick="battle.lock_action(this,1,'magic',432); battle.set_friendly_skill(432); battle.touch_and_go()" onmouseover="battle.set_infopane_spell('Arcane Focus', 'The target attains a higher level of attunement with the arcane forces, increasing spell and crit damage.', 'm4020', 365, 0, 0)"><div class="fc2 fal fcb"><div>Arcane Focus</div></div></div></td></tr></tbody></table>
+</div>
+<div class="bttp" id="pane_item" onmouseout="battle.clear_infopane()" style="display:none">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>P</div></div></div>
+<div class="bti3">
+</div>
+</div><div class="c"><div style="width:300px; float:left"><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>1</div></div></div>
+<div class="bti3">
+<div id="ikey_1" onclick="battle.lock_action(this,1,'items','ikey_1'); battle.set_friendly_skill('1'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11191)"><div class="fc2 fal fcb"><div>Health Draught</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>2</div></div></div>
+<div class="bti3">
+<div id="ikey_2" onclick="battle.lock_action(this,1,'items','ikey_2'); battle.set_friendly_skill('2'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11195)"><div class="fc2 fal fcb"><div>Health Potion</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>3</div></div></div>
+<div class="bti3">
+<div id="ikey_3" onclick="battle.lock_action(this,1,'items','ikey_3'); battle.set_friendly_skill('3'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11199)"><div class="fc2 fal fcb"><div>Health Elixir</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>4</div></div></div>
+<div class="bti3">
+<div id="ikey_4" onclick="battle.lock_action(this,1,'items','ikey_4'); battle.set_friendly_skill('4'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11291)"><div class="fc2 fal fcb"><div>Mana Draught</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>5</div></div></div>
+<div class="bti3">
+<div id="ikey_5" onclick="battle.lock_action(this,1,'items','ikey_5'); battle.set_friendly_skill('5'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11295)"><div class="fc2 fal fcb"><div>Mana Potion</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>6</div></div></div>
+<div class="bti3">
+<div id="ikey_6" onclick="battle.lock_action(this,1,'items','ikey_6'); battle.set_friendly_skill('6'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11299)"><div class="fc2 fal fcb"><div>Mana Elixir</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>7</div></div></div>
+<div class="bti3">
+<div id="ikey_7" onclick="battle.lock_action(this,1,'items','ikey_7'); battle.set_friendly_skill('7'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11391)"><div class="fc2 fal fcb"><div>Spirit Draught</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>8</div></div></div>
+<div class="bti3">
+<div id="ikey_8" onclick="battle.lock_action(this,1,'items','ikey_8'); battle.set_friendly_skill('8'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11395)"><div class="fc2 fal fcb"><div>Spirit Potion</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>9</div></div></div>
+<div class="bti3">
+<div id="ikey_9" onclick="battle.lock_action(this,1,'items','ikey_9'); battle.set_friendly_skill('9'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11399)"><div class="fc2 fal fcb"><div>Spirit Elixir</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>10</div></div></div>
+<div class="bti3">
+<div id="ikey_10" onclick="battle.lock_action(this,1,'items','ikey_10'); battle.set_friendly_skill('10'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(19111)"><div class="fc2 fal fcb"><div>Flower Vase</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>11</div></div></div>
+<div class="bti3">
+<div id="ikey_11" onclick="battle.lock_action(this,1,'items','ikey_11'); battle.set_friendly_skill('11'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(19131)"><div class="fc2 fal fcb"><div>Bubble-Gum</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>12</div></div></div>
+<div class="bti3">
+<div id="ikey_12" onclick="battle.lock_action(this,1,'items','ikey_12'); battle.set_friendly_skill('12'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11501)"><div class="fc2 fal fcb"><div>Last Elixir</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>13</div></div></div>
+<div class="bti3">
+<div id="ikey_13" onclick="battle.lock_action(this,1,'items','ikey_13'); battle.set_friendly_skill('13'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(11401)"><div class="fc2 fal fcb"><div>Energy Drink</div></div></div>
+</div>
+</div></div></div><div style="width:300px; float:left"><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>S1</div></div></div>
+<div class="bti3">
+<div id="ikey_s1" onclick="battle.lock_action(this,1,'items','ikey_s1'); battle.set_friendly_skill('101'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(13299)"><div class="fc2 fal fcb"><div>Scroll of the Gods</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>S2</div></div></div>
+<div class="bti3">
+<div id="ikey_s2" onclick="battle.lock_action(this,1,'items','ikey_s2'); battle.set_friendly_skill('102'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(13221)"><div class="fc2 fal fcb"><div>Scroll of Life</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>S3</div></div></div>
+<div class="bti3">
+<div id="ikey_s3" onclick="battle.lock_action(this,1,'items','ikey_s3'); battle.set_friendly_skill('103'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(13211)"><div class="fc2 fal fcb"><div>Scroll of Shadows</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>S4</div></div></div>
+<div class="bti3">
+<div id="ikey_s4" onclick="battle.lock_action(this,1,'items','ikey_s4'); battle.set_friendly_skill('104'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(13199)"><div class="fc2 fal fcb"><div>Scroll of the Avatar</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>S5</div></div></div>
+<div class="bti3">
+<div id="ikey_s5" onclick="battle.lock_action(this,1,'items','ikey_s5'); battle.set_friendly_skill('105'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(13101)"><div class="fc2 fal fcb"><div>Scroll of Swiftness</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>S6</div></div></div>
+<div class="bti3">
+<div id="ikey_s6" onclick="battle.lock_action(this,1,'items','ikey_s6'); battle.set_friendly_skill('106'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(13111)"><div class="fc2 fal fcb"><div>Scroll of Protection</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>N1</div></div></div>
+<div class="bti3">
+<div id="ikey_n1" onclick="battle.lock_action(this,1,'items','ikey_n1'); battle.set_friendly_skill('201'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(12401)"><div class="fc2 fal fcb"><div>Infusion of Storms</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>N2</div></div></div>
+<div class="bti3">
+<div id="ikey_n2" onclick="battle.lock_action(this,1,'items','ikey_n2'); battle.set_friendly_skill('202'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(12101)"><div class="fc2 fal fcb"><div>Infusion of Flames</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>N3</div></div></div>
+<div class="bti3">
+<div id="ikey_n3" onclick="battle.lock_action(this,1,'items','ikey_n3'); battle.set_friendly_skill('203'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(12201)"><div class="fc2 fal fcb"><div>Infusion of Frost</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>N4</div></div></div>
+<div class="bti3">
+<div id="ikey_n4" onclick="battle.lock_action(this,1,'items','ikey_n4'); battle.set_friendly_skill('204'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(12301)"><div class="fc2 fal fcb"><div>Infusion of Lightning</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>N5</div></div></div>
+<div class="bti3">
+<div id="ikey_n5" onclick="battle.lock_action(this,1,'items','ikey_n5'); battle.set_friendly_skill('205'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(12501)"><div class="fc2 fal fcb"><div>Infusion of Divinity</div></div></div>
+</div>
+</div></div><div class="c">
+<div class="bti1">
+<div class="bti2"><div class="fc2 fac fcb"><div>N6</div></div></div>
+<div class="bti3">
+<div id="ikey_n6" onclick="battle.lock_action(this,1,'items','ikey_n6'); battle.set_friendly_skill('206'); battle.touch_and_go()" onmouseover="battle.set_infopane_item(12601)"><div class="fc2 fal fcb"><div>Infusion of Darkness</div></div></div>
+</div>
+</div></div></div></div>
+</div>
+</div>
+<div id="battle_right"><img id="ta_monster_1" src="/fixture/taright.png" style="opacity: 1;"/><img id="ta_monster_2" src="/fixture/taleft.png" style="opacity: 1;"/>
+<div id="pane_monster">
+<div class="btm1" id="mkey_1">
+<div class="btm2"><div><img alt="a" src="/fixture/mon_a.png"/></div><div><div class="fc4 fac fcb"><div>493</div></div></div></div>
+<div class="btm3"><div class="fc2 fal fcb"><div>Witchblade</div></div></div>
+<div class="btm4">
+<div class="btm5">
+<div class="chbd">
+<img alt="health" src="/fixture/nbargreen.png" style="width:120px"/>
+<img src="/fixture/nbarfg.png"/>
+</div></div>
+<div class="btm5">
+<div class="chbd">
+<img alt="magic" src="/fixture/nbarblue.png" style="width:4px"/>
+<img src="/fixture/nbarfg.png"/>
+</div></div>
+<div class="btm5">
+<div class="chbd">
+<img alt="spirit" src="/fixture/nbarred.png" style="width:58px"/>
+<img src="/fixture/nbarfg.png"/>
+</div></div>
+</div>
+<div class="btm6"></div>
+</div>
+<div class="btm1" id="mkey_2">
+<div class="btm2"><div><img alt="b" src="/fixture/mon_b.png"/></div><div><div class="fc4 fac fcb"><div>493</div></div></div></div>
+<div class="btm3"><div class="fc2 fal fcb"><div>Things Are Getting Spicy</div></div></div>
+<div class="btm4">
+<div class="btm5">
+<div class="chbd">
+<img alt="health" src="/fixture/nbargreen.png" style="width:120px"/>
+<img src="/fixture/nbarfg.png"/>
+</div></div>
+<div class="btm5">
+<div class="chbd">
+<img alt="magic" src="/fixture/nbarblue.png" style="width:50px"/>
+<img src="/fixture/nbarfg.png"/>
+</div></div>
+<div class="btm5">
+<div class="chbd">
+<img alt="spirit" src="/fixture/nbarred.png" style="width:5px"/>
+<img src="/fixture/nbarfg.png"/>
+</div></div>
+</div>
+<div class="btm6"></div>
+</div></div>
+</div>
+</div>
+<div id="expholder">
+<img src="/fixture/expbar.png"/>
+<img id="expbar" src="/fixture/bar_blue.png" style="width:486px"/>
+</div>
+</div><script>var battle_token = "fixture-battle-token";</script></body></html>

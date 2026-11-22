@@ -1,0 +1,165 @@
+<!doctype html><html><body><div id="train_outer">
+<form action="https://hentaiverse.org/?s=Character&amp;ss=tr" id="trainform" method="post">
+<input id="start_train" name="start_train" type="hidden" value="0"/>
+<input id="cancel_train" name="cancel_train" type="hidden" value="0"/>
+</form>
+<table id="train_table">
+<tbody><tr>
+<th><div class="fc2 fac fcb"><div>Training</div></div></th>
+<th><div class="fc2 fac fcb"><div>Effect</div></div></th>
+<th><div class="fc2 fac fcb"><div>Credit Cost</div></div></th>
+<th><div class="fc2 fac fcb"><div>Time</div></div></th>
+<th colspan="3"><div class="fc2 fac fcb"><div>Level</div></div></th>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Adept Learner</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1% EXP Bonus</div></div></td>
+<td><div class="fc4 fac fcb"><div>-</div></div></td>
+<td><div class="fc4 fac fcb"><div>-</div></div></td>
+<td><div class="fc4 far fcb"><div>300</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>300</div></div></td>
+<td><img src="./training/train_d.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Assimilator</div></div></td>
+<td><div class="fc2 fal fcb"><div>+10% Proficiency Experience</div></div></td>
+<td><div class="fc4 fac fcb"><div>1,183,393</div></div></td>
+<td><div class="fc4 fac fcb"><div>24 H</div></div></td>
+<td><div class="fc4 far fcb"><div>10</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>25</div></div></td>
+<td><img onclick="training.start_training(51)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Ability Boost</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1 Ability Point</div></div></td>
+<td><div class="fc4 fac fcb"><div>167,518</div></div></td>
+<td><div class="fc4 fac fcb"><div>2 H</div></div></td>
+<td><div class="fc4 far fcb"><div>300</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>493</div></div></td>
+<td><img onclick="training.start_training(80)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Manifest Destiny</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1 Mastery Point</div></div></td>
+<td><div class="fc4 fac fcb"><div>1,000,000</div></div></td>
+<td><div class="fc4 fac fcb"><div>24 H</div></div></td>
+<td><div class="fc4 far fcb"><div>0</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>9</div></div></td>
+<td><img onclick="training.start_training(81)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Scavenger</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1% Base Loot Drop Chance</div></div></td>
+<td><div class="fc4 fac fcb"><div>199,750</div></div></td>
+<td><div class="fc4 fac fcb"><div>4 H</div></div></td>
+<td><div class="fc4 far fcb"><div>30</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>50</div></div></td>
+<td><img onclick="training.start_training(70)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Quartermaster</div></div></td>
+<td><div class="fc2 fal fcb"><div>+5% Base Equipment Drop Chance</div></div></td>
+<td><div class="fc4 fac fcb"><div>1,653,428</div></div></td>
+<td><div class="fc4 fac fcb"><div>12 H</div></div></td>
+<td><div class="fc4 far fcb"><div>15</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>20</div></div></td>
+<td><img src="./training/train_d.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Luck of the Draw</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1% Base Rare Equipment Chance</div></div></td>
+<td><div class="fc4 fac fcb"><div>442,100</div></div></td>
+<td><div class="fc4 fac fcb"><div>8 H</div></div></td>
+<td><div class="fc4 far fcb"><div>15</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>25</div></div></td>
+<td><img onclick="training.start_training(71)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Archaeologist</div></div></td>
+<td><div class="fc2 fal fcb"><div>+10% Base Artifact Drop Chance</div></div></td>
+<td><div class="fc4 fac fcb"><div>25,000</div></div></td>
+<td><div class="fc4 fac fcb"><div>24 H</div></div></td>
+<td><div class="fc4 far fcb"><div>0</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>10</div></div></td>
+<td><img onclick="training.start_training(73)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Metabolism</div></div></td>
+<td><div class="fc2 fal fcb"><div>Improved Monster Hunger Drain</div></div></td>
+<td><div class="fc4 fac fcb"><div>1,000,000</div></div></td>
+<td><div class="fc4 fac fcb"><div>24 H</div></div></td>
+<td><div class="fc4 far fcb"><div>0</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>10</div></div></td>
+<td><img onclick="training.start_training(84)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Inspiration</div></div></td>
+<td><div class="fc2 fal fcb"><div>Improved Monster Morale Drain</div></div></td>
+<td><div class="fc4 fac fcb"><div>2,000,000</div></div></td>
+<td><div class="fc4 fac fcb"><div>24 H</div></div></td>
+<td><div class="fc4 far fcb"><div>0</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>10</div></div></td>
+<td><img src="./training/train_d.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Scholar of War</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1 Battle Scroll Slots</div></div></td>
+<td><div class="fc4 fac fcb"><div>-</div></div></td>
+<td><div class="fc4 fac fcb"><div>-</div></div></td>
+<td><div class="fc4 far fcb"><div>5</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>5</div></div></td>
+<td><img src="./training/train_d.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Tincture</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1 Battle Infusion Slots</div></div></td>
+<td><div class="fc4 fac fcb"><div>-</div></div></td>
+<td><div class="fc4 fac fcb"><div>-</div></div></td>
+<td><div class="fc4 far fcb"><div>5</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>5</div></div></td>
+<td><img src="./training/train_d.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Pack Rat</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1 Battle Inventory Slots</div></div></td>
+<td><div class="fc4 fac fcb"><div>90,000</div></div></td>
+<td><div class="fc4 fac fcb"><div>0 H</div></div></td>
+<td><div class="fc4 far fcb"><div>8</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>10</div></div></td>
+<td><img onclick="training.start_training(98)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Dissociation</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1 Persona Slot</div></div></td>
+<td><div class="fc4 fac fcb"><div>1,000,000</div></div></td>
+<td><div class="fc4 fac fcb"><div>24 H</div></div></td>
+<td><div class="fc4 far fcb"><div>0</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>6</div></div></td>
+<td><img onclick="training.start_training(88)" src="./training/train.png"/></td>
+</tr>
+<tr>
+<td><div class="fc4 far fcb"><div>Set Collector</div></div></td>
+<td><div class="fc2 fal fcb"><div>+1 Equipment Set</div></div></td>
+<td><div class="fc4 fac fcb"><div>12,500</div></div></td>
+<td><div class="fc4 fac fcb"><div>12 H</div></div></td>
+<td><div class="fc4 far fcb"><div>0</div></div></td>
+<td><div class="fc4 fac fcb"><div>/</div></div></td>
+<td><div class="fc4 far fcb"><div>4</div></div></td>
+<td><img onclick="training.start_training(96)" src="./training/train.png"/></td>
+</tr></tbody></table>
+<p>Here you can exchange your credits for Henjutsu Training in various subjects.<br/>Training happens in realtime, and you can only train one skill at a time.</p>
+</div><div id="networth" style="width:165px">Credits: 1,318,626</div></body></html>

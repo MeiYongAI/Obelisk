@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hv_settings_general">General</string>
+    <string name="hv_settings_battle">Battle</string>
+    <string name="hv_settings_loot">Equipment &amp; Shrine</string>
+    <string name="hv_settings_web">Website appearance</string>
+    <string name="hv_settings_font">Website font</string>
+    <string name="hv_settings_sets">Separate equipment set assignments</string>
+    <string name="hv_settings_armor">Armor</string>
+    <string name="hv_settings_weapons">Weapons</string>
+    <string name="hv_settings_shields">Shields</string>
+    <string name="hv_settings_equipment">Equipment</string>
+    <string name="hv_settings_sell">Sell</string>
+    <string name="hv_settings_salvage">Salvage</string>
+    <string name="hv_settings_off">Off</string>
+    <string name="hv_settings_default">Default</string>
+    <string name="hv_settings_no_upgrade">Do not upgrade</string>
+    <string name="hv_settings_level_default">By character level</string>
+    <string name="hv_settings_save">Save settings</string>
+    <string name="hv_settings_undo">Undo changes</string>
+    <string name="hv_settings_custom_font">Custom font</string>
+    <string name="hv_settings_font_family">Font family</string>
+    <string name="hv_settings_font_size">Size (pt)</string>
+    <string name="hv_settings_font_weight">Weight</string>
+    <string name="hv_settings_font_style">Style</string>
+    <string name="hv_settings_font_offset">Vertical offset (px)</string>
+    <string name="hv_settings_set_abilities">Abilities</string>
+    <string name="hv_settings_set_skills">Quickbar &amp; Auto-Cast</string>
+</resources>

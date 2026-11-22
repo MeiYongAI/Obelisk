@@ -1,0 +1,512 @@
+<!doctype html><html><body><div id="market_outer">
+<div id="market_left">
+<div id="market_xfer">
+<div class="credit_balance" onclick="document.getElementById('account_amount').value=1393689">
+<div><div class="fc2 fac fcb"><div>Account Balance</div></div></div>
+<div>1,393,689 C</div>
+</div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023" method="post">
+<div><input name="account_withdraw" type="submit" value="▲ Withdraw ▲"/></div>
+<div><input name="marketoken" type="hidden" value="test-market-token"/><input id="account_amount" maxlength="9" name="account_amount" size="9" type="text" value="0"/> C</div>
+<div><input name="account_deposit" type="submit" value="▼   Deposit   ▼"/></div>
+</form>
+<div class="credit_balance" onclick="document.getElementById('account_amount').value=748247">
+<div><div class="fc2 fac fcb"><div>Market Balance</div></div></div>
+<div>748,247 C</div>
+</div>
+</div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr"><div class="market_tab market_cur">Browse Items</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=buyorders&amp;filter=tr"><div class="market_tab">My Buy Orders</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=sellorders&amp;filter=tr"><div class="market_tab">My Sell Orders</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=marketlog"><div class="market_tab">Account Log</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=tradelog"><div class="market_tab">Trade Log</div></a>
+<div></div>
+</div>
+<div id="market_right"><div id="filterbar"><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=co"><div class="cfb">Consumables</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=ma"><div class="cfb">Materials</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr"><div class="cfbs">Trophies</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=ar"><div class="cfb">Artifacts</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=fi"><div class="cfb">Figures</div></a><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=mo"><div class="cfb">Monster Items</div></a></div>
+<div id="market_itempage">
+<div id="market_itemheader">
+<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30022">◀</a></div>
+<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023">Broken Glasses</a></div>
+<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30024">▶</a></div>
+</div>
+<div id="market_iteminfo">You have <span>42</span> available to sell. This item is traded in single units. Min price is <span>10 C</span> for market orders and <span>2,000 C</span> for backorders.</div>
+<div id="market_itembody">
+<div id="market_itemsell">
+<div>
+<div><div class="fc2 fac fcb"><div>Your Sell Order</div></div></div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023" method="post">
+<input name="marketoken" type="hidden" value="test-market-token"/>
+<table class="market_placeorder">
+<tbody><tr>
+<td>Count: </td>
+<td>
+<input onclick="document.getElementById('sellorder_batchcount').stepDown(); onchange_sellorder_fields()" type="button" value="-"/><input id="sellorder_batchcount" max="42" min="0" name="sellorder_batchcount" oninput="check_item_countfield(this, 42); onchange_sellorder_fields()" pattern="[0-9]*" type="number" value="42"/><input onclick="document.getElementById('sellorder_batchcount').stepUp(); onchange_sellorder_fields()" type="button" value="+"/>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>Price: </td>
+<td>
+<input onclick="price_step('sellorder_batchprice', -1); onchange_sellorder_fields()" type="button" value="-"/><input id="sellorder_batchprice" inputmode="numeric" name="sellorder_batchprice" oninput="check_item_pricefield(this); onchange_sellorder_fields()" pattern="[0-9]*" type="text" value="1290"/><input onclick="price_step('sellorder_batchprice', 1); onchange_sellorder_fields()" type="button" value="+"/>
+</td>
+<td>C</td>
+</tr>
+<tr>
+<td colspan="3" id="sell_order_stock_field" onclick="document.getElementById('sellorder_batchcount').value=42; onchange_sellorder_fields()">Stock: <span>0 + 42</span></td>
+</tr>
+<tr>
+<td colspan="3"><input disabled="disabled" id="sellorder_update" name="sellorder_update" type="submit" value="Update"/> <input name="sellorder_cancel" type="submit" value="Delete"/></td>
+</tr>
+<tr>
+<td colspan="3" onclick="autofill_from_sell_order(1280,0,0)">Min Undercut: 1,280 C</td>
+</tr>
+</tbody></table>
+</form>
+</div>
+<div class="market_itemorders">
+<div><div class="fc2 fac fcb"><div>Listed Sell Orders</div></div></div>
+<table>
+<tbody><tr>
+<th>Count</th><th>Price</th><th>Total</th>
+</tr>
+<tr data-orderactive="1" data-orderconflict="1" onclick="autofill_from_sell_order(1290,0,84)">
+<td>84</td>
+<td>1,290 C</td>
+<td>108,360 C</td>
+</tr>
+<tr data-orderconflict="1" onclick="autofill_from_sell_order(1300,0,161)">
+<td>77</td>
+<td>1,300 C</td>
+<td>100,100 C</td>
+</tr>
+<tr data-orderconflict="1" onclick="autofill_from_sell_order(1310,0,476)">
+<td>315</td>
+<td>1,310 C</td>
+<td>412,650 C</td>
+</tr>
+<tr data-orderconflict="1" onclick="autofill_from_sell_order(1320,0,507)">
+<td>31</td>
+<td>1,320 C</td>
+<td>40,920 C</td>
+</tr>
+<tr data-orderconflict="1" onclick="autofill_from_sell_order(1330,0,562)">
+<td>920</td>
+<td>1,330 C</td>
+<td>1,223,600 C</td>
+</tr>
+<tr data-orderconflict="1" data-orderinsufficient="1" onclick="autofill_from_sell_order(1340,0,558)">
+<td>101</td>
+<td>1,340 C</td>
+<td>135,340 C</td>
+</tr>
+<tr data-orderconflict="1" data-orderinsufficient="1" onclick="autofill_from_sell_order(1350,0,554)">
+<td>22</td>
+<td>1,350 C</td>
+<td>29,700 C</td>
+</tr>
+<tr data-orderconflict="1" data-orderinsufficient="1" onclick="autofill_from_sell_order(1360,0,550)">
+<td>35</td>
+<td>1,360 C</td>
+<td>47,600 C</td>
+</tr>
+<tr data-orderconflict="1" data-orderinsufficient="1" onclick="autofill_from_sell_order(1370,0,546)">
+<td>54</td>
+<td>1,370 C</td>
+<td>73,980 C</td>
+</tr></tbody></table>
+</div>
+</div>
+<div id="market_itembuy">
+<div>
+<div><div class="fc2 fac fcb"><div>Your Buy Order</div></div></div>
+<form action="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023" method="post">
+<input name="marketoken" type="hidden" value="test-market-token"/>
+<table class="market_placeorder">
+<tbody><tr>
+<td>Count: </td>
+<td>
+<input onclick="document.getElementById('buyorder_batchcount').stepDown(); onchange_buyorder_fields()" type="button" value="-"/><input id="buyorder_batchcount" max="99999999" min="0" name="buyorder_batchcount" oninput="check_item_countfield(this, 99999999); onchange_buyorder_fields()" pattern="[0-9]*" type="number" value="0"/><input onclick="document.getElementById('buyorder_batchcount').stepUp(); onchange_buyorder_fields()" type="button" value="+"/>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>Price: </td>
+<td>
+<input onclick="price_step('buyorder_batchprice', -1); onchange_buyorder_fields()" type="button" value="-"/><input id="buyorder_batchprice" inputmode="numeric" name="buyorder_batchprice" oninput="check_item_pricefield(this); onchange_buyorder_fields()" pattern="[0-9]*" type="text" value="0"/><input onclick="price_step('buyorder_batchprice', 1); onchange_buyorder_fields()" type="button" value="+"/>
+</td>
+<td>C</td>
+</tr>
+<tr>
+<td colspan="3" id="buy_order_needed_field">Order Total: <span id="buy_order_needed_balance">0</span> C</td>
+</tr>
+<tr>
+<td colspan="3"><input disabled="disabled" id="buyorder_update" name="buyorder_update" style="width:150px" type="submit" value="Place Buy Order"/></td>
+</tr>
+<tr>
+<td colspan="3" onclick="autofill_from_buy_order(1260,0,0)">Min Overbid: 1,260 C</td>
+</tr>
+</tbody></table>
+</form>
+</div>
+<div class="market_itemorders">
+<div><div class="fc2 fac fcb"><div>Listed Buy Orders</div></div></div>
+<table>
+<tbody><tr>
+<th>Count</th><th>Price</th><th>Total</th>
+</tr>
+<tr onclick="autofill_from_buy_order(1250,1250,42)">
+<td>29486</td>
+<td>1,250 C</td>
+<td>36,857,500 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1240,1250,42)">
+<td>1000</td>
+<td>1,240 C</td>
+<td>1,240,000 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1230,1250,42)">
+<td>6780</td>
+<td>1,230 C</td>
+<td>8,339,400 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1170,1250,42)">
+<td>1</td>
+<td>1,170 C</td>
+<td>1,170 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1150,1250,42)">
+<td>800</td>
+<td>1,150 C</td>
+<td>920,000 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1090,1250,42)">
+<td>1000</td>
+<td>1,090 C</td>
+<td>1,090,000 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1070,1250,42)">
+<td>500</td>
+<td>1,070 C</td>
+<td>535,000 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1040,1250,42)">
+<td>1100</td>
+<td>1,040 C</td>
+<td>1,144,000 C</td>
+</tr>
+<tr data-orderinsufficient="1" onclick="autofill_from_buy_order(1030,1250,42)">
+<td>1000</td>
+<td>1,030 C</td>
+<td>1,030,000 C</td>
+</tr></tbody></table>
+</div>
+</div>
+<div id="market_itemhistory">
+<div>
+<div><div class="fc2 fac fcb"><div>Price History</div></div></div>
+<table id="market_price">
+<tbody><tr>
+<th></th><th>Sold</th><th>Low</th><th>Avg</th><th>High</th><th>Vol</th>
+</tr>
+<tr>
+<td>Day</td>
+<td>18613</td>
+<td>1,250 C</td>
+<td>1,253 C</td>
+<td>1,300 C</td>
+<td>23,323,030 C</td>
+</tr>
+<tr>
+<td>Week</td>
+<td>57875</td>
+<td>1,190 C</td>
+<td>1,288 C</td>
+<td>1,450 C</td>
+<td>74,520,310 C</td>
+</tr>
+<tr>
+<td>Month</td>
+<td>279161</td>
+<td>1,020 C</td>
+<td>1,335 C</td>
+<td>1,600 C</td>
+<td>372,719,530 C</td>
+</tr>
+<tr>
+<td>Year</td>
+<td>2360483</td>
+<td>935 C</td>
+<td>1,475 C</td>
+<td>2,000 C</td>
+<td>3,482,188,510 C</td>
+</tr>
+</tbody></table>
+</div>
+<div>
+<div><div class="fc2 fac fcb"><div>Recent Trades</div></div></div>
+<table id="market_recent">
+<tbody><tr>
+<th></th><th>Seller</th><th>Buyer</th><th>Sold</th><th>Price</th>
+</tr>
+<tr>
+<td>2026-11-21 10:41</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-1383973">alice1017</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>2</td>
+<td>1,250 C</td>
+</tr>
+<tr>
+<td>2026-11-21 10:40</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-5302262">快乐的龙仔</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>13</td>
+<td>1,250 C</td>
+</tr>
+<tr>
+<td>2026-11-21 10:29</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-1956934">thegustmd1</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>2</td>
+<td>1,250 C</td>
+</tr>
+<tr>
+<td>2026-11-21 10:10</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-1904509">Pigtail Drill</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>23</td>
+<td>1,250 C</td>
+</tr>
+<tr>
+<td>2026-11-21 10:00</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-506928">sasankuros</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>89</td>
+<td>1,250 C</td>
+</tr>
+<tr>
+<td>2026-11-21 09:55</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3718709">232333b</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>18</td>
+<td>1,250 C</td>
+</tr>
+<tr>
+<td>2026-11-21 09:48</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-554944">mintmemory</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>26</td>
+<td>1,250 C</td>
+</tr>
+<tr>
+<td>2026-11-21 09:46</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-536071">tecche</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-7264086">sawa_toko</a></div></td>
+<td>784</td>
+<td>1,280 C</td>
+</tr>
+<tr>
+<td>2026-11-21 09:46</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-985957">mason9360</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-7264086">sawa_toko</a></div></td>
+<td>20</td>
+<td>1,280 C</td>
+</tr>
+<tr>
+<td>2026-11-21 09:46</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-2724944">pixiastr</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-7264086">sawa_toko</a></div></td>
+<td>116</td>
+<td>1,280 C</td>
+</tr>
+<tr>
+<td>2026-11-21 09:46</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-9133018">dz31899560</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-7264086">sawa_toko</a></div></td>
+<td>21</td>
+<td>1,260 C</td>
+</tr>
+<tr>
+<td>2026-11-21 09:45</td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-7568480">alpaca~wuhu</a></div></td>
+<td><div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=user-3366393">st31118aa</a></div></td>
+<td>15</td>
+<td>1,250 C</td>
+</tr></tbody></table>
+</div>
+<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30023&amp;tradelog=item-30023">Show Full Trade Log</a></div>
+</div>
+</div>
+<div><a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30022">◀ Previous Trophy</a>     <a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr">Back to Trophies</a>     <a href="https://hentaiverse.org/?s=Bazaar&amp;ss=mk&amp;screen=browseitems&amp;filter=tr&amp;itemid=30024">Next Trophy ▶</a>
+</div>
+<script type="text/javascript">
+
+var min_balance = 0;
+var market_balance = 748247;
+var player_stock = 42;
+var batch_size = 1;
+
+function autofill_from_sell_order(batch_price_sell, batch_price_buy, batch_count) {
+	if(batch_price_buy > 0) {
+		document.getElementById("buyorder_batchcount").value = Math.max(batch_count, parseInt(document.getElementById("buyorder_batchcount").value));
+		document.getElementById("buyorder_batchprice").value = batch_price_buy;
+	}
+
+	document.getElementById("sellorder_batchprice").value = batch_price_sell;
+	onchange_buyorder_fields();
+	onchange_sellorder_fields();
+}
+
+function autofill_from_buy_order(batch_price_buy, batch_price_sell, batch_count) {
+	if(batch_price_sell > 0) {
+		document.getElementById("sellorder_batchcount").value = Math.max(batch_count, parseInt(document.getElementById("sellorder_batchcount").value));
+		document.getElementById("sellorder_batchprice").value = batch_price_sell;
+	}
+
+	document.getElementById("buyorder_batchprice").value = batch_price_buy;
+	onchange_buyorder_fields();
+	onchange_sellorder_fields();
+}
+
+function onchange_buyorder_fields() {
+	var elem_batchcount = document.getElementById("buyorder_batchcount");
+	var elem_batchprice = document.getElementById("buyorder_batchprice");
+	var batchcount = parseInt(elem_batchcount.value);
+	var batchprice = parseInt(elem_batchprice.value);
+
+	if(batchcount > 0 && batchprice >= 10) {
+		min_balance = Math.round(batchcount * batchprice);
+	}
+	else {
+		min_balance = 0;
+	}
+
+	document.getElementById("buy_order_needed_balance").innerHTML = min_balance.toLocaleString("en-US");
+	document.getElementById("buy_order_needed_field").style.color = min_balance <= market_balance ? "inherit" : "#e63e3e";
+
+	var button = document.getElementById("buyorder_update");
+	var valid_step = true;
+
+	if(batchprice < 10 || batchprice % price_step("buyorder_batchprice", 0) > 0) {
+		elem_batchprice.style.background = "#f0cfcf";
+		valid_step = false;
+	}
+	else {
+		elem_batchprice.style.background = "";
+	}
+
+	if(valid_step && min_balance > 0 && min_balance <= market_balance) {
+		button.removeAttribute("disabled");
+	}
+	else {
+		button.setAttribute("disabled", "disabled");
+	}
+	
+}
+
+function onchange_sellorder_fields() {
+	var elem_batchcount = document.getElementById("sellorder_batchcount");
+	var elem_batchprice = document.getElementById("sellorder_batchprice");
+	var batchcount = parseInt(elem_batchcount.value);
+	var batchprice = parseInt(elem_batchprice.value);
+
+	document.getElementById("sell_order_stock_field").style.color = batchcount * batch_size <= player_stock ? "inherit" : "#e63e3e";
+
+	var button = document.getElementById("sellorder_update");
+	var valid_step = true;
+
+	if(batchprice < 10 || batchprice % price_step("sellorder_batchprice", 0) > 0) {
+		elem_batchprice.style.background = "#f0cfcf";
+		valid_step = false;
+	}
+	else {
+		elem_batchprice.style.background = "";
+	}
+
+	if(valid_step && batchcount > 0 && batchcount * batch_size <= player_stock && batchprice >= 10) {
+		button.removeAttribute("disabled");
+	}
+	else {
+		button.setAttribute("disabled", "disabled");
+	}
+}
+
+function check_item_countfield(countfield, max_value) {
+	if(countfield.value > max_value) {
+		countfield.value = max_value;
+	}
+	
+	if(countfield.value < 0) {
+		countfield.value = 0;
+	}
+
+	if(countfield.value.length == 0) {
+		countfield.value = 0;
+	}
+}
+
+function check_item_pricefield(pricefield) {
+	if(pricefield.value > 100000000) {
+		pricefield.value = 100000000;
+	}
+
+	if(pricefield.value < 0) {
+		pricefield.value = 0;
+	}
+
+	if(pricefield.value.length == 0) {
+		pricefield.value = 0;
+	}
+}
+
+function price_step(fieldname, direction) {
+	var pricefield = document.getElementById(fieldname);
+	var stepval = pricefield.value;
+	var stepcur = 1;
+
+	if(direction < 0) {
+		while(stepval > 1000) {
+			stepcur = stepcur * 10;
+			stepval = stepval / 10;
+		}
+
+		if(stepval > 500) {
+			stepcur = stepcur * 5;
+		}
+		else if(stepval > 200) {
+			stepcur = stepcur * 2;
+		}
+	}
+	else {
+		while(stepval >= 1000) {
+			stepcur = stepcur * 10;
+			stepval = stepval / 10;
+		}
+
+		if(stepval >= 500) {
+			stepcur = stepcur * 5;
+		}
+		else if(stepval >= 200) {
+			stepcur = stepcur * 2;
+		}
+	}
+
+	if(direction > 0) {
+		pricefield.value = Math.min(100000000, Math.max(10, parseInt(pricefield.value) + (stepcur - parseInt(pricefield.value) % stepcur)));
+	}
+	else if(direction < 0) {
+		if(pricefield.value <= 10) {
+			pricefield.value = 0;
+		}
+		else {
+			var mod = parseInt(pricefield.value) % stepcur;
+		
+			if(mod > 0) {
+				pricefield.value = Math.max(0, parseInt(pricefield.value) - mod);
+			}
+			else {
+				pricefield.value = Math.max(0, parseInt(pricefield.value) - stepcur);
+			}
+		}
+	}
+	
+	return stepcur;
+}
+
+</script>
+</div>
+</div></div></body></html>

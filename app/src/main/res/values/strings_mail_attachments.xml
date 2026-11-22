@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mail_attach_add">Add attachment</string>
+    <string name="mail_attach_remove">Remove attachment</string>
+    <string name="mail_attach_take">Claim attachment</string>
+    <string name="mail_attach_items">Items</string>
+    <string name="mail_attach_equipment">Equipment</string>
+    <string name="mail_attach_currency">Currency</string>
+    <string name="mail_attach_cod">Cash on delivery</string>
+    <string name="mail_attach_cod_zero">0 removes the payment request</string>
+    <string name="mail_attach_credits">Amount (C)</string>
+    <string name="mail_attach_apply">Apply</string>
+    <string name="mail_attach_maximum">Maximum %1$s</string>
+    <string name="mail_attach_all">All</string>
+</resources>

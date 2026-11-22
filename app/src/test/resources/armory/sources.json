@@ -1,0 +1,147 @@
+[
+  {
+    "fixture": "modify-armor_cloth.html",
+    "source": "The HentaiVerse（modify&filter=armor_cloth）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=armor_cloth"
+  },
+  {
+    "fixture": "modify-armor_heavy.html",
+    "source": "The HentaiVerse（modify&filter=armor_heavy）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=armor_heavy"
+  },
+  {
+    "fixture": "modify-armor_light.html",
+    "source": "The HentaiVerse（modify&filter=armor_light）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=armor_light"
+  },
+  {
+    "fixture": "charm-slot-empty.html",
+    "source": "The HentaiVerse（modify&filter=equipped&eqids[]=309083529&charmslot=2）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=equipped&eqids[]=309083529&charmslot=2"
+  },
+  {
+    "fixture": "modify-equipped.html",
+    "source": "The HentaiVerse（modify&filter=equipped）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=equipped"
+  },
+  {
+    "fixture": "modify-shield.html",
+    "source": "The HentaiVerse（modify&filter=shield）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=shield"
+  },
+  {
+    "fixture": "modify-weapon_1handed.html",
+    "source": "The HentaiVerse（modify&filter=weapon_1handed）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=weapon_1handed"
+  },
+  {
+    "fixture": "upgrade-unbound.html",
+    "source": "The HentaiVerse（modify&filter=weapon_2handed&eqids%5B%5D=311410613）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=weapon_2handed&eqids%5B%5D=311410613"
+  },
+  {
+    "fixture": "modify-weapon_2handed.html",
+    "source": "The HentaiVerse（modify&filter=weapon_2handed）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=weapon_2handed"
+  },
+  {
+    "fixture": "modify-weapon_staff.html",
+    "source": "The HentaiVerse（modify&filter=weapon_staff）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=modify&filter=weapon_staff"
+  },
+  {
+    "fixture": "organize-armor_cloth.html",
+    "source": "The HentaiVerse（organize&filter=armor_cloth）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=armor_cloth"
+  },
+  {
+    "fixture": "organize-armor_heavy.html",
+    "source": "The HentaiVerse（organize&filter=armor_heavy）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=armor_heavy"
+  },
+  {
+    "fixture": "organize-armor_light.html",
+    "source": "The HentaiVerse（organize&filter=armor_light）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=armor_light"
+  },
+  {
+    "fixture": "organize-salvaged.html",
+    "source": "The HentaiVerse（organize&filter=salvaged）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=salvaged"
+  },
+  {
+    "fixture": "organize-shield.html",
+    "source": "The HentaiVerse（organize&filter=shield）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=shield"
+  },
+  {
+    "fixture": "organize-weapon_1handed.html",
+    "source": "The HentaiVerse（organize&filter=weapon_1handed）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=weapon_1handed"
+  },
+  {
+    "fixture": "organize-weapon_2handed.html",
+    "source": "The HentaiVerse（organize&filter=weapon_2handed）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=weapon_2handed"
+  },
+  {
+    "fixture": "organize-weapon_staff.html",
+    "source": "The HentaiVerse（organize&filter=weapon_staff）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=organize&filter=weapon_staff"
+  },
+  {
+    "fixture": "repair-armor_cloth.html",
+    "source": "The HentaiVerse（repair&filter=armor_cloth）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=armor_cloth"
+  },
+  {
+    "fixture": "repair-armor_heavy.html",
+    "source": "The HentaiVerse（repair&filter=armor_heavy）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=armor_heavy"
+  },
+  {
+    "fixture": "repair-armor_light.html",
+    "source": "The HentaiVerse（repair&filter=armor_light）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=armor_light"
+  },
+  {
+    "fixture": "repair-equipped.html",
+    "source": "The HentaiVerse（repair&filter=equipped）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=equipped"
+  },
+  {
+    "fixture": "repair-new.html",
+    "source": "The HentaiVerse（repair&filter=new）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=new"
+  },
+  {
+    "fixture": "repair-salvaged.html",
+    "source": "The HentaiVerse（repair&filter=salvaged）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=salvaged"
+  },
+  {
+    "fixture": "repair-shield.html",
+    "source": "The HentaiVerse（repair&filter=shield）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=shield"
+  },
+  {
+    "fixture": "repair-weapon_1handed.html",
+    "source": "The HentaiVerse（repair&filter=weapon_1handed）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=weapon_1handed"
+  },
+  {
+    "fixture": "repair-weapon_2handed.html",
+    "source": "The HentaiVerse（repair&filter=weapon_2handed）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=weapon_2handed"
+  },
+  {
+    "fixture": "repair-weapon_staff.html",
+    "source": "The HentaiVerse（repair&filter=weapon_staff）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=repair&filter=weapon_staff"
+  },
+  {
+    "fixture": "soulbind-weapon_1handed.html",
+    "source": "The HentaiVerse（soulbind&filter=weapon_1handed）.html",
+    "url": "https://hentaiverse.org/?s=Bazaar&ss=am&screen=soulbind&filter=weapon_1handed"
+  }
+]

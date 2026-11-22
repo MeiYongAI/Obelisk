@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mail_folder_inbox">收件箱</string>
+    <string name="mail_folder_read">已读</string>
+    <string name="mail_folder_sent">已发送</string>
+    <string name="mail_compose">写邮件</string>
+    <string name="mail_empty">没有邮件</string>
+    <string name="mail_previous">上一页</string>
+    <string name="mail_next">下一页</string>
+    <string name="mail_no_subject">无主题</string>
+    <string name="mail_from">寄信人</string>
+    <string name="mail_to">收件人</string>
+    <string name="mail_subject">主题</string>
+    <string name="mail_body">正文</string>
+    <string name="mail_unread">未读</string>
+    <string name="mail_read">已读</string>
+    <string name="mail_cod_amount">到付金额 · %1$s C</string>
+    <string name="mail_edit">修改</string>
+    <string name="mail_add_attachment">添加附件</string>
+    <string name="mail_postage">邮费 %1$s C</string>
+    <string name="mail_send">发送</string>
+    <string name="mail_reply">回复</string>
+    <string name="mail_pay_and_claim">支付 %1$s C 并领取</string>
+    <string name="mail_claim_all">领取全部</string>
+</resources>

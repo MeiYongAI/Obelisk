@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html><body><div id="mainpane">
+<form action="" id="form_unlockability" method="post">
+<input id="unlock_ability" name="unlock_ability" type="hidden" value="0"/>
+</form>
+<form action="" id="form_resetability" method="post">
+<input id="reset_ability" name="reset_ability" type="hidden" value="0"/>
+</form>
+<form action="" id="form_resetall" method="post">
+<input id="reset_all" name="reset_all" type="hidden" value="0"/>
+</form>
+<form action="" id="form_unlockslot" method="post">
+<input id="unlock_slot" name="unlock_slot" type="hidden" value="0"/>
+</form>
+<form action="" id="form_equipslot" method="post">
+<input id="equip_slot" name="equip_slot" type="hidden" value="0"/>
+<input id="equip_ability" name="equip_ability" type="hidden" value="0"/>
+</form>
+<div id="ability_outer">
+<div id="ability_top">
+<div class="ability_slotbar">
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/ru.png)" title="Major Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_101" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/ru.png)" title="Major Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_102" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/ru.png)" title="Major Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_103" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/ru.png)" title="Major Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_111" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/ru.png)" title="Major Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_112" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div style="background-image:url(/y/ab/rl.png)" title="Major Ability Slot - Unlock Cost: 1 Mastery Point">
+<div id="slot_113" onclick="do_unlock_slot(113)" style="background-image:url(/y/t/0.png);background-position:0px 2px"></div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+<div class="ability_slotbar">
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/gu.png)" title="Supportive Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_201" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/gu.png)" title="Supportive Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_202" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/gu.png)" title="Supportive Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_203" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/gu.png)" title="Supportive Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_211" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/gu.png)" title="Supportive Ability Slot - Click or drag an unlocked ability to fill slot.">
+<div id="slot_212" style="background-image:url(/y/t/0.png);background-position:34px 2px"></div>
+</div>
+<div style="background-image:url(/y/ab/gl.png)" title="Supportive Ability Slot - Unlock Cost: 1 Mastery Point">
+<div id="slot_213" onclick="do_unlock_slot(213)" style="background-image:url(/y/t/0.png);background-position:0px 2px"></div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+<div class="ability_slotbar">
+<div style="background-image:url(/y/ab/bl.png)" title="Protection Augment Ability Slot - Unlock Cost: 1 Mastery Point">
+<div id="slot_301" onclick="do_unlock_slot(301)" style="background-image:url(/y/t/0.png);background-position:0px 2px"></div>
+</div>
+<div style="background-image:url(/y/ab/pl.png)" title="Drain Augment Ability Slot - Unlock Cost: 2 Mastery Points">
+<div id="slot_401" onclick="do_unlock_slot(401)" style="background-image:url(/y/t/0.png);background-position:0px 2px"></div>
+</div></div>
+<div><div class="fl f4b"><div class="c5a"></div><div class="c5b"></div><div class="c5i"></div><div class="c5l"></div><div class="c5i"></div><div class="c5t"></div><div class="c5y"></div><div class="c59"></div><div class="c5p"></div><div class="c5o"></div><div class="c5i"></div><div class="c5n"></div><div class="c5t"></div><div class="c5s"></div><div class="c4m"></div><div class="c59"></div><div class="c43"></div></div></div>
+<div><div class="fl f4b"><div class="c5m"></div><div class="c5a"></div><div class="c5s"></div><div class="c5t"></div><div class="c5e"></div><div class="c5r"></div><div class="c5y"></div><div class="c59"></div><div class="c5p"></div><div class="c5o"></div><div class="c5i"></div><div class="c5n"></div><div class="c5t"></div><div class="c5s"></div><div class="c4m"></div><div class="c59"></div><div class="c41"></div></div></div>
+<div><img onclick="do_reset_all(0)" src="/y/ab/resetall.png"/></div>
+</div>
+<div id="ability_bot">
+<div id="ability_treelist"><div><img src="/y/ab/tageneral.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=onehanded'" src="/y/ab/tdonehanded.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=twohanded'" src="/y/ab/tdtwohanded.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=dualwield'" src="/y/ab/tddualwield.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=niten'" src="/y/ab/tdniten.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=staff'" src="/y/ab/tdstaff.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=cloth'" src="/y/ab/tdcloth.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=light'" src="/y/ab/tdlight.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=heavy'" src="/y/ab/tdheavy.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=deprecating1'" src="/y/ab/tddeprecating1.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=deprecating2'" src="/y/ab/tddeprecating2.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=supportive1'" src="/y/ab/tdsupportive1.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=supportive2'" src="/y/ab/tdsupportive2.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=elemental'" src="/y/ab/tdelemental.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=forbidden'" src="/y/ab/tdforbidden.png"/></div><div><img onclick="document.location='https://hentaiverse.org/?s=Character&amp;ss=ab&amp;tree=divine'" src="/y/ab/tddivine.png"/></div></div>
+<div id="ability_treepane">
+<div>
+<div><div class="fr f2b"><div class="c3h"></div><div class="c3p"></div><div class="c39"></div><div class="c3t"></div><div class="c3a"></div><div class="c3n"></div><div class="c3k"></div></div></div>
+<div class="ability_slotbox">
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/ru.png)">
+<div id="slot_1101" onmouseout="outability()" onmouseover="overability(0, 'HP Tank','Increases your maximum HP. This adds 10% to your total HP per tier.','Not Acquired','Requires &lt;strong&gt;Level 0&lt;/strong&gt; and &lt;strong&gt;1 Ability Points&lt;/strong&gt;&lt;div&gt;&lt;strong&gt;Direct Player Stat Modification&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;+10% Maximum Health&lt;/div&gt;')" style="background-image:url(/y/t/3.png);background-position:0px 38px"></div>
+</div></div>
+<div class="aw10" onclick="do_unlock_ability(1101)"><div style="background-image:url(/y/ab/10ru.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div></div>
+<div><div class="fr f4b"><div class="c5c"></div><div class="c5o"></div><div class="c5s"></div><div class="c5t"></div><div class="c4m"></div><div class="c59"></div><div class="c41"></div><div class="c59"></div><div class="c5a"></div><div class="c5p"></div></div></div>
+<div><img src="/y/ab/reset_d.png"/></div>
+</div>
+<div>
+<div><div class="fr f2b"><div class="c3m"></div><div class="c3p"></div><div class="c39"></div><div class="c3t"></div><div class="c3a"></div><div class="c3n"></div><div class="c3k"></div></div></div>
+<div class="ability_slotbox">
+<div ondragover="dragOver(event)" ondrop="drop(event)" style="background-image:url(/y/ab/ru.png)">
+<div id="slot_1102" onmouseout="outability()" onmouseover="overability(20, 'MP Tank','Increases your maximum MP. This adds 10% to your total MP per tier.','Not Acquired','Requires &lt;strong&gt;Level 0&lt;/strong&gt; and &lt;strong&gt;1 Ability Points&lt;/strong&gt;&lt;div&gt;&lt;strong&gt;Direct Player Stat Modification&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;+10% Maximum Magic&lt;/div&gt;')" style="background-image:url(/y/t/3.png);background-position:-34px 38px"></div>
+</div></div>
+<div class="aw10" onclick="do_unlock_ability(1102)"><div style="background-image:url(/y/ab/10ru.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div><div style="background-image:url(/y/ab/10x.png)"></div></div>
+<div><div class="fr f4b"><div class="c5c"></div><div class="c5o"></div><div class="c5s"></div><div class="c5t"></div><div class="c4m"></div><div class="c59"></div><div class="c41"></div><div class="c59"></div><div class="c5a"></div><div class="c5p"></div></div></div>
+<div><img src="/y/ab/reset_d.png"/></div>
+</div>
+
+
+
+</div>
+</div>
+<div id="ability_info"></div>
+</div>
+</div></body></html>

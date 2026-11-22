@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shop_category">分类</string>
+    <string name="shop_balance">余额 %1$s C</string>
+    <string name="shop_owned">持有 %1$s</string>
+    <string name="shop_owned_label">持有</string>
+    <string name="shop_stock">库存</string>
+    <string name="shop_unit_price">单价</string>
+    <string name="shop_maximum">最多 %1$s</string>
+    <string name="shop_max">最大</string>
+    <string name="shop_out_of_stock">缺货</string>
+    <string name="shop_insufficient_credits">余额不足</string>
+</resources>

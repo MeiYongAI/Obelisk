@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mail_attach_add">添加附件</string>
+    <string name="mail_attach_remove">移除附件</string>
+    <string name="mail_attach_take">领取附件</string>
+    <string name="mail_attach_items">道具</string>
+    <string name="mail_attach_equipment">装备</string>
+    <string name="mail_attach_currency">货币</string>
+    <string name="mail_attach_cod">货到付款</string>
+    <string name="mail_attach_cod_zero">设为 0 可取消收款</string>
+    <string name="mail_attach_credits">金额（C）</string>
+    <string name="mail_attach_apply">确定</string>
+    <string name="mail_attach_maximum">最多 %1$s</string>
+    <string name="mail_attach_all">全部</string>
+</resources>

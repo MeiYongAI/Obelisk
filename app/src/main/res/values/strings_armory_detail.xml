@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="armory_detail_upgrade">Upgrade</string>
+    <string name="armory_detail_charms">Charms</string>
+    <string name="armory_detail_rolls">Base rolls</string>
+</resources>

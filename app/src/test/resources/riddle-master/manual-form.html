@@ -1,0 +1,44 @@
+<html><body><div id="mainpane">
+<div id="riddlemaster">
+<div id="riddleimage"><img src="./The HentaiVerse_files/riddlemaster"/></div>
+<div id="riddlemid">
+<form action="https://alt.hentaiverse.org/?s=Battle&amp;ss=ar" id="riddleform" method="post" name="riddleform">
+<div id="riddler1"><div><label class="lc"><input name="riddleanswer[]" onchange="check_submit_button()" type="checkbox" value="ts"/><span></span> Twilight Sparkle</label></div><div><label class="lc"><input name="riddleanswer[]" onchange="check_submit_button()" type="checkbox" value="ra"/><span></span> Rarity</label></div><div><label class="lc"><input name="riddleanswer[]" onchange="check_submit_button()" type="checkbox" value="fs"/><span></span> Fluttershy</label></div><div><label class="lc"><input name="riddleanswer[]" onchange="check_submit_button()" type="checkbox" value="rd"/><span></span> Rainbow Dash</label></div><div><label class="lc"><input name="riddleanswer[]" onchange="check_submit_button()" type="checkbox" value="pp"/><span></span> Pinkie Pie</label></div><div><label class="lc"><input name="riddleanswer[]" onchange="check_submit_button()" type="checkbox" value="aj"/><span></span> Applejack</label></div></div>
+<div id="riddler2">
+<div id="riddlepon"><a href="https://alt.hentaiverse.org/y/ponychart.jpg" target="ponychart"><img src="./The HentaiVerse_files/ponychartbutton.png"/></a></div>
+<div><input id="riddlesubmit" name="riddlesubmit" type="submit" value="提交答案"/></div>
+<div id="riddlecounter"><div style="position:relative; display:inline; height:12px; width:9px"><div style="float:right; height:12px; width:10px; background:transparent url(/y/font/12b.png) 0px -96px"></div></div></div>
+</div>
+</form>
+<p>请在时间限制结束之前选择你在上图认出的所有小马名称并点击“提交答案”</p>
+</div>
+</div>
+<script>
+var end_time = 1000030;
+var time_skew = 1000000 - Math.floor(Date.now() / 1000);
+var timer = setInterval(function() {
+	var time = Math.max(0, Math.ceil(end_time - Date.now() / 1000 - time_skew));
+
+	if(time < 1) {
+		clearInterval(timer);
+		e("riddleform").submit();
+	}
+
+	e("riddlecounter").innerHTML = common.get_dynamic_digit_string(time);
+}, 100);
+
+function check_submit_button() {
+	var selected_count = 0;
+
+	for(i = 0; i < document.riddleform.elements.length; i++) {
+		if(document.riddleform.elements[i].name == "riddleanswer[]") {
+			if(document.riddleform.elements[i].checked) {
+				++selected_count;
+			}
+		}
+	}
+
+	e("riddlesubmit").disabled = selected_count > 0 && selected_count < 4 ? "" : "disabled";
+}
+</script>
+</div></body></html>
