@@ -1,6 +1,5 @@
 package com.mitahv.mobile.data
 
-import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.gson.JsonParser
@@ -8,7 +7,6 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.security.MessageDigest
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
@@ -24,7 +22,7 @@ class JpxLibraryTest {
     private val bundle = """{"battleVersion":1,"setting":true,"$one":$stop,"$two":{"supports":[],"attacks":[{"type":"item"}]},"$blank":{}}"""
     private fun parse(text: String) = JpxImport.read(text.byteInputStream(), "battle.json", "Isekai")
     private fun profiles() = lib.entries().associateBy { it.mode }
-    private fun saved() = db.readableDatabase.rawQuery("SELECT slot,payload FROM applied WHERE account='sample' AND world='Isekai'",null).use { c ->
+    private fun saved() = db.readableDatabase.rawQuery("SELECT slot,applied_source FROM profiles WHERE account='sample' AND world='Isekai' AND applied_source IS NOT NULL",null).use { c ->
         buildMap { while(c.moveToNext()) put(c.getString(0), c.getString(1)) }
     }
     @After fun cleanUp() { db.close(); context.deleteDatabase(filename) }
@@ -56,30 +54,26 @@ class JpxLibraryTest {
             assertTrue(other.entries().isEmpty()); assertTrue(runCatching { other.remove(copy.id) }.isFailure)
             assertEquals(3,other.save(parse(bundle))); assertFalse(other.entries().any { it.selected })
         }
-        assertEquals("{}",saved()[one])
+        assertEquals(lib.load(copy.id).source, saved()[one])
     }
 
-    private fun seedLegacy(version: Int) {
-        context.openOrCreateDatabase(filename, Context.MODE_PRIVATE, null).use { old ->
-            old.execSQL("""CREATE TABLE configs(id INTEGER PRIMARY KEY,account TEXT,world TEXT,digest TEXT,name TEXT,modes TEXT,rules INTEGER,source TEXT,selected INTEGER)""")
-            val hash = MessageDigest.getInstance("SHA-256").digest(bundle.toByteArray()).joinToString("") { "%02x".format(it) }
-            old.execSQL("INSERT INTO configs VALUES(7,'sample','Isekai',?,'battle.json',?,2,?,1)", arrayOf(hash,"$one, $two, $blank",bundle))
-            if(version==2) {
-                old.execSQL("CREATE TABLE applied(account TEXT,world TEXT,slot TEXT,entry INTEGER,digest TEXT,payload TEXT,PRIMARY KEY(account,world,slot))")
-                for ((slot,payload) in mapOf(one to "{}","setting" to "false")) old.execSQL("INSERT INTO applied VALUES('sample','Isekai',?,7,'prior-revision',?)",arrayOf(slot,payload))
-            }
-            old.version = version
+    @Test fun staffGeneralExportCanBeImportedOnItsOwn() {
+        val staff = "Staff_General"
+        val raw = """{"battleVersion":1,"$staff":$stop,"$two":{},"globalOption":true}"""
+        for (file in listOf(raw, """{"schemaVersion":1,"kind":"battle","world":"Isekai","config":$raw}""")) {
+            lib.save(parse(file))
+            val before = profiles(); val id = before.getValue(staff).id
+            lib.update(id, JpxDocument(lib.load(id)).update(staff, "rules", lib.world) { it[0].addProperty("disabled", true) })
+            val exported = lib.load(id).source
+            val single = JpxImport.read(exported.byteInputStream(), "Staff_General.json", lib.world)
+            assertEquals(listOf(staff), single.modes); assertFalse(JpxDocument(single).config.has("globalOption"))
+            val sibling = lib.load(before.getValue(two).id)
+            lib.remove(id); assertEquals(1, lib.save(single)); assertEquals(sibling, lib.load(before.getValue(two).id))
+            val restored = profiles().getValue(staff)
+            assertFalse(restored.selected)
+            assertTrue(JpxDocument(lib.load(restored.id)).rules(staff, "rules")[0].asJsonObject["disabled"].asBoolean)
+            lib.entries().forEach { lib.remove(it.id) }
         }
-    }
-    @Test fun v2KeepsUnappliedEditsAndHistoricalActivePayloadsSeparate() {
-        seedLegacy(2); val rows = profiles(); assertEquals(3,rows.size); assertEquals(1,lib.load(rows.getValue(one).id).rules)
-        assertTrue(rows.getValue(one).changed); assertFalse(rows.getValue(two).selected)
-        assertEquals(mapOf(one to "{}","setting" to "false"),saved()); assertEquals(0,lib.save(parse(bundle)))
-        lib.remove(rows.getValue(two).id); assertEquals(mapOf(one to "{}","setting" to "false"),saved())
-    }
-    @Test fun v1SelectedPackageMigratesToAppliedIndividualModes() {
-        seedLegacy(1); assertEquals(3,lib.entries().size); assertTrue(lib.entries().all { it.selected && !it.changed })
-        assertEquals(setOf(one,two,blank,"setting"),saved().keys); assertEquals(stop,saved()[one])
     }
     @Test fun largePlusProfileRoundTripsWithoutCursorWindowTruncation() {
         val text = """{"schemaVersion":1,"kind":"battle","world":"Isekai","description":"keep","config":{"version":1,"$one":{"rules":[{"type":"custom","code":"${"測".repeat(698900)}"}]},"$blank":{}}}"""

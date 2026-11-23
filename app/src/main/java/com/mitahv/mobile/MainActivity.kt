@@ -115,7 +115,6 @@ import com.mitahv.mobile.model.BazaarSectionsPage
 import com.mitahv.mobile.model.BattleModesPage
 import com.mitahv.mobile.model.HvWorld
 import com.mitahv.mobile.model.HvSite
-import com.mitahv.mobile.model.AppSettingsAccount
 import com.mitahv.mobile.model.AppThemeMode
 import com.mitahv.mobile.model.AppLanguage
 import com.mitahv.mobile.i18n.ProvideLocalizedText
@@ -170,10 +169,8 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             isAppearanceLightNavigationBars = !dark
         }
     }
-    var hasSession by remember { mutableStateOf(cookieJar.hasCookies()) }
-    var accountRevision by remember { mutableStateOf(0) }
-    val savedAccounts = remember(accountRevision) { cookieJar.accounts() }
-    val activeAccountId = remember(accountRevision) { cookieJar.activeAccountId() }
+    var activeAccountId by remember { mutableStateOf(cookieJar.memberId()) }
+    val hasSession = activeAccountId != null
     val httpClient = remember { OkHttpClient.Builder().eventListenerFactory { HvNetworkTiming(it.request()) }.build() }
     val pageCache = remember(activeAccountId, site) {
         val cacheKey = MessageDigest.getInstance("SHA-256")
@@ -186,9 +183,8 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             scriptCache = HvScriptCaches.forAccount(File(context.cacheDir, "hv-scripts"), activeAccountId),
             pageCache = pageCache)
     }
-    var showSettings by rememberSaveable { mutableStateOf(!hasSession && savedAccounts.isNotEmpty()) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     var settingsError by remember { mutableStateOf<String?>(null) }
-    var showLogin by rememberSaveable { mutableStateOf(!hasSession && !showSettings) }
     var showWebLogin by rememberSaveable { mutableStateOf(false) }
     var loginBusy by remember { mutableStateOf(false) }
     var loginError by remember { mutableStateOf<String?>(null) }
@@ -196,8 +192,8 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var world by rememberSaveable { mutableStateOf(HvWorld.Persistent) }
     val configDb = remember { JpxLibrary.Database(context) }
     androidx.compose.runtime.DisposableEffect(configDb) { onDispose { configDb.close() } }
-    val configLibrary = remember(activeAccountId, world, hasSession) {
-        activeAccountId?.takeIf { hasSession }?.let { JpxLibrary(configDb, it, world.name) }
+    val configLibrary = remember(activeAccountId, world) {
+        activeAccountId?.let { JpxLibrary(configDb, it, world.name) }
     }
     var route by rememberSaveable { mutableStateOf(HvRoute.Character) }
     var battleSessionActive by rememberSaveable(world) { mutableStateOf(false) }
@@ -206,12 +202,12 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var currentUrl by rememberSaveable(world, site) { mutableStateOf(route.url(world, site).toString()) }
     var nativeBackStack by rememberSaveable(world, route, site) { mutableStateOf(listOf<String>()) }
     var requestState by remember { mutableStateOf<RequestState>(RequestState.Idle) }
-    val pageSnapshots = remember(world, site, activeAccountId, hasSession) { PageSnapshotCache() }
+    val pageSnapshots = remember(world, site, activeAccountId) { PageSnapshotCache() }
     // Save only the small, read-only observation; never persist raw account pages.
-    var loadout by key(world, site, activeAccountId, hasSession) {
+    var loadout by key(world, site, activeAccountId) {
         rememberSaveable { mutableStateOf<BattleLoadout?>(null) }
     }
-    var observedPersona by key(world, site, activeAccountId, hasSession) {
+    var observedPersona by key(world, site, activeAccountId) {
         rememberSaveable { mutableStateOf<String?>(null) }
     }
     var displayedRoute by remember(world, site, activeAccountId) { mutableStateOf(route) }
@@ -322,7 +318,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             if (serial == loadSerial && !battleSessionActive) loadout = null
         }
     }
-    LaunchedEffect(world, site, hasSession, activeAccountId, retryNonce) {
+    LaunchedEffect(world, site, activeAccountId, retryNonce) {
         if (!hasSession) return@LaunchedEffect
         val requestWorld = world
         val requestRoute = route
@@ -517,8 +513,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         staminaMessage = null
         characterRevision++
         retryNonce++
-        accountRevision++
-        hasSession = cookieJar.hasCookies()
+        activeAccountId = cookieJar.memberId()
     }
 
     fun retryPage() {
@@ -613,9 +608,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             try {
                 action()
                 resetSessionPage()
-                hasSession = true
                 showWebLogin = false
-                showLogin = false
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -625,19 +618,15 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             }
         }
     }
-    BackHandler(enabled = showLogin && (loginBusy || hasSession || showSettings) && !showWebLogin) {
-        if (!loginBusy) showLogin = false
-    }
     fun openSettings() {
         settingsError = null
-        accountRevision++
+        activeAccountId = cookieJar.memberId()
         showSettings = true
     }
     fun closeSettings() {
         showSettings = false
-        if (!hasSession) showLogin = true
     }
-    BackHandler(enabled = showSettings && !showLogin) { closeSettings() }
+    BackHandler(enabled = showSettings && hasSession) { closeSettings() }
 
     val colorScheme = when {
         dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && dark ->
@@ -652,7 +641,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         colorScheme = colorScheme,
         motionScheme = MotionScheme.expressive(),
     ) {
-        if (showLogin) {
+        if (!hasSession) {
             if (showWebLogin) {
                 ForumLoginScreen(
                     busy = loginBusy,
@@ -668,9 +657,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 LoginScreen(
                     busy = loginBusy,
                     error = loginError,
-                    canGoBack = hasSession || showSettings,
                     onClearError = { loginError = null },
-                    onBack = { if (!loginBusy) showLogin = false },
                     onCredentials = { username, password ->
                         val requestWorld = world
                         authenticate { loginClient.signIn(username, password, requestWorld) }
@@ -706,26 +693,15 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 onThemeChanged = { theme = it; preferences.theme = it },
                 dynamicColorEnabled = dynamicColor,
                 onDynamicColorChanged = { dynamicColor = it; preferences.dynamicColor = it },
-                accounts = savedAccounts.map { AppSettingsAccount(it.memberId, it.isActive, it.hasUsableSession) },
-                onSelectAccount = { id ->
-                    if (cookieJar.switchAccount(id)) {
-                        settingsError = null
-                        resetSessionPage()
-                    } else {
-                        loginError = context.getString(R.string.app_account_needs_login)
-                        showWebLogin = false
-                        showLogin = true
-                    }
-                },
-                onRemoveAccount = { id ->
-                    val removingActive = cookieJar.activeAccountId() == id
-                    if (cookieJar.removeAccount(id)) {
-                        if (removingActive) resetSessionPage() else accountRevision++
-                    } else settingsError = context.getString(R.string.app_account_remove_failed)
-                },
-                onAddAccount = { loginError = null; showWebLogin = false; showLogin = true },
+                memberId = activeAccountId.orEmpty(),
                 onSignOut = {
-                    if (cookieJar.logout()) resetSessionPage()
+                    if (cookieJar.logout()) {
+                        android.webkit.CookieManager.getInstance().removeAllCookies { android.webkit.CookieManager.getInstance().flush() }
+                        showSettings = false
+                        showWebLogin = false
+                        loginError = null
+                        resetSessionPage()
+                    }
                     else settingsError = context.getString(R.string.app_account_logout_failed)
                 },
                 onBack = ::closeSettings,

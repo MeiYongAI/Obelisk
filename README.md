@@ -37,19 +37,19 @@ The APK is written to `app/build/outputs/apk/debug/`. To run the local unit test
 ## Sign In and Use
 
 1. Install and open the debug build on an Android device.
-2. Sign in using the available account login, cookie import, or forum web-login option.
+2. Sign in with your credentials, imported cookies, or the forum web login. Obelisk keeps one session on this device. To use a different login, sign out in **Obelisk settings** first.
 3. Choose a world, tap a bottom navigation category, then select a page from its list. Dismiss the list to stay on the current page. Battle controls appear when the server returns an active encounter.
 
 During combat, tap **Strategy panel** in the top bar to see the detected weapon style, spell affinity, and the bonuses behind them. The gear icon opens **Obelisk settings**; use Back to return to the encounter. The panel uses a pre-battle equipment snapshot, not a request on every turn. If no snapshot is available, open Equipment before the next encounter or let the battle lobby load.
 
 ### Choose a JPX battle configuration
 
-Open **Obelisk settings → Battle configurations → Import file** and choose a JPX `.txt` or `.json` (up to 2 MiB). Check the preview and tap **Add to library**. A file such as `battle.json` is just a container: **One-handed · General**, **Two-handed · General**, and each other mode it contains appear directly in your list. Previously imported files are split automatically; nothing is applied on import and no presets are bundled.
+Open **Obelisk settings → Battle configurations → Import file** and choose a JPX `.txt` or `.json` (up to 2 MiB). Check the preview and tap **Add to library**. A file such as `battle.json` is just a container: **One-handed · General**, **Two-handed · General**, and each other mode it contains appear directly in your list. Importing does not apply rules, and no presets are bundled.
 
 - **Edit:** tap a configuration to go straight to its rules. Add or edit actions and conditions, disable rules, or use a rule’s menu to move or delete it. Edits stay in your library until you apply them.
 - **Manage variants:** different imports can supply alternatives for the same mode. Use **⋮ → Set alias** to tell them apart. Re-importing the same file restores missing modes without resetting existing edits.
 - **Apply:** choose **Apply configuration** to replace just that mode’s active rules in the current account and world. This does not run custom scripts or play battle turns automatically.
-- **Export or remove:** either action in a configuration’s **⋮** menu affects only that entry. The exported JSON contains its saved rules, including unapplied edits, and can be imported again. Removing the active variant also clears its active rules; other modes and the original file stay intact.
+- **Export or remove:** either action in a configuration’s **⋮** menu affects only that entry. The exported JSON contains its saved rules, including unapplied edits, and can be imported again. Removing the active variant also clears its active rules; other modes and the original file stay intact. For example, choose **Staff · General → ⋮ → Export configuration** to save only that profile. Use **Import file** to add it back on its own; no full battle file is required.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 

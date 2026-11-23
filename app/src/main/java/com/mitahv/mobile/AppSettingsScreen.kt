@@ -4,18 +4,14 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BrightnessAuto
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
@@ -30,9 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
-import com.mitahv.mobile.model.AppSettingsAccount
 import com.mitahv.mobile.model.AppThemeMode
 import com.mitahv.mobile.data.JpxLibrary
 import androidx.compose.material.icons.filled.FolderOpen
@@ -50,10 +44,7 @@ internal fun AppSettingsScreen(
     onLanguageChanged: (AppLanguage) -> Unit,
     dynamicColorEnabled: Boolean,
     onDynamicColorChanged: (Boolean) -> Unit,
-    accounts: List<AppSettingsAccount>,
-    onSelectAccount: (String) -> Unit,
-    onRemoveAccount: (String) -> Unit,
-    onAddAccount: () -> Unit,
+    memberId: String,
     onSignOut: () -> Unit,
     onBack: () -> Unit,
     busy: Boolean = false,
@@ -68,9 +59,7 @@ internal fun AppSettingsScreen(
     var sitePickerOpen by rememberSaveable { mutableStateOf(false) }
     var themePickerOpen by rememberSaveable { mutableStateOf(false) }
     var languagePickerOpen by rememberSaveable { mutableStateOf(false) }
-    var removeId by rememberSaveable { mutableStateOf<String?>(null) }
     var signOutOpen by rememberSaveable { mutableStateOf(false) }
-    val activeAccount = accounts.firstOrNull { it.active }
     BackHandler(onBack = onBack)
 
     Scaffold(
@@ -145,19 +134,15 @@ internal fun AppSettingsScreen(
                         }
                     }
                 }
-                item("accounts-heading") { AppSettingsHeading(stringResource(R.string.app_accounts)) }
-                items(accounts, key = { "account:${it.id}" }) { account ->
-                    AppSettingsAccountRow(account = account, busy = busy,
-                        onSelect = { onSelectAccount(account.id) },
-                        onRemove = { removeId = account.id },
-                        onRelogin = onAddAccount,
-                        onSignOut = { signOutOpen = true })
-                }
-                item("add-account") {
-                    FilledTonalButton(onClick = onAddAccount, enabled = !busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                        Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
-                        Text(stringResource(R.string.app_add_account))
+                item("session") {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Filled.Person, null)
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.app_current_account), style = MaterialTheme.typography.labelMedium)
+                            Text(memberId, style = MaterialTheme.typography.bodyLarge)
+                        }
+                        TextButton(onClick = { signOutOpen = true }, enabled = !busy) { Text(stringResource(R.string.app_logout)) }
                     }
                 }
             }
@@ -191,21 +176,10 @@ internal fun AppSettingsScreen(
             if (AppLanguage.entries[index] != language) onLanguageChanged(AppLanguage.entries[index])
         },
     )
-    accounts.firstOrNull { it.id == removeId }?.let { account ->
-        AlertDialog(
-            onDismissRequest = { removeId = null },
-            title = { Text(stringResource(R.string.app_remove_account_question)) },
-            text = { Text(stringResource(R.string.app_remove_account_body, account.id)) },
-            confirmButton = { TextButton(onClick = { removeId = null; onRemoveAccount(account.id) }, enabled = !busy) {
-                Text(stringResource(R.string.app_remove), color = MaterialTheme.colorScheme.error)
-            } },
-            dismissButton = { TextButton(onClick = { removeId = null }) { Text(stringResource(R.string.app_cancel)) } },
-        )
-    }
-    if (signOutOpen && activeAccount != null) AlertDialog(
+    if (signOutOpen) AlertDialog(
         onDismissRequest = { signOutOpen = false },
         title = { Text(stringResource(R.string.app_sign_out_question)) },
-        text = { Text(activeAccount.id) },
+        text = { Text(memberId) },
         confirmButton = { TextButton(onClick = { signOutOpen = false; onSignOut() }, enabled = !busy) { Text(stringResource(R.string.app_sign_out)) } },
         dismissButton = { TextButton(onClick = { signOutOpen = false }) { Text(stringResource(R.string.app_cancel)) } },
     )
@@ -235,53 +209,6 @@ private fun AppSettingChoiceRow(title: String, value: String, icon: ImageVector,
                 Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun AppSettingsAccountRow(
-    account: AppSettingsAccount,
-    busy: Boolean,
-    onSelect: () -> Unit,
-    onRemove: () -> Unit,
-    onRelogin: () -> Unit,
-    onSignOut: () -> Unit,
-) {
-    var menuOpen by rememberSaveable(account.id) { mutableStateOf(false) }
-    val currentAccountLabel = stringResource(R.string.app_current_account)
-    Surface(shape = MaterialTheme.shapes.extraLarge,
-        color = if (account.active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = if (account.active) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface) {
-        Row(Modifier.fillMaxWidth().padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Row(
-                Modifier.weight(1f).heightIn(min = 80.dp)
-                    .selectable(selected = account.active, enabled = !busy && (!account.active || !account.usable),
-                        role = Role.RadioButton, onClick = onSelect)
-                    .semantics { if (account.active) stateDescription = currentAccountLabel }
-                    .padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Icon(Icons.Filled.Person, null)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(account.id, style = MaterialTheme.typography.titleMedium)
-                    if (!account.usable) Text(stringResource(R.string.app_needs_login), style = MaterialTheme.typography.bodyMedium)
-                }
-                if (account.active) Icon(Icons.Filled.Check, null)
-            }
-            Box {
-                IconButton(onClick = { menuOpen = true }, enabled = !busy) {
-                    Icon(Icons.Filled.MoreVert, stringResource(R.string.app_account_options, account.id))
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    if (account.active) DropdownMenuItem(text = { Text(stringResource(R.string.app_sign_in_again)) }, enabled = !busy,
-                        onClick = { menuOpen = false; onRelogin() })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.app_remove)) }, enabled = !busy, onClick = { menuOpen = false; onRemove() })
-                    if (account.active) DropdownMenuItem(text = { Text(stringResource(R.string.app_logout)) }, enabled = !busy,
-                        onClick = { menuOpen = false; onSignOut() })
-                }
-            }
         }
     }
 }

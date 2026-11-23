@@ -75,9 +75,7 @@ import com.mitahv.mobile.i18n.messageText
 internal fun LoginScreen(
     busy: Boolean,
     error: String?,
-    canGoBack: Boolean,
     onClearError: () -> Unit,
-    onBack: () -> Unit,
     onCredentials: (String, String) -> Unit,
     onCookieImport: (String) -> Unit,
     onWebLogin: () -> Unit,
@@ -106,16 +104,10 @@ internal fun LoginScreen(
     }
 
     BackHandler(enabled = busy) { }
-    BackHandler(enabled = canGoBack && !busy && !cookieDialog, onBack = onBack)
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_login)) },
-                navigationIcon = {
-                    if (canGoBack) IconButton(onClick = onBack, enabled = !busy) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back))
-                    }
-                },
             )
         },
     ) { padding ->
