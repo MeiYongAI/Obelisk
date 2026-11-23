@@ -44,9 +44,11 @@ During combat, tap **Strategy panel** in the top bar to see the detected weapon 
 
 ### Choose a JPX battle configuration
 
-Open **Obelisk settings → Battle configurations → Import file** before or during a fight. Choose a JPX battle export (`.txt` or `.json`, up to 2 MiB), review its modes and rule count, then tap **Save and select**. No presets are bundled. Tap a saved configuration to switch to it; use its overflow menu to remove it without deleting the original file.
+Open **Obelisk settings → Battle configurations → Import file**, choose a JPX battle `.txt` or `.json` (up to 2 MiB), then tap **Add to library**. Importing opens the file without applying it. No presets are bundled.
 
-Configurations are local to the current account and world. The selected name appears in the combat strategy panel; selecting it does not execute scripts or play turns automatically.
+- **Inspect and edit:** tap a saved file, then a mode to see its ordered rules. Tap a rule to edit its action and conditions. You can also add rules, disable them, or use the row menu to move or delete them. Saving changes edits the library copy only.
+- **Apply:** use **Apply configuration** for the whole file or **Apply this mode** for one mode. Confirm to update the active snapshot in the current account and world. Other modes stay intact. This does not execute custom scripts or play battle turns automatically.
+- **Export:** use **⋮ → Export file** in the library, or the export icon inside a file or mode. Pick a destination in the Android file picker. The JSON contains the saved edits, whether applied or not. Exporting a mode excludes unrelated global settings and modes.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 

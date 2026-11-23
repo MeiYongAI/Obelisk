@@ -40,10 +40,10 @@ internal fun BattleTopBar(onStrategy: () -> Unit, onSettings: () -> Unit, settin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BattleStrategySheet(loadout: BattleLoadout?, configLibrary: JpxLibrary?, onDismiss: () -> Unit) {
-    val selection = produceState<String?>(null, configLibrary) {
+    val selection = produceState<List<String>>(emptyList(), configLibrary) {
         value = withContext(Dispatchers.IO) {
-            try { configLibrary?.entries()?.firstOrNull { it.selected }?.name }
-            catch (_: android.database.SQLException) { null }
+            try { configLibrary?.entries()?.filter { it.selected }?.map { it.name }.orEmpty() }
+            catch (_: android.database.SQLException) { emptyList() }
         }
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberBottomSheetState(
@@ -54,7 +54,7 @@ internal fun BattleStrategySheet(loadout: BattleLoadout?, configLibrary: JpxLibr
         }
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            selection.value?.let { Text(stringResource(R.string.jpx_battle_selection, it), style = MaterialTheme.typography.labelLarge) }
+            selection.value.forEach { Text(stringResource(R.string.jpx_applied_label, it), style = MaterialTheme.typography.labelLarge) }
             if (loadout == null) {
                 Text(stringResource(R.string.strategy_no_snapshot), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.strategy_no_snapshot_hint), style = MaterialTheme.typography.bodyMedium)

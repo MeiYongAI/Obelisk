@@ -1,0 +1,342 @@
+<resources>
+    <string-array name="jpx_field_keys" translatable="false">
+        <item>target</item>
+        <item>spellSupport</item>
+        <item>item</item>
+        <item>toggle</item>
+        <item>stop</item>
+        <item>smartDebuff</item>
+        <item>spellDebuff</item>
+        <item>spellDamage</item>
+        <item>skill</item>
+        <item>normalAttack</item>
+        <item>kamisamaniNattaHi</item>
+        <item>priorityRule</item>
+        <item>toggled</item>
+        <item>customMessage</item>
+        <item>targetCount</item>
+        <item>bottomUp</item>
+        <item>tailSkip</item>
+        <item>maxAtFirst</item>
+        <item>minMonstersLeft</item>
+        <item>offset</item>
+        <item>matched</item>
+        <item>world</item>
+        <item>pLevel</item>
+        <item>pMaxSpellType</item>
+        <item>battleTypes</item>
+        <item>difficulty</item>
+        <item>roundCurrent</item>
+        <item>roundLeft</item>
+        <item>roundTotal</item>
+        <item>floor</item>
+        <item>pActionCooldown</item>
+        <item>pActionHistory</item>
+        <item>pActionCounts</item>
+        <item>pTotalActionCounts</item>
+        <item>pHP</item>
+        <item>pMP</item>
+        <item>pSP</item>
+        <item>pOC</item>
+        <item>pSpiritStatus</item>
+        <item>pEffects</item>
+        <item>pIgnoredEffects</item>
+        <item>pEffectStacks</item>
+        <item>monsters</item>
+        <item>activeMonsters</item>
+        <item>defeatedMonsters</item>
+        <item>bosses</item>
+        <item>activeBosses</item>
+        <item>defeatedBosses</item>
+        <item>mLevel</item>
+        <item>mWithoutEffects</item>
+        <item>tName</item>
+        <item>tTypes</item>
+        <item>tClasses</item>
+        <item>tPowerLevel</item>
+        <item>tIndex</item>
+        <item>tHP</item>
+        <item>tMP</item>
+        <item>tSP</item>
+        <item>tEffects</item>
+        <item>tIgnoredEffects</item>
+        <item>tEffectStacks</item>
+        <item>tDaysSinceUpdate</item>
+        <item>supports</item>
+        <item>attacks</item>
+        <item>rules</item>
+    </string-array>
+    <string-array name="jpx_field_labels">
+        <item>Target</item>
+        <item>Support spell</item>
+        <item>Item</item>
+        <item>Toggle</item>
+        <item>Stop</item>
+        <item>Smart debuff</item>
+        <item>Debuff spell</item>
+        <item>Damage spell</item>
+        <item>Skill</item>
+        <item>Normal attack</item>
+        <item>Kamisama ni Natta Hi</item>
+        <item>Target priority</item>
+        <item>Toggled</item>
+        <item>Stop message</item>
+        <item>Targets</item>
+        <item>Bottom to top (J → A)</item>
+        <item>Trim targets (+N: skip last N; −N: keep first N)</item>
+        <item>Cast limit before 2 defeats</item>
+        <item>Unlimited casts at ≤ N monsters left (after 2 defeats)</item>
+        <item>Target offset</item>
+        <item>Matching targets</item>
+        <item>World</item>
+        <item>Player level</item>
+        <item>Strongest spell type</item>
+        <item>Battle types</item>
+        <item>Difficulty</item>
+        <item>Current round</item>
+        <item>Rounds left</item>
+        <item>Total rounds</item>
+        <item>Tower floor</item>
+        <item>Action cooldowns</item>
+        <item>Recent actions</item>
+        <item>Uses this round</item>
+        <item>Uses this battle</item>
+        <item>Player HP %</item>
+        <item>Player MP %</item>
+        <item>Player SP %</item>
+        <item>Player OC</item>
+        <item>Spirit stance</item>
+        <item>Player effects</item>
+        <item>Excluded player effects</item>
+        <item>Player effect stacks</item>
+        <item>Total monsters</item>
+        <item>Monsters left</item>
+        <item>Monsters defeated</item>
+        <item>Total bosses</item>
+        <item>Bosses left</item>
+        <item>Bosses defeated</item>
+        <item>Monster level</item>
+        <item>Monsters missing effects</item>
+        <item>Monster name</item>
+        <item>Monster types</item>
+        <item>Monster classes</item>
+        <item>Monster power level</item>
+        <item>Monster position</item>
+        <item>Monster HP</item>
+        <item>Monster MP</item>
+        <item>Monster SP</item>
+        <item>Monster effects</item>
+        <item>Excluded monster effects</item>
+        <item>Monster effect stacks</item>
+        <item>Days since monster update</item>
+        <item>Supports</item>
+        <item>Attacks</item>
+        <item>Rules</item>
+    </string-array>
+    <string-array name="jpx_option_keys" translatable="false">
+        <item>Top Down</item>
+        <item>Bottom Up</item>
+        <item>Current HP Low to High</item>
+        <item>Current HP High to Low</item>
+        <item>Current HP Percent Low to High</item>
+        <item>Current HP Percent High to Low</item>
+        <item>Spirit</item>
+        <item>Defend</item>
+        <item>Focus</item>
+        <item>Mystic Gem</item>
+        <item>Health Gem</item>
+        <item>Health Draught</item>
+        <item>Health Potion</item>
+        <item>Health Elixir</item>
+        <item>Mana Gem</item>
+        <item>Mana Draught</item>
+        <item>Mana Potion</item>
+        <item>Mana Elixir</item>
+        <item>Spirit Gem</item>
+        <item>Spirit Draught</item>
+        <item>Spirit Potion</item>
+        <item>Spirit Elixir</item>
+        <item>Last Elixir</item>
+        <item>Infusion of Flames</item>
+        <item>Infusion of Frost</item>
+        <item>Infusion of Storms</item>
+        <item>Infusion of Lightning</item>
+        <item>Infusion of Divinity</item>
+        <item>Infusion of Darkness</item>
+        <item>Scroll of Swiftness</item>
+        <item>Scroll of Protection</item>
+        <item>Scroll of the Avatar</item>
+        <item>Scroll of Absorption</item>
+        <item>Scroll of Shadows</item>
+        <item>Scroll of Life</item>
+        <item>Scroll of the Gods</item>
+        <item>Caffeinated Candy</item>
+        <item>Energy Drink</item>
+        <item>Flower Vase</item>
+        <item>Bubble-Gum</item>
+        <item>Shield Bash</item>
+        <item>Vital Strike</item>
+        <item>Merciful Blow</item>
+        <item>Iris Strike</item>
+        <item>Backstab</item>
+        <item>Frenzied Blows</item>
+        <item>Great Cleave</item>
+        <item>Rending Blow</item>
+        <item>Shatter Strike</item>
+        <item>Skyward Sword</item>
+        <item>Concussive Strike</item>
+        <item>Flee</item>
+        <item>Scan</item>
+        <item>FUS RO DAH</item>
+        <item>Orbital Friendship Cannon</item>
+        <item>Cure</item>
+        <item>Full-Cure</item>
+        <item>Regen</item>
+        <item>Haste</item>
+        <item>Protection</item>
+        <item>Absorb</item>
+        <item>Shadow Veil</item>
+        <item>Spark of Life</item>
+        <item>Spirit Shield</item>
+        <item>Heartseeker</item>
+        <item>Arcane Focus</item>
+        <item>T1</item>
+        <item>T2</item>
+        <item>T3</item>
+        <item>Fiery Blast</item>
+        <item>Inferno</item>
+        <item>Flames of Loki</item>
+        <item>Freeze</item>
+        <item>Blizzard</item>
+        <item>Fimbulvetr</item>
+        <item>Gale</item>
+        <item>Downburst</item>
+        <item>Storms of Njord</item>
+        <item>Shockblast</item>
+        <item>Chained Lightning</item>
+        <item>Wrath of Thor</item>
+        <item>Smite</item>
+        <item>Banishment</item>
+        <item>Paradise Lost</item>
+        <item>Corruption</item>
+        <item>Disintegrate</item>
+        <item>Ragnarok</item>
+        <item>Drain</item>
+        <item>Weaken</item>
+        <item>Imperil</item>
+        <item>Slow</item>
+        <item>Sleep</item>
+        <item>Confuse</item>
+        <item>Blind</item>
+        <item>Silence</item>
+        <item>Immobilize</item>
+        <item>Channeling</item>
+        <item>Regeneration</item>
+        <item>Replenishment</item>
+        <item>Refreshment</item>
+        <item>Hastened</item>
+        <item>Absorbing Ward</item>
+        <item>Infused Flames</item>
+        <item>Infused Frost</item>
+        <item>Infused Storm</item>
+        <item>Infused Lightning</item>
+        <item>Infused Divinity</item>
+        <item>Infused Darkness</item>
+        <item>Energized</item>
+        <item>Sleeper Imprint</item>
+        <item>Kicking Ass</item>
+        <item>Overwhelming Strikes</item>
+        <item>Ether Tap</item>
+        <item>Cloak of the Fallen</item>
+        <item>Blessing of the RiddleMaster</item>
+        <item>Defending</item>
+        <item>Focusing</item>
+        <item>Normal</item>
+        <item>Rare</item>
+        <item>Legendary</item>
+        <item>Ultimate</item>
+        <item>Arena300</item>
+        <item>Arena400</item>
+        <item>Arena500</item>
+        <item>Arthropod</item>
+        <item>Avion</item>
+        <item>Beast</item>
+        <item>Celestial</item>
+        <item>Daimon</item>
+        <item>Dragonkin</item>
+        <item>Elemental</item>
+        <item>Giant</item>
+        <item>Humanoid</item>
+        <item>Mechanoid</item>
+        <item>Reptilian</item>
+        <item>Sprite</item>
+        <item>Undead</item>
+        <item>Arena</item>
+        <item>Encounter</item>
+        <item>Colosseum</item>
+        <item>Battle1000</item>
+        <item>Item</item>
+        <item>Tower</item>
+        <item>Vital Theft</item>
+        <item>Ether Theft</item>
+        <item>Spirit Theft</item>
+        <item>Weakened</item>
+        <item>Imperiled</item>
+        <item>Slowed</item>
+        <item>Asleep</item>
+        <item>Confused</item>
+        <item>Blinded</item>
+        <item>Silenced</item>
+        <item>Immobilized</item>
+        <item>Stunned</item>
+        <item>Penetrated Armor</item>
+        <item>Bleeding Wound</item>
+        <item>Spreading Poison</item>
+        <item>Coalesced Mana</item>
+        <item>Searing Skin</item>
+        <item>Freezing Limbs</item>
+        <item>Turbulent Air</item>
+        <item>Deep Burns</item>
+        <item>Breached Defense</item>
+        <item>Blunted Attack</item>
+        <item>Burning Soul</item>
+        <item>Ripened Soul</item>
+        <item>Fury of the Sisters</item>
+        <item>Lamentations of the Future</item>
+        <item>Screams of the Past</item>
+        <item>Wails of the Present</item>
+        <item>world</item>
+        <item>Persistent</item>
+        <item>Isekai</item>
+        <item>pMaxSpellType</item>
+        <item>fire</item>
+        <item>cold</item>
+        <item>elec</item>
+        <item>wind</item>
+        <item>holy</item>
+        <item>dark</item>
+        <item>difficulty</item>
+        <item>Hard</item>
+        <item>Nightmare</item>
+        <item>Hell</item>
+        <item>Nintendo</item>
+        <item>IWBTH</item>
+        <item>PFUDOR</item>
+        <item>battleTypes</item>
+        <item>tTypes</item>
+        <item>tClasses</item>
+        <item>pActionHistory</item>
+        <item>pActionCounts</item>
+        <item>pTotalActionCounts</item>
+        <item>pActionCooldown</item>
+        <item>Attack</item>
+        <item>pEffects</item>
+        <item>pIgnoredEffects</item>
+        <item>pEffectStacks</item>
+        <item>tEffects</item>
+        <item>tIgnoredEffects</item>
+        <item>tEffectStacks</item>
+        <item>mWithoutEffects</item>
+    </string-array>
+    <item type="array" name="jpx_option_labels">@array/jpx_option_keys</item>
+</resources>
