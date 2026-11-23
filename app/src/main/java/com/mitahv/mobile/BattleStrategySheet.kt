@@ -1,5 +1,6 @@
 package com.mitahv.mobile
 
+import com.mitahv.mobile.data.BattleStrategy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -7,11 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.produceState
-import com.mitahv.mobile.data.JpxEntry
-import com.mitahv.mobile.data.JpxLibrary
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,13 +36,7 @@ internal fun BattleTopBar(onStrategy: () -> Unit, onSettings: () -> Unit, settin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BattleStrategySheet(loadout: BattleLoadout?, configLibrary: JpxLibrary?, onDismiss: () -> Unit) {
-    val selection = produceState<List<JpxEntry>>(emptyList(), configLibrary) {
-        value = withContext(Dispatchers.IO) {
-            try { configLibrary?.entries()?.filter { it.selected }.orEmpty() }
-            catch (_: android.database.SQLException) { emptyList() }
-        }
-    }
+internal fun BattleStrategySheet(loadout: BattleLoadout?, strategy: BattleStrategy, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -55,7 +45,8 @@ internal fun BattleStrategySheet(loadout: BattleLoadout?, configLibrary: JpxLibr
         }
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            selection.value.forEach { Text(stringResource(R.string.jpx_applied_label, profileLabel(it, it.nickname)), style = MaterialTheme.typography.labelLarge) }
+            StrategySummary(strategy)
+
             if (loadout == null) {
                 Text(stringResource(R.string.strategy_no_snapshot), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.strategy_no_snapshot_hint), style = MaterialTheme.typography.bodyMedium)

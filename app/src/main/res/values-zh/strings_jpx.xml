@@ -24,12 +24,11 @@
     <string name="jpx_scene_colosseum">浴血擂台</string>
     <string name="jpx_scene_item">道具界</string>
     <string name="jpx_library_save">加入配置库</string>
-    <string name="jpx_preview_hint">每个模式会在列表中成为一项独立配置。导入不会应用，也不会覆盖已有修改。</string>
+    <string name="jpx_preview_hint">每个模式单独加入列表。开启自动应用时，匹配的配置即可使用；已有修改不会被覆盖。</string>
     <string name="jpx_apply">应用配置</string>
-    <string name="jpx_apply_body">在%2$s应用“%1$s”？只替换该模式的生效规则，其他模式不变，不会自动出招。</string>
-    <string name="jpx_applied">已应用</string>
+    <string name="jpx_apply_body">在%2$s手动使用“%1$s”？将应用已保存的修改，并固定这项策略，直到重新开启自动应用。</string>
+    <string name="jpx_applied">已选策略</string>
     <string name="jpx_modified">有改动待应用</string>
-    <string name="jpx_stored">未应用</string>
     <string name="jpx_export">导出配置</string>
     <string name="jpx_export_mode">导出此配置</string>
     <string name="jpx_export_ok">文件已导出</string>
@@ -63,7 +62,6 @@
     <string name="jpx_keybind">快捷键：%1$s</string>
     <string name="jpx_options_rule">第 %1$d 条规则的选项</string>
     <string name="jpx_fraction">按比例填写：0.3 表示 30%。</string>
-    <string name="jpx_applied_label">已应用：%1$s</string>
     <string name="jpx_cond_count">%1$d 个条件</string>
     <string name="jpx_add_value">尚未选择匹配项</string>
     <string name="jpx_pick_values">选择匹配项</string>
@@ -72,4 +70,25 @@
         <item quantity="other">已添加 %1$d 项配置</item>
     </plurals>
     <string name="jpx_already_imported">这些配置已在列表中，已有修改保持不变。</string>
+    <string name="jpx_detection">当前识别：%1$s · %2$s</string>
+    <string name="jpx_no_field">未进入战场</string>
+    <string name="jpx_current">本场生效</string>
+    <string name="jpx_preview_strategy">策略预览</string>
+    <string name="jpx_pick_manual">请从列表手动应用一项配置</string>
+    <string name="jpx_no_match">无匹配配置</string>
+    <string name="jpx_auto">自动应用</string>
+    <string name="jpx_manual">手动固定</string>
+    <string name="jpx_detected_badge">当前识别</string>
+    <string name="jpx_reason_assigned">使用本战场指定配置</string>
+    <string name="jpx_reason_exact">自动匹配本战场</string>
+    <string name="jpx_reason_general">使用同流派通用配置</string>
+    <string name="jpx_reason_assigned_general">使用该流派指定的通用策略</string>
+    <string name="jpx_auto_hint">优先用本战场的配置，没有规则时用同流派的通用配置。</string>
+    <string name="jpx_manual_hint">手动模式：流派或战场变化时，不会替换已选策略。</string>
+    <string name="jpx_routes">战场策略</string>
+    <string name="jpx_routes_hint">先选流派，再点战场指定配置。战场分配只在自动应用时生效。</string>
+    <string name="jpx_route_style">配置流派</string>
+    <string name="jpx_route_auto">自动：%1$s</string>
+    <string name="jpx_route_bound">指定：%1$s</string>
+    <string name="jpx_auto_match">按模式自动匹配</string>
 </resources>

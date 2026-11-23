@@ -1,5 +1,6 @@
 package com.mitahv.mobile
 
+import com.mitahv.mobile.data.BattleStrategy
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
@@ -36,6 +37,7 @@ import com.mitahv.mobile.i18n.messageText
 @Composable
 internal fun AppSettingsScreen(
     configLibrary: JpxLibrary?,
+    strategy: BattleStrategy,
     siteIsAlt: Boolean,
     onSiteChanged: (Boolean) -> Unit,
     themeMode: AppThemeMode,
@@ -53,7 +55,7 @@ internal fun AppSettingsScreen(
 ) {
     var showConfigs by rememberSaveable { mutableStateOf(false) }
     if (showConfigs && configLibrary != null) {
-        key(configLibrary) { BattleConfigsScreen(configLibrary) { showConfigs = false } }
+        key(configLibrary) { BattleConfigsScreen(configLibrary, strategy) { showConfigs = false } }
         return
     }
     var sitePickerOpen by rememberSaveable { mutableStateOf(false) }

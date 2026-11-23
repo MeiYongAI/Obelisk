@@ -24,12 +24,11 @@
     <string name="jpx_scene_colosseum">Ring of Blood</string>
     <string name="jpx_scene_item">Item World</string>
     <string name="jpx_library_save">Add to library</string>
-    <string name="jpx_preview_hint">Each mode becomes a separate configuration. Importing does not apply rules or overwrite your edits.</string>
+    <string name="jpx_preview_hint">Each mode is added separately. Automatic selection can use matching imports. Existing edits stay unchanged.</string>
     <string name="jpx_apply">Apply configuration</string>
-    <string name="jpx_apply_body">Apply %1$s in %2$s? Only the active rules for this mode are replaced. No battle actions will run.</string>
-    <string name="jpx_applied">Applied</string>
+    <string name="jpx_apply_body">Pin %1$s in %2$s? This applies its saved edits and switches to manual until you turn automatic selection back on.</string>
+    <string name="jpx_applied">Selected strategy</string>
     <string name="jpx_modified">Saved changes to apply</string>
-    <string name="jpx_stored">In library</string>
     <string name="jpx_export">Export configuration</string>
     <string name="jpx_export_mode">Export this configuration</string>
     <string name="jpx_export_ok">File exported</string>
@@ -63,7 +62,6 @@
     <string name="jpx_keybind">Key: %1$s</string>
     <string name="jpx_options_rule">Options for rule %1$d</string>
     <string name="jpx_fraction">Use a ratio: 0.3 means 30%.</string>
-    <string name="jpx_applied_label">Applied: %1$s</string>
     <string name="jpx_cond_count">%1$d conditions</string>
     <string name="jpx_add_value">No values selected</string>
     <string name="jpx_pick_values">Choose values</string>
@@ -73,4 +71,25 @@
         <item quantity="other">Added %1$d configurations</item>
     </plurals>
     <string name="jpx_already_imported">Already in your list. Existing edits were kept.</string>
+    <string name="jpx_detection">Detected: %1$s · %2$s</string>
+    <string name="jpx_no_field">Outside battle</string>
+    <string name="jpx_current">In use this battle</string>
+    <string name="jpx_preview_strategy">Strategy preview</string>
+    <string name="jpx_pick_manual">Apply a configuration from the list</string>
+    <string name="jpx_no_match">No matching configuration</string>
+    <string name="jpx_auto">Apply automatically</string>
+    <string name="jpx_manual">Manually pinned</string>
+    <string name="jpx_detected_badge">Detected mode</string>
+    <string name="jpx_reason_assigned">Assigned to this battlefield</string>
+    <string name="jpx_reason_exact">Battlefield match</string>
+    <string name="jpx_reason_general">General for this style</string>
+    <string name="jpx_reason_assigned_general">Assigned general strategy</string>
+    <string name="jpx_auto_hint">Use the battlefield strategy first, then the general strategy for your style.</string>
+    <string name="jpx_manual_hint">The selected strategy stays fixed when your style or battlefield changes.</string>
+    <string name="jpx_routes">Battlefield strategies</string>
+    <string name="jpx_routes_hint">Choose a style, then tap a battlefield to assign one of its configurations. Assignments take effect in automatic mode.</string>
+    <string name="jpx_route_style">Configure style</string>
+    <string name="jpx_route_auto">Automatic: %1$s</string>
+    <string name="jpx_route_bound">Assigned: %1$s</string>
+    <string name="jpx_auto_match">Match automatically</string>
 </resources>

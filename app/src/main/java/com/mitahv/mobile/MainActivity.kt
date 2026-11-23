@@ -102,6 +102,8 @@ import com.mitahv.mobile.data.BattleModesParser
 import com.mitahv.mobile.model.ArenaChallenge
 import com.mitahv.mobile.model.BattleAction
 import com.mitahv.mobile.model.BattleContinuation
+import com.mitahv.mobile.model.BattleScene
+import com.mitahv.mobile.model.style
 import com.mitahv.mobile.model.BattleLoadout
 import com.mitahv.mobile.model.BattlePage
 import com.mitahv.mobile.model.RiddlePage
@@ -197,6 +199,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
     var route by rememberSaveable { mutableStateOf(HvRoute.Character) }
     var battleSessionActive by rememberSaveable(world) { mutableStateOf(false) }
+    var battleScene by key(world, site, activeAccountId) { rememberSaveable { mutableStateOf<BattleScene?>(null) } }
     var battleReturnUrl by rememberSaveable(world) { mutableStateOf<String?>(null) }
     var battleReturnRoute by rememberSaveable(world) { mutableStateOf<HvRoute?>(null) }
     var currentUrl by rememberSaveable(world, site) { mutableStateOf(route.url(world, site).toString()) }
@@ -261,8 +264,10 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         observeEquipment(parsedPage)
         if (parsedPage is RequestState.BattleReady || parsedPage is RequestState.RiddleReady) {
             pageSnapshots.clear()
+            if (parsedPage is RequestState.BattleReady) battleScene = parsedPage.page.scene ?: battleScene
             battleSessionActive = true
         } else if (battleSessionActive) {
+            battleScene = null
             battleSessionActive = false
             battleReturnUrl = null
             battleReturnRoute = null
@@ -304,11 +309,14 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             if (pageSource == source) nativeError = context.getString(R.string.app_details_failed, failureMessage(error, context))
         }
     }
-    // Warm up in the lobby, not on the battle-start or turn submission path.
+    // Observe in the lobby or in settings before a battle, never on turn submission.
     val inBattleLobby = !battleSessionActive && !pageLoading &&
         (requestState is RequestState.ArenaReady || requestState is RequestState.BattleModeReady)
-    LaunchedEffect(client, world, inBattleLobby) {
-        if (!hasSession || !inBattleLobby) return@LaunchedEffect
+    val settingsNeedLoadout = showSettings && !battleSessionActive && !pageLoading && loadout == null &&
+        requestState !is RequestState.Loading && requestState !is RequestState.Idle
+    val observeLoadout = inBattleLobby || settingsNeedLoadout
+    LaunchedEffect(client, world, observeLoadout) {
+        if (!hasSession || !observeLoadout) return@LaunchedEffect
         val serial = loadSerial
         try {
             val observed = client.fetchBattleLoadout(world)
@@ -492,6 +500,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
 
     fun resetSessionPage() {
         observedPersona = null
+        battleScene = null
         loadout = null
         battleSessionActive = false
         battleReturnUrl = null
@@ -579,6 +588,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                         // endpoint already returned the panes that changed; sending the
                         // result through acceptPage would parse the whole page again and
                         // briefly present it as a normal page load.
+                        updated.scene?.let { battleScene = it }
                         requestState = RequestState.BattleReady(updated)
                         nativeError = null
                     } else {
@@ -628,6 +638,10 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
     BackHandler(enabled = showSettings && hasSession) { closeSettings() }
 
+    val scene = if (battleSessionActive) battleScene else if (inBattleLobby) BattleScene.fromLobby(displayedRoute) else null
+    val detectedStyle = remember(loadout) { loadout?.style }
+    val strategy = key(configLibrary) { rememberStrategy(configLibrary, detectedStyle, scene, battleSessionActive) }
+
     val colorScheme = when {
         dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && dark ->
             dynamicDarkColorScheme(context)
@@ -672,6 +686,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         } else if (showSettings) {
             AppSettingsScreen(
                 configLibrary = configLibrary,
+                strategy = strategy,
                 siteIsAlt = site == HvSite.Alt,
                 onSiteChanged = { useAlt ->
                     site = if (useAlt) HvSite.Alt else HvSite.Main
@@ -714,7 +729,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 if (battleSessionActive) BattleSessionScreen(
                     state = requestState,
                     loadout = loadout,
-                    configLibrary = configLibrary,
+                    strategy = strategy,
                     onSettings = ::openSettings,
                     settingsEnabled = !pageLoading && !nativeBusy && !challengeBusy &&
                         requestState !is RequestState.BattleBusy && requestState !is RequestState.Loading,
@@ -793,6 +808,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                         val requestRoute = route
                         battleReturnUrl = currentUrl
                         battleReturnRoute = route
+                        battleScene = BattleScene.fromLobby(route)
                         battleSessionActive = true
                         challengeBusy = true
                         scope.launch {
@@ -815,6 +831,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                         }
                         battleReturnUrl = currentUrl
                         battleReturnRoute = route
+                        battleScene = BattleScene.fromLobby(route)
                         battleSessionActive = true
                         requestState = RequestState.Loading
                         executeNativeAction(action)

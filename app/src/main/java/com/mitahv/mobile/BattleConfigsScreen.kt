@@ -29,11 +29,13 @@ import androidx.compose.ui.semantics.*
 import androidx.compose.ui.unit.dp
 import com.google.gson.JsonParseException
 import com.mitahv.mobile.data.*
+import com.mitahv.mobile.model.BattleScene
+import com.mitahv.mobile.model.BattleStyle
 import kotlinx.coroutines.*
 import java.io.IOException
 
 @Composable
-internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
+internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, onBack: () -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val resolver = context.contentResolver
@@ -44,7 +46,9 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
     var exportId by rememberSaveable { mutableStateOf<Long?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    var entries by remember { mutableStateOf(emptyList<JpxEntry>()) }
+    val catalog = strategy.catalog
+    val entries = catalog?.entries.orEmpty()
+    var configuringRoutes by rememberSaveable { mutableStateOf(false) }
     var draft by remember { mutableStateOf<JpxDraft?>(null) }
     var deleting by remember { mutableStateOf<JpxEntry?>(null) }
     var renaming by remember { mutableStateOf<JpxEntry?>(null) }
@@ -62,10 +66,8 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
         catch (_: Exception) { error = R.string.jpx_io }
         finally { busy = false }
     }
-    suspend fun reload() { entries = withContext(Dispatchers.IO) { library.entries() } }
-    fun change(block: () -> Unit) { scope.launch { perform { withContext(Dispatchers.IO) { block() }; reload() } } }
+    fun change(block: () -> Unit) { scope.launch { perform { withContext(Dispatchers.IO) { block() } } } }
     LaunchedEffect(library, openId) { perform {
-        reload()
         val id = openId
         document = if (id == null) null else withContext(Dispatchers.IO) { JpxDocument(library.load(id)) }
     } }
@@ -96,11 +98,12 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
         } }
     }
     BackHandler(onBack = onBack)
-    val variants = remember(entries) { entries.groupingBy { it.mode }.eachCount() }
-    val sameOrigins = remember(entries) { entries.groupingBy { it.mode to it.origin }.eachCount() }
-    fun variant(entry: JpxEntry): String = entry.nickname.ifEmpty {
-        if ((variants[entry.mode] ?: 0) < 2) ""
-        else if ((sameOrigins[entry.mode to entry.origin] ?: 0) > 1) "${entry.origin} #${entry.id}" else entry.origin
+    fun variant(entry: JpxEntry) = catalog?.variant(entry).orEmpty()
+    if (configuringRoutes && catalog != null) {
+        StrategyRoutesScreen(catalog, strategy.style, library.world, busy, error, onBack = { configuringRoutes = false }) { style, scene, id ->
+            change { library.assign(style, scene, id) }
+        }
+        return
     }
     val entry = entries.find { it.id == openId }; val doc = document
     if (entry != null && doc != null) JpxConfigDetails(doc, variant(entry).ifEmpty { stringResource(R.string.jpx_rows,entry.rules) }, busy, error,
@@ -109,17 +112,19 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
             document = withContext(Dispatchers.IO) {
                 val edited = doc.update(entry.mode,group,library.world,edit)
                 library.update(entry.id,edited); JpxDocument(edited)
-            }; reload(); done(); notify(R.string.jpx_edit_saved)
+            }; done(); notify(R.string.jpx_edit_saved)
         } }
     } else ConfigLibraryContent(
-        world = library.world, entries = entries, busy = busy, error = error, onBack = onBack, listState = listState, variant = ::variant,
+        strategy = strategy, onRoutes = { configuringRoutes = true },
+        onAutomatic = { enabled -> change { library.setAutomatic(enabled, strategy.match?.entry?.id) } },
+        world = library.world, entries = entries, busy = busy || catalog == null, error = if (catalog?.readFailed == true) R.string.jpx_io else error, onBack = onBack, listState = listState, variant = ::variant,
         onImport = { picker.launch(arrayOf("*/*")) }, onOpen = { document=null; openId=it.id }, onApply = { applyId=it.id },
         onExport=::export, onRename={ renaming=it }, onRemove = { deleting = it },
     )
     val applying = entries.find { it.id == applyId }
     if (applying != null) AlertDialog(onDismissRequest={applyId=null},title={Text(stringResource(R.string.jpx_apply))},
         text={ Text(stringResource(R.string.jpx_apply_body, profileLabel(applying, variant(applying)), optionLabel(library.world))) },
-        confirmButton={TextButton(enabled=!busy,onClick={applyId=null;scope.launch { perform { withContext(Dispatchers.IO) { library.apply(applying.id) }; reload();notify(R.string.jpx_application_ok) } }}){Text(stringResource(R.string.jpx_apply))}},
+        confirmButton={TextButton(enabled=!busy,onClick={applyId=null;scope.launch { perform { withContext(Dispatchers.IO) { library.apply(applying.id) };notify(R.string.jpx_application_ok) } }}){Text(stringResource(R.string.jpx_apply))}},
         dismissButton={TextButton(onClick={applyId=null}){Text(stringResource(R.string.game_ui_cancel))}})
     draft?.let { candidate -> AlertDialog(onDismissRequest = { draft = null }, title = { Text(stringResource(R.string.jpx_preview)) },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -133,7 +138,6 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
             draft = null
             scope.launch { perform {
                 val added = withContext(Dispatchers.IO) { library.save(candidate) }
-                reload()
                 listState.scrollToItem(0)
                 val message = if (added == 0) resources.getString(R.string.jpx_already_imported) else resources.getQuantityString(R.plurals.jpx_imported, added, added)
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -155,6 +159,7 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
 
 @Composable
 private fun ConfigLibraryContent(
+    strategy: BattleStrategy, onRoutes: () -> Unit, onAutomatic: (Boolean) -> Unit,
     world: String, entries: List<JpxEntry>, busy: Boolean, error: Int,
     listState: LazyListState, variant: (JpxEntry) -> String, onRename: (JpxEntry) -> Unit,
     onBack: () -> Unit, onImport: () -> Unit, onOpen: (JpxEntry) -> Unit, onApply: (JpxEntry) -> Unit, onExport: (JpxEntry) -> Unit, onRemove: (JpxEntry) -> Unit,
@@ -181,6 +186,11 @@ private fun ConfigLibraryContent(
                 if (error != 0) item {
                     Text(stringResource(error), Modifier.padding(vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Polite }, color = colors.error)
                 }
+                item {
+                    StrategySummary(strategy)
+                    StrategyControls(automatic = strategy.catalog?.manual != true, enabled = !busy && strategy.catalog?.readFailed == false,
+                        onAutomatic = onAutomatic, onRoutes = onRoutes)
+                }
                 if (entries.isEmpty() && !busy) item {
                     Surface(shape = MaterialTheme.shapes.large, color = colors.surfaceContainerLow) {
                         Column(Modifier.fillMaxWidth().padding(20.dp)) {
@@ -198,7 +208,7 @@ private fun ConfigLibraryContent(
                         style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant)
                 }
                 items(entries, key = { it.id }) { entry ->
-                    ConfigRow(entry, variant(entry), !busy, onRename = { onRename(entry) }, onOpen = { onOpen(entry) }, onApply={onApply(entry)}, onExport={onExport(entry)}, onRemove = { onRemove(entry) })
+                    ConfigRow(entry, variant(entry), strategy.detected(entry), strategy.match?.entry?.id == entry.id, !busy, onRename = { onRename(entry) }, onOpen = { onOpen(entry) }, onApply={onApply(entry)}, onExport={onExport(entry)}, onRemove = { onRemove(entry) })
                 }
             }
         }
@@ -206,19 +216,22 @@ private fun ConfigLibraryContent(
 }
 
 @Composable
-private fun ConfigRow(entry: JpxEntry, variant: String, enabled: Boolean, onRename: () -> Unit, onOpen: () -> Unit, onApply: () -> Unit, onExport: () -> Unit, onRemove: () -> Unit) {
+private fun ConfigRow(entry: JpxEntry, variant: String, detected: Boolean, active: Boolean, enabled: Boolean, onRename: () -> Unit, onOpen: () -> Unit, onApply: () -> Unit, onExport: () -> Unit, onRemove: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
-    Surface(shape = MaterialTheme.shapes.medium, color = if (entry.selected) colors.secondaryContainer else colors.surface) {
+    Surface(shape = MaterialTheme.shapes.medium, color = if (active) colors.secondaryContainer else colors.surface) {
         Row(Modifier.fillMaxWidth().padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(Modifier.weight(1f).clickable(enabled=enabled,onClick=onOpen).heightIn(min = 72.dp).padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(if(entry.selected) Icons.Filled.CheckCircle else Icons.Filled.Description,null)
+                Icon(if(active) Icons.Filled.CheckCircle else Icons.Filled.Description,null)
                 Column {
                     Text(modeLabel(entry.mode), style = MaterialTheme.typography.titleMedium)
                     if (variant.isNotBlank()) Text(variant, style=MaterialTheme.typography.bodySmall, maxLines=1, overflow=TextOverflow.Ellipsis)
-                    val status = stringResource(if(entry.changed) R.string.jpx_modified else if(entry.selected) R.string.jpx_applied else R.string.jpx_stored)
-                    Text("${stringResource(R.string.jpx_rows, entry.rules)} · $status", style = MaterialTheme.typography.bodySmall)
+                    val status = listOfNotNull(stringResource(R.string.jpx_rows, entry.rules),
+                        if (detected) stringResource(R.string.jpx_detected_badge) else null,
+                        if (active) stringResource(R.string.jpx_applied) else null,
+                        if (entry.changed) stringResource(R.string.jpx_modified) else null)
+                    Text(status.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                 }
             }
             Box {
@@ -242,26 +255,7 @@ internal fun profileLabel(entry: JpxEntry, variant: String): String =
 
 @Composable
 internal fun modeLabel(key: String): String {
-    val family = key.substringBeforeLast('_')
-    val label = when (family) {
-        "OneHanded", "1H_Mage" -> R.string.strategy_one
-        "TwoHanded", "2H_Mage" -> R.string.strategy_two
-        "DualWielding", "DW_Mage" -> R.string.strategy_dual
-        "NitenIchiryu", "NI_Mage" -> R.string.strategy_niten
-        "Staff" -> R.string.strategy_staff
-        "Unarmed" -> R.string.strategy_unarmed
-        else -> return key
-    }
-    val style = if (family.endsWith("_Mage")) stringResource(R.string.strategy_mage, stringResource(label)) else stringResource(label)
-    val scene = when (key.substringAfterLast('_')) {
-        "Tower" -> R.string.game_ui_tower
-        "Arena" -> R.string.jpx_scene_arena
-        "Encounter" -> R.string.jpx_scene_encounter
-        "Colosseum" -> R.string.jpx_scene_colosseum
-        "Item" -> R.string.jpx_scene_item
-        "Battle1000" -> R.string.game_ui_grindfest
-        "General" -> R.string.jpx_scene_general
-        else -> return key
-    }
-    return stringResource(R.string.jpx_mode_label, style, stringResource(scene))
+    val style = BattleStyle.entries.find { it.key == key.substringBeforeLast('_') } ?: return key
+    val scene = BattleScene.entries.find { it.name == key.substringAfterLast('_') } ?: return key
+    return stringResource(R.string.jpx_mode_label, styleLabel(style), stringResource(scene.label))
 }

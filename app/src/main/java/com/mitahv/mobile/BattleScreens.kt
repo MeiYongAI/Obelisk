@@ -1,5 +1,6 @@
 package com.mitahv.mobile
 
+import com.mitahv.mobile.data.BattleStrategy
 import androidx.compose.ui.res.stringResource
 import com.mitahv.mobile.i18n.gameText
 import com.mitahv.mobile.i18n.gameActionText
@@ -81,7 +82,7 @@ import okhttp3.HttpUrl
 internal fun BattleSessionScreen(
     state: RequestState,
     loadout: BattleLoadout?,
-    configLibrary: com.mitahv.mobile.data.JpxLibrary?,
+    strategy: BattleStrategy,
     onSettings: () -> Unit,
     settingsEnabled: Boolean,
     loading: Boolean,
@@ -161,7 +162,7 @@ internal fun BattleSessionScreen(
             }
         }
     }
-    if (strategyOpen) BattleStrategySheet(loadout, configLibrary) { strategyOpen = false }
+    if (strategyOpen) BattleStrategySheet(loadout, strategy) { strategyOpen = false }
 }
 
 @Composable

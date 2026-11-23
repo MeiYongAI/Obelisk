@@ -6,6 +6,7 @@ import com.mitahv.mobile.model.BattleActionOption
 import com.mitahv.mobile.model.BattleItemText
 import com.mitahv.mobile.model.BattleEnemy
 import com.mitahv.mobile.model.BattlePage
+import com.mitahv.mobile.model.BattleScene
 import com.mitahv.mobile.model.BattleVital
 import com.mitahv.mobile.model.BattleEffect
 import com.mitahv.mobile.model.BattleControl
@@ -88,6 +89,7 @@ internal object BattlePageParser {
 
         val completion = document.selectFirst("#pane_completion")
 
+        val log = document.select("#textlog tr").map { it.hvText() }.filter(String::isNotBlank)
         return BattlePage(
             token = token,
             playerVitals = vitals(document.selectFirst("#pane_vitals")),
@@ -96,7 +98,8 @@ internal object BattlePageParser {
             skills = groupedActions(document.selectFirst("#table_skills")).ifEmpty { document.select("#pane_skill .btsd").mapNotNull(::actionOption) },
             spells = groupedActions(document.selectFirst("#table_magic")).ifEmpty { document.select("#pane_magic .btsd").mapNotNull(::actionOption) },
             items = items(document, itemText),
-            log = document.select("#textlog tr").map { it.hvText() }.filter(String::isNotBlank),
+            log = log,
+            scene = BattleScene.fromLog(log),
             completion = completion.hvText(),
             experienceBarWidth = document.selectFirst("#expbar")?.let(::barWidth) ?: 0f,
             playerEffects = effects(document.selectFirst("#pane_effects")),
@@ -233,6 +236,7 @@ internal object BattlePageParser {
             controls = pane("pane_action")?.let(::controls) ?: current.controls,
             experienceBarWidth = response.optDouble("exp", Double.NaN).takeIf { it.isFinite() && it >= 0 }?.toFloat() ?: current.experienceBarWidth,
             log = log,
+            scene = current.scene ?: BattleScene.fromLog(log),
             isComplete = completion != null,
             completion = completionText,
             completionLines = completion?.select("#btcp > div")?.map { it.hvText() }.orEmpty()

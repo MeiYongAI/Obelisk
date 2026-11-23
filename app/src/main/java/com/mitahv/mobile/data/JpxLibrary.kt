@@ -4,13 +4,13 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.mitahv.mobile.model.BattleScene
+import com.mitahv.mobile.model.BattleStyle
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
-
-internal data class JpxEntry(
-    val id: Long, val mode: String, val origin: String, val nickname: String,
-    val rules: Int, val selected: Boolean, val changed: Boolean,
-)
 
 internal class JpxLibrary(private val db: Database, private val account: String, val world: String) {
     class Database(context: Context, name: String = "battle-profiles.db") : SQLiteOpenHelper(context.applicationContext, name, null, 1) {
@@ -19,10 +19,21 @@ internal class JpxLibrary(private val db: Database, private val account: String,
                 id INTEGER PRIMARY KEY, account TEXT NOT NULL, world TEXT NOT NULL,
                 import_hash TEXT NOT NULL, origin TEXT NOT NULL, slot TEXT NOT NULL,
                 nickname TEXT NOT NULL DEFAULT '', rules INTEGER NOT NULL,
-                source TEXT NOT NULL, applied_source TEXT,
+                source TEXT NOT NULL,
                 UNIQUE(account, world, import_hash, slot))""")
-            db.execSQL("""CREATE UNIQUE INDEX active_mode ON profiles(account, world, slot)
-                WHERE applied_source IS NOT NULL""")
+        }
+
+        override fun onConfigure(db: SQLiteDatabase) = db.setForeignKeyConstraintsEnabled(true)
+
+        // Routing and unpublished edits are separate from the imported profile format.
+        override fun onOpen(db: SQLiteDatabase) {
+            db.execSQL("""CREATE TABLE IF NOT EXISTS profile_edits(
+                profile INTEGER PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+                source TEXT NOT NULL, rules INTEGER NOT NULL)""")
+            db.execSQL("""CREATE TABLE IF NOT EXISTS strategy_routes(
+                account TEXT NOT NULL, world TEXT NOT NULL, target TEXT NOT NULL,
+                profile INTEGER REFERENCES profiles(id) ON DELETE SET NULL,
+                PRIMARY KEY(account,world,target))""")
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) =
@@ -33,25 +44,62 @@ internal class JpxLibrary(private val db: Database, private val account: String,
     private val owned = "account=? AND world=?"
     private val row = "$owned AND id=?"
 
-    fun entries(): List<JpxEntry> = db.readableDatabase.rawQuery("""SELECT id, slot, origin, nickname, rules,
-        applied_source IS NOT NULL, applied_source <> source FROM profiles WHERE $owned
-        ORDER BY (rules=0), (slot NOT GLOB '*_General'), id DESC""", scope).use { c ->
-        buildList {
-            while (c.moveToNext()) add(JpxEntry(c.getLong(0), c.getString(1), c.getString(2), c.getString(3),
-                c.getInt(4), c.getInt(5) != 0, c.getInt(6) != 0))
-        }
+    private val changes = MutableStateFlow(0L)
+    val revision = changes.asStateFlow()
+
+    fun catalog(): JpxCatalog = read(::readCatalog)
+
+    /** Read the chosen rules and routing metadata in the same transaction, outside the turn loop. */
+    fun strategy(style: BattleStyle?, scene: BattleScene?, inBattle: Boolean): BattleStrategy = read { sql ->
+        val catalog = readCatalog(sql)
+        val match = catalog.resolve(style, scene)
+        val published = if (inBattle && match != null) load(match.entry.id, published = true) else null
+        BattleStrategy(catalog, style, scene, inBattle, match, published)
     }
 
-    fun load(id: Long): JpxDraft {
+    private fun <T> read(action: (SQLiteDatabase) -> T): T {
         val sql = db.readableDatabase
+        sql.beginTransactionNonExclusive()
+        try { return action(sql).also { sql.setTransactionSuccessful() } } finally { sql.endTransaction() }
+    }
+
+    private fun readCatalog(sql: SQLiteDatabase): JpxCatalog {
+        val entries = sql.rawQuery("""SELECT id, slot, origin, nickname, COALESCE(e.rules,p.rules), p.rules,
+            e.profile IS NOT NULL FROM profiles p LEFT JOIN profile_edits e ON e.profile=p.id WHERE $owned
+            ORDER BY (COALESCE(e.rules,p.rules)=0), (slot NOT GLOB '*_General'), id DESC""", scope).use { c ->
+            buildList {
+                while (c.moveToNext()) add(JpxEntry(c.getLong(0), c.getString(1), c.getString(2), c.getString(3),
+                    c.getInt(4), c.getInt(5), c.getInt(6) != 0))
+            }
+        }
+        var manual = false
+        var manualId: Long? = null
+        val routes = buildMap {
+            sql.rawQuery("SELECT target,profile FROM strategy_routes WHERE $owned", scope).use { c ->
+                while (c.moveToNext()) {
+                    val target = c.getString(0)
+                    val id = if (c.isNull(1)) null else c.getLong(1)
+                    if (target == MANUAL) { manual = true; manualId = id }
+                    else if (id != null) put(target, id)
+                }
+            }
+        }
+        return JpxCatalog(entries, manual, manualId, routes)
+    }
+
+    fun load(id: Long, published: Boolean = false): JpxDraft {
+        val sql = db.readableDatabase
+        val source = if (published) "p.source" else "COALESCE(e.source,p.source)"
+        val count = if (published) "p.rules" else "COALESCE(e.rules,p.rules)"
+        val from = "FROM profiles p LEFT JOIN profile_edits e ON e.profile=p.id WHERE $row"
         val args = scope + id.toString()
-        return sql.rawQuery("SELECT origin, slot, rules, length(CAST(source AS BLOB)) FROM profiles WHERE $row", args).use { c ->
+        return sql.rawQuery("SELECT origin, slot, $count, length(CAST($source AS BLOB)) $from", args).use { c ->
             check(c.moveToFirst())
             // A valid import can exceed one Android CursorWindow row. Read UTF-8 in byte chunks.
             val length = c.getInt(3)
             val out = ByteArrayOutputStream(length)
             while (out.size() < length) {
-                sql.rawQuery("SELECT substr(CAST(source AS BLOB),?,262144) FROM profiles WHERE $row",
+                sql.rawQuery("SELECT substr(CAST($source AS BLOB),?,262144) $from",
                     arrayOf((out.size() + 1).toString()) + args).use { chunk ->
                     check(chunk.moveToFirst())
                     val bytes = chunk.getBlob(0)
@@ -79,30 +127,65 @@ internal class JpxLibrary(private val db: Database, private val account: String,
         missing.size
     }
 
-    fun update(id: Long, draft: JpxDraft) {
-        val values = ContentValues().apply { put("source", draft.source); put("rules", draft.rules) }
-        check(db.writableDatabase.update("profiles", values, "$row AND slot=?", scope + id.toString() + draft.modes.single()) == 1)
+    fun update(id: Long, draft: JpxDraft) = transaction { sql ->
+        val args = scope + id.toString()
+        require(sql.rawQuery("SELECT 1 FROM profiles WHERE $row AND slot=?", args + draft.modes.single()).use { it.moveToFirst() })
+        sql.execSQL("INSERT OR REPLACE INTO profile_edits(profile,source,rules) VALUES (?,?,?)", arrayOf<Any>(id, draft.source, draft.rules))
+        sql.execSQL("DELETE FROM profile_edits WHERE profile=? AND source=(SELECT source FROM profiles WHERE id=?)", arrayOf(id,id))
     }
 
-    fun rename(id: Long, nickname: String) {
+    fun rename(id: Long, nickname: String) = transaction { sql ->
         val values = ContentValues().apply { put("nickname", nickname.trim().take(80)) }
-        check(db.writableDatabase.update("profiles", values, row, scope + id.toString()) == 1)
+        check(sql.update("profiles", values, row, scope + id.toString()) == 1)
     }
 
+    /** Publish only this draft, and pin it independently of detected style and scene. */
     fun apply(id: Long) = transaction { sql ->
         val args = scope + id.toString()
-        val slot = sql.rawQuery("SELECT slot FROM profiles WHERE $row", args).use { c ->
-            check(c.moveToFirst()); c.getString(0)
-        }
-        sql.execSQL("UPDATE profiles SET applied_source=NULL WHERE $owned AND slot=? AND applied_source IS NOT NULL", scope + slot)
-        sql.execSQL("UPDATE profiles SET applied_source=source WHERE $row", args)
+        require(sql.rawQuery("SELECT 1 FROM profiles WHERE $row", args).use { it.moveToFirst() })
+        sql.execSQL("""UPDATE profiles SET source=(SELECT source FROM profile_edits WHERE profile=id),
+            rules=(SELECT rules FROM profile_edits WHERE profile=id) WHERE $row AND id IN (SELECT profile FROM profile_edits)""", args)
+        sql.delete("profile_edits", "profile=?", arrayOf(id.toString()))
+        // Publishing an empty draft makes it ineligible for automatic assignments.
+        sql.execSQL("DELETE FROM strategy_routes WHERE $owned AND target<>? AND profile=? AND (SELECT rules FROM profiles WHERE id=?)=0",
+            scope + arrayOf(MANUAL, id.toString(), id.toString()))
+        setRoute(sql, MANUAL, id)
     }
 
-    fun remove(id: Long) { check(db.writableDatabase.delete("profiles", row, scope + id.toString()) == 1) }
+    fun setAutomatic(automatic: Boolean, current: Long? = null) = transaction { sql ->
+        if (automatic) sql.delete("strategy_routes", "$owned AND target=?", scope + MANUAL)
+        else if (current != null) {
+            require(sql.rawQuery("SELECT 1 FROM profiles WHERE $row", scope + current.toString()).use { it.moveToFirst() })
+            setRoute(sql, MANUAL, current)
+        } else sql.execSQL("INSERT OR IGNORE INTO strategy_routes(account,world,target) VALUES (?,?,?)", scope + MANUAL)
+        Unit
+    }
+
+    fun assign(style: BattleStyle, scene: BattleScene, id: Long?) = transaction { sql ->
+        val target = style.slot(scene)
+        if (id == null) sql.delete("strategy_routes", "$owned AND target=?", scope + target)
+        else {
+            val mode = sql.rawQuery("SELECT slot FROM profiles WHERE $row AND rules>0", scope + id.toString()).use { c ->
+                require(c.moveToFirst()); c.getString(0)
+            }
+            require(mode.substringBeforeLast('_') == style.key)
+            setRoute(sql, target, id)
+        }
+        Unit
+    }
+
+    private fun setRoute(sql: SQLiteDatabase, target: String, id: Long) = sql.execSQL(
+        "INSERT OR REPLACE INTO strategy_routes(account,world,target,profile) VALUES (?,?,?,?)", arrayOf<Any>(account, world, target, id))
+
+    fun remove(id: Long) = transaction { sql -> check(sql.delete("profiles", row, scope + id.toString()) == 1) }
 
     private fun <T> transaction(action: (SQLiteDatabase) -> T): T {
         val sql = db.writableDatabase
         sql.beginTransaction()
-        try { return action(sql).also { sql.setTransactionSuccessful() } } finally { sql.endTransaction() }
+        val result = try { action(sql).also { sql.setTransactionSuccessful() } } finally { sql.endTransaction() }
+        changes.update { it + 1 }
+        return result
     }
+
+    private companion object { const val MANUAL = "@manual" }
 }

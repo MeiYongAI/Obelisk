@@ -338,5 +338,6 @@
         <item>tEffectStacks</item>
         <item>mWithoutEffects</item>
     </string-array>
-    <item type="array" name="jpx_option_labels">@array/jpx_option_keys</item>
+    <!-- No translated overrides: optionLabel falls back to the original JPX value. -->
+    <string-array name="jpx_option_labels" />
 </resources>

@@ -30,6 +30,7 @@ data class BattlePage(
     val log: List<String>,
     val completion: String,
     val experienceBarWidth: Float,
+    val scene: BattleScene? = null,
     val turnKey: Any = Any(),
     val playerEffects: List<BattleEffect> = emptyList(),
     val controls: List<BattleControl> = emptyList(),

@@ -1,5 +1,6 @@
 package com.mitahv.mobile.data
 
+import com.mitahv.mobile.model.BattleScene
 import com.mitahv.mobile.model.HvRoute
 import com.mitahv.mobile.model.HvSite
 import com.mitahv.mobile.model.HvWorld
@@ -23,6 +24,16 @@ class BattlePageParserTest {
 
         assertEquals(listOf("22412", "5005", "2168", "0"), requireNotNull(updated).playerVitals.map { it.value })
         assertFalse(BattlePageParser.hasActionUpdate(JSONObject()))
+    }
+
+    @Test fun sceneSurvivesLogEvictionAndCanBeRecognizedFromAnAjaxRound() {
+        val ring = BattlePageParser.parseBattle(activeFixture("ring-of-blood"))
+        assertEquals(BattleScene.Colosseum, ring.scene)
+        val log = org.json.JSONArray().apply { repeat(101) { put(JSONObject().put("t", "An ordinary turn")) } }
+        val next = applyTurn(ring, JSONObject().put("textlog", log))
+        assertFalse(next.log.any { it.startsWith("Initializing") }); assertEquals(ring.scene, next.scene)
+        val init = org.json.JSONArray().put(JSONObject().put("t", "Initializing Item World (Round 2 / 5) ..."))
+        assertEquals(BattleScene.Item, applyTurn(next.copy(scene = null), JSONObject().put("textlog", init)).scene)
     }
 
     @Test fun consecutivePaneUpdatesMatchFullPageMergeAndReuseUnchangedLists() {
