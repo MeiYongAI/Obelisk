@@ -3,6 +3,7 @@ package com.mitahv.mobile.data
 import com.mitahv.mobile.model.ArenaChallenge
 import com.mitahv.mobile.model.ArenaPage
 import com.mitahv.mobile.model.BattleActionOption
+import com.mitahv.mobile.model.BattleItemText
 import com.mitahv.mobile.model.BattleEnemy
 import com.mitahv.mobile.model.BattlePage
 import com.mitahv.mobile.model.BattleVital
@@ -67,91 +68,105 @@ internal object BattlePageParser {
         supplementalScripts: List<String> = emptyList(),
         world: HvWorld = HvWorld.Persistent,
         currentUrl: HttpUrl = HvRoute.Battle.url(world),
-    ): BattlePage = parseBattle(Jsoup.parse(html), html, supplementalScripts, world, currentUrl)
+    ): BattlePage = parseBattle(Jsoup.parse(html), supplementalScripts, world, currentUrl)
 
-    fun parseBattle(document: Document, snapshotHtml: String,
+    fun parseBattle(document: Document,
         supplementalScripts: List<String> = emptyList(), world: HvWorld = HvWorld.Persistent,
         currentUrl: HttpUrl = HvRoute.Battle.url(world)): BattlePage {
         require(document.selectFirst("#battle_main") != null) { "Active battle page was not found" }
-        val scripts = document.select("script").joinToString("\n") { it.data() + it.html() }
+        val scripts = document.select("script").joinToString("\n") { it.data() }
         val itemCatalog = HvScriptObjectParser.parse(scripts + "\n" + supplementalScripts.joinToString("\n"), "dynjs_itemc")
+        val itemText = itemCatalog?.let { catalog ->
+            catalog.keys().asSequence().associateWith { id ->
+                val info = catalog.optJSONObject(id)
+                BattleItemText(info?.optString("n").orEmpty(), info?.optString("q").orEmpty())
+            }
+        }.orEmpty()
         val token = requireNotNull(BATTLE_TOKEN.find(scripts)?.groupValues?.get(1)) {
             "Active battle token was not found"
         }
 
-        val vitalPane = document.selectFirst("#pane_vitals")
-        val utilitarianVitals = vitalPane?.selectFirst("#dvbh") != null
-        val vitalPrefix = if (utilitarianVitals) "d" else ""
-        // hvb.css defines both Standard and Utilitarian bars. Their IDs and
-        // full widths differ; the health readout can use either hb or hd.
-        val vitals = listOfNotNull(
-            vitalPane?.selectFirst("#${vitalPrefix}vrhb, #${vitalPrefix}vrhd")?.let { value ->
-                BattleVital("Health", value.hvText(), document.selectFirst("#${vitalPrefix}vbh img")
-                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 496f) } ?: 0f)
-            },
-            vitalPane?.selectFirst("#${vitalPrefix}vrm")?.let { value ->
-                BattleVital("Mana", value.hvText(), document.selectFirst("#${vitalPrefix}vbm img")
-                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 207f) } ?: 0f)
-            },
-            vitalPane?.selectFirst("#${vitalPrefix}vrs")?.let { value ->
-                BattleVital("Spirit", value.hvText(), document.selectFirst("#${vitalPrefix}vbs img")
-                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 207f) } ?: 0f)
-            },
-            vitalPane?.selectFirst("#dvrc")?.let { value ->
-                BattleVital("Overcharge", value.hvText(), document.selectFirst("#dvbc img")
-                    ?.let { barFraction(it, 414f) } ?: 0f)
-            } ?: if (!utilitarianVitals) standardOvercharge(vitalPane) else null,
-        )
         val completion = document.selectFirst("#pane_completion")
 
         return BattlePage(
             token = token,
-            playerVitals = vitals,
-            enemies = document.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
-                val target = enemy.id().substringAfter("mkey_").toIntOrNull() ?: return@mapNotNull null
-                val level = enemy.selectFirst(".btm2").hvText()
-                BattleEnemy(
-                    target = target,
-                    name = enemy.selectFirst(".btm3").hvText(),
-                    level = level,
-                    healthFraction = enemy.selectFirst(".chbd img[alt=health]")
-                        ?.let { barFraction(it, 120f) } ?: 0f,
-                    magicFraction = enemy.selectFirst(".chbd img[alt=magic]")?.let { barFraction(it, 120f) },
-                    spiritFraction = enemy.selectFirst(".chbd img[alt=spirit]")?.let { barFraction(it, 120f) },
-                    effects = effects(enemy.selectFirst(".btm6")),
-                    targetable = enabled(enemy) && COMMIT_TARGET.find(enemy.attr("onclick"))?.groupValues?.get(1)?.toIntOrNull() == target,
-                )
-            },
+            playerVitals = vitals(document.selectFirst("#pane_vitals")),
+            enemies = enemies(document),
             quickActions = document.select("#quickbar > div").mapNotNull(::actionOption),
             skills = groupedActions(document.selectFirst("#table_skills")).ifEmpty { document.select("#pane_skill .btsd").mapNotNull(::actionOption) },
             spells = groupedActions(document.selectFirst("#table_magic")).ifEmpty { document.select("#pane_magic .btsd").mapNotNull(::actionOption) },
-            items = document.select("#pane_item .bti3 > div, #pane_item [id^=ikey_]").mapNotNull { item ->
-                val itemId = BattleTooltipParser.arguments(item.attr("onmouseover"), "set_infopane_item")?.firstOrNull()
-                val metadata = itemId?.let { itemCatalog?.optJSONObject(it) }
-                actionOption(item)?.let { option -> option.copy(
-                    name = metadata?.optString("n")?.takeIf(String::isNotBlank) ?: option.name,
-                    description = metadata?.optString("q")?.let { Jsoup.parseBodyFragment(it).text() }.orEmpty(),
-                    group = item.closest(".bti1")?.selectFirst(".bti2").hvText().let {
-                    when { it.startsWith("S") -> "Scrolls"; it.startsWith("N") -> "Infusions"; else -> "Items" }
-                }) }
-            },
+            items = items(document, itemText),
             log = document.select("#textlog tr").map { it.hvText() }.filter(String::isNotBlank),
             completion = completion.hvText(),
             experienceBarWidth = document.selectFirst("#expbar")?.let(::barWidth) ?: 0f,
-            snapshotHtml = snapshotHtml,
             playerEffects = effects(document.selectFirst("#pane_effects")),
-            controls = document.select("#pane_action [id^=ckey_]").mapNotNull { control ->
-                val mode = control.id().substringAfter("ckey_")
-                if (mode !in setOf("attack", "skill", "items", "spirit", "defend", "focus")) return@mapNotNull null
-                BattleControl(mode, enabled(control) && CONTROL_ACTION.find(control.attr("onclick"))?.groupValues?.get(1) == mode,
-                    control.attr("src").substringBefore('?').endsWith("_s.png"))
-            },
+            controls = controls(document),
             isComplete = completion?.let { it.attr("data-obelisk-complete") == "true" || it.html().isNotBlank() } == true,
             continuation = completion?.let { continuation(it, world, currentUrl) },
             completionLines = completion?.select("#btcp > div")?.map { it.hvText() }
                 .orEmpty().filter(String::isNotBlank).ifEmpty { listOfNotNull(completion.hvText().takeIf(String::isNotBlank)) },
-            supplementalScripts = supplementalScripts,
+            itemText = itemText,
         )
+    }
+
+    private fun vitals(vitalPane: Element?): List<BattleVital> {
+        if (vitalPane == null) return emptyList()
+        val utilitarianVitals = vitalPane.selectFirst("#dvbh") != null
+        val vitalPrefix = if (utilitarianVitals) "d" else ""
+        // hvb.css defines both Standard and Utilitarian bars. Their IDs and
+        // full widths differ; the health readout can use either hb or hd.
+        return listOfNotNull(
+            vitalPane.selectFirst("#${vitalPrefix}vrhb, #${vitalPrefix}vrhd")?.let { value ->
+                BattleVital("Health", value.hvText(), vitalPane.selectFirst("#${vitalPrefix}vbh img")
+                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 496f) } ?: 0f)
+            },
+            vitalPane.selectFirst("#${vitalPrefix}vrm")?.let { value ->
+                BattleVital("Mana", value.hvText(), vitalPane.selectFirst("#${vitalPrefix}vbm img")
+                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 207f) } ?: 0f)
+            },
+            vitalPane.selectFirst("#${vitalPrefix}vrs")?.let { value ->
+                BattleVital("Spirit", value.hvText(), vitalPane.selectFirst("#${vitalPrefix}vbs img")
+                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 207f) } ?: 0f)
+            },
+            vitalPane.selectFirst("#dvrc")?.let { value ->
+                BattleVital("Overcharge", value.hvText(), vitalPane.selectFirst("#dvbc img")
+                    ?.let { barFraction(it, 414f) } ?: 0f)
+            } ?: if (!utilitarianVitals) standardOvercharge(vitalPane) else null,
+        )
+    }
+
+    private fun enemies(root: Element) = root.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
+        val target = enemy.id().substringAfter("mkey_").toIntOrNull() ?: return@mapNotNull null
+        val level = enemy.selectFirst(".btm2").hvText()
+        BattleEnemy(
+            target = target,
+            name = enemy.selectFirst(".btm3").hvText(),
+            level = level,
+            healthFraction = enemy.selectFirst(".chbd img[alt=health]")
+                ?.let { barFraction(it, 120f) } ?: 0f,
+            magicFraction = enemy.selectFirst(".chbd img[alt=magic]")?.let { barFraction(it, 120f) },
+            spiritFraction = enemy.selectFirst(".chbd img[alt=spirit]")?.let { barFraction(it, 120f) },
+            effects = effects(enemy.selectFirst(".btm6")),
+            targetable = enabled(enemy) && COMMIT_TARGET.find(enemy.attr("onclick"))?.groupValues?.get(1)?.toIntOrNull() == target,
+        )
+    }
+
+    private fun items(root: Element, itemText: Map<String, BattleItemText>) = root.select("#pane_item .bti3 > div, #pane_item [id^=ikey_]").mapNotNull { item ->
+        val itemId = BattleTooltipParser.arguments(item.attr("onmouseover"), "set_infopane_item")?.firstOrNull()
+        val metadata = itemId?.let(itemText::get)
+        actionOption(item)?.let { option -> option.copy(
+            name = metadata?.name?.takeIf(String::isNotBlank) ?: option.name,
+            description = metadata?.descriptionHtml?.let { Jsoup.parseBodyFragment(it).text() }.orEmpty(),
+            group = item.closest(".bti1")?.selectFirst(".bti2").hvText().let {
+            when { it.startsWith("S") -> "Scrolls"; it.startsWith("N") -> "Infusions"; else -> "Items" }
+        }) }
+    }
+
+    private fun controls(root: Element) = root.select("#pane_action [id^=ckey_]").mapNotNull { control ->
+        val mode = control.id().substringAfter("ckey_")
+        if (mode !in setOf("attack", "skill", "items", "spirit", "defend", "focus")) return@mapNotNull null
+        BattleControl(mode, enabled(control) && CONTROL_ACTION.find(control.attr("onclick"))?.groupValues?.get(1) == mode,
+            control.attr("src").substringBefore('?').endsWith("_s.png"))
     }
 
     private fun continuation(container: Element, world: HvWorld, currentUrl: HttpUrl): BattleContinuation? {
@@ -185,23 +200,45 @@ internal object BattlePageParser {
         return document.outerHtml()
     }
 
-    /**
-     * Applies the server's battle JSON to the already loaded battle document and
-     * parses that same document. This avoids the generic page pipeline (navigation,
-     * page classification and supplemental-script discovery) for every battle turn.
-     * A null result means the response did not contain an update pane we understand.
-     */
+    /** The action API returns innerHTML per pane. Parse only supplied fragments, using
+     * the original container tag so table rows are not discarded by the HTML parser. */
     fun parseActionResponse(
-        current: BattlePage,
-        response: JSONObject,
-        world: HvWorld,
-        currentUrl: HttpUrl,
+        current: BattlePage, response: JSONObject, world: HvWorld, currentUrl: HttpUrl,
     ): BattlePage? {
         if (!hasActionUpdate(response)) return null
-        val document = Jsoup.parse(current.snapshotHtml, currentUrl.toString())
-        applyActionResponse(document, response)
-        val updatedHtml = document.outerHtml()
-        return parseBattle(document, updatedHtml, current.supplementalScripts, world, currentUrl)
+        fun pane(id: String, tag: String = "div"): Element? = if (!response.has(id)) null
+            else Element(tag).id(id).html(response.getString(id))
+
+        val completion = pane("pane_completion")
+        val completionText = completion.hvText()
+        val logBatch = response.optJSONArray("textlog")
+        val log = if (logBatch == null || logBatch.length() == 0) current.log else buildList {
+            for (i in logBatch.length() - 1 downTo 0) {
+                val entry = logBatch.optJSONObject(i) ?: continue
+                val text = Element("td").html(entry.optString("t")).hvText()
+                if (text.isNotBlank()) add(text)
+                if (size == 100) break
+            }
+            addAll(current.log.take(100 - size))
+        }
+        return current.copy(
+            turnKey = Any(),
+            playerVitals = pane("pane_vitals")?.let(::vitals) ?: current.playerVitals,
+            enemies = pane("pane_monster")?.let(::enemies) ?: current.enemies,
+            quickActions = pane("pane_quickbar")?.select("#quickbar > div")?.mapNotNull(::actionOption) ?: current.quickActions,
+            skills = pane("table_skills", "table")?.let(::groupedActions) ?: current.skills,
+            spells = pane("table_magic", "table")?.let(::groupedActions) ?: current.spells,
+            items = pane("pane_item")?.let { items(it, current.itemText) } ?: current.items,
+            playerEffects = pane("pane_effects")?.let(::effects) ?: current.playerEffects,
+            controls = pane("pane_action")?.let(::controls) ?: current.controls,
+            experienceBarWidth = response.optDouble("exp", Double.NaN).takeIf { it.isFinite() && it >= 0 }?.toFloat() ?: current.experienceBarWidth,
+            log = log,
+            isComplete = completion != null,
+            completion = completionText,
+            completionLines = completion?.select("#btcp > div")?.map { it.hvText() }.orEmpty()
+                .filter(String::isNotBlank).ifEmpty { listOfNotNull(completionText.takeIf(String::isNotBlank)) },
+            continuation = completion?.let { continuation(it, world, currentUrl) },
+        )
     }
 
     fun hasActionUpdate(response: JSONObject): Boolean =

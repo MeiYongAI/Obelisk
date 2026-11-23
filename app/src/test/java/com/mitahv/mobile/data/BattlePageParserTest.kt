@@ -25,6 +25,26 @@ class BattlePageParserTest {
         assertFalse(BattlePageParser.hasActionUpdate(JSONObject()))
     }
 
+    @Test fun consecutivePaneUpdatesMatchFullPageMergeAndReuseUnchangedLists() {
+        var html = activeFixture("ring-of-blood")
+        var current = BattlePageParser.parseBattle(html)
+        val other = Jsoup.parse(activeFixture("encounter"))
+        val panes = JSONObject()
+        for (id in listOf("pane_vitals", "pane_effects", "pane_action", "pane_monster", "pane_quickbar",
+                "table_magic", "table_skills", "pane_item")) {
+            panes.put(id, other.getElementById(id)!!.html())
+        }
+        for (turn in listOf(panes, JSONObject().put("exp", 311).put("textlog", org.json.JSONArray()
+                .put(JSONObject().put("t", "First")).put(JSONObject().put("t", "<b>Second</b>"))),
+                JSONObject().put("pane_completion", "").put("pane_monster", ""), JSONObject().put("exp", 1))) {
+            val next = applyTurn(current, turn)
+            html = BattlePageParser.mergeActionResponse(html, turn)
+            assertEquals(BattlePageParser.parseBattle(html).copy(turnKey = next.turnKey), next)
+            if (!turn.has("table_magic")) org.junit.Assert.assertSame(current.spells, next.spells)
+            current = next
+        }
+    }
+
     @Test fun suppliedUtilitarianVitalsReadBothHealthIdsAndUpdateFromTheResponsePane() {
         val active = Jsoup.parse(activeFixture("ring-of-blood"))
         active.selectFirst("#dvrhd")!!.attr("id", "dvrhb")
@@ -33,18 +53,14 @@ class BattlePageParserTest {
         assertEquals(listOf(1f, 1f, 1f), before.playerVitals.take(3).map { it.fraction })
 
         val updatedVitals = Jsoup.parse(activeFixture("encounter")).selectFirst("#pane_vitals")!!.html()
-        val updated = BattlePageParser.parseBattle(BattlePageParser.mergeActionResponse(
-            before.snapshotHtml, JSONObject().put("pane_vitals", updatedVitals),
-        ))
+        val updated = applyTurn(before, JSONObject().put("pane_vitals", updatedVitals))
         assertEquals(listOf("22412", "5005", "2168", "0"), updated.playerVitals.map { it.value })
         assertEquals(370f / 414f, updated.playerVitals[0].fraction)
         assertEquals(372f / 414f, updated.playerVitals[1].fraction)
 
         val defeat = requireNotNull(javaClass.getResource("/battle-completion/item-world-defeat.html")).readText()
         val defeatVitals = Jsoup.parse(defeat).selectFirst("#pane_vitals")!!.html()
-        val defeated = BattlePageParser.parseBattle(BattlePageParser.mergeActionResponse(
-            updated.snapshotHtml, JSONObject().put("pane_vitals", defeatVitals),
-        ))
+        val defeated = applyTurn(updated, JSONObject().put("pane_vitals", defeatVitals))
         assertTrue(defeated.playerVitals.isEmpty())
     }
 
@@ -67,9 +83,7 @@ class BattlePageParserTest {
         standard.selectFirst("#vbh img")!!.attr("style", "width:248px")
         standard.selectFirst("#vrm")!!.text("2788")
         standard.selectFirst("#vbm img")!!.attr("style", "width:103.5px")
-        val updated = BattlePageParser.parseBattle(BattlePageParser.mergeActionResponse(
-            before.snapshotHtml, JSONObject().put("pane_vitals", standard.selectFirst("#pane_vitals")!!.html()),
-        ))
+        val updated = applyTurn(before, JSONObject().put("pane_vitals", standard.selectFirst("#pane_vitals")!!.html()))
         assertEquals(listOf("12540", "2788", "2168"), updated.playerVitals.map { it.value })
         assertEquals(listOf(0.5f, 0.5f, 1f), updated.playerVitals.map { it.fraction })
     }
@@ -148,8 +162,8 @@ class BattlePageParserTest {
         val script = """var dynjs_itemc={"11191":{"n":"Health Draught","q":"Provides <b>restoration</b>."}};"""
         val page = BattlePageParser.parseBattle(activeFixture("ring-of-blood"), listOf(script))
         assertEquals("Provides restoration.", page.items.single { it.name == "Health Draught" }.description)
-        val merged = BattlePageParser.mergeActionResponse(page.snapshotHtml, JSONObject())
-        val next = BattlePageParser.parseBattle(merged, page.supplementalScripts)
+        val pane = Jsoup.parse(activeFixture("ring-of-blood")).selectFirst("#pane_item")!!.html()
+        val next = applyTurn(page, JSONObject().put("pane_item", pane))
         assertEquals(page.items.single { it.name == "Health Draught" }.description, next.items.single { it.name == "Health Draught" }.description)
     }
 
@@ -278,6 +292,10 @@ class BattlePageParserTest {
         document.selectFirst("#arena_list td")!!.text("No challenges").attr("colspan", "8")
         assertTrue(BattlePageParser.parseArena(document.outerHtml()).challenges.isEmpty())
     }
+
+    private fun applyTurn(page: com.mitahv.mobile.model.BattlePage, response: JSONObject) = requireNotNull(
+        BattlePageParser.parseActionResponse(page, response, HvWorld.Persistent, HvRoute.Battle.url(HvWorld.Persistent)),
+    )
 
     private fun fixture(name: String) = requireNotNull(javaClass.getResource("/battle-modes/$name.html")).readText()
     private fun activeFixture(name: String) = requireNotNull(javaClass.getResource("/battle-active/$name.html")).readText()

@@ -30,13 +30,13 @@ data class BattlePage(
     val log: List<String>,
     val completion: String,
     val experienceBarWidth: Float,
-    val snapshotHtml: String,
+    val turnKey: Any = Any(),
     val playerEffects: List<BattleEffect> = emptyList(),
     val controls: List<BattleControl> = emptyList(),
     val isComplete: Boolean = false,
     val continuation: BattleContinuation? = null,
     val completionLines: List<String> = emptyList(),
-    val supplementalScripts: List<String> = emptyList(),
+    val itemText: Map<String, BattleItemText> = emptyMap(),
 ) {
     val canContinue: Boolean get() = continuation != null
 }
@@ -47,6 +47,8 @@ data class BattleContinuation(
     val action: NativeAction? = null,
     val destination: HvRoute? = null,
 )
+
+data class BattleItemText(val name: String, val descriptionHtml: String)
 
 data class BattleVital(val name: String, val value: String, val fraction: Float)
 

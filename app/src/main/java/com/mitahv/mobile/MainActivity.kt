@@ -524,19 +524,23 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         requestState = RequestState.BattleBusy(page)
         scope.launch {
             try {
+                val started = SystemClock.elapsedRealtime()
                 val response = client.submitBattleAction(
                     world = requestWorld,
                     referer = requestUrl,
                     token = page.token,
                     action = action,
                 )
+                val received = SystemClock.elapsedRealtime()
                 if (response.has("error") || response.has("reload") || response.has("login")) {
+                    Log.d("HvLoading", "battle reply=${received - started}ms refresh=true (server)")
                     val refreshed = client.fetchPage(requestWorld, requestUrl)
                     requestState = acceptPage(requestRoute, requestWorld, refreshed.html, refreshed.url)
                 } else {
                     val updated = withContext(Dispatchers.Default) {
                         BattlePageParser.parseActionResponse(page, response, requestWorld, requestUrl)
                     }
+                    Log.d("HvLoading", "battle reply=${received - started}ms apply=${SystemClock.elapsedRealtime() - received}ms refresh=${updated == null}")
                     if (updated != null) {
                         // Keep the battle session and its current URL intact. The JSON
                         // endpoint already returned the panes that changed; sending the
@@ -836,7 +840,7 @@ internal fun parseLoadedPage(route: HvRoute, world: HvWorld, html: String, hasNa
     when {
         RiddlePageParser.isRiddlePage(document) -> RequestState.RiddleReady(RiddlePageParser.parse(document, world, currentUrl))
         BattlePageParser.isBattlePage(document) -> RequestState.BattleReady(
-            BattlePageParser.parseBattle(document, html, supplementalScripts, world, currentUrl))
+            BattlePageParser.parseBattle(document, supplementalScripts, world, currentUrl))
         route == HvRoute.Character -> RequestState.CharacterReady(CharacterPageParser.parse(document))
         route == HvRoute.Battle -> RequestState.ArenaReady(BattlePageParser.parseArena(document))
         hasNavigation && route.category == HvSection.Character ->

@@ -238,13 +238,13 @@ internal fun BattleScreen(
     onContinue: (BattleContinuation) -> Unit,
     onLeaveBattle: () -> Unit,
 ) {
-    var panel by remember(page.snapshotHtml) { mutableStateOf(BattlePanel.Attack) }
-    var pendingOptionId by remember(page.snapshotHtml) { mutableStateOf<String?>(null) }
+    var panel by remember(page.turnKey) { mutableStateOf(BattlePanel.Attack) }
+    var pendingOptionId by remember(page.turnKey) { mutableStateOf<String?>(null) }
     val pendingOption = (page.quickActions + page.skills + page.spells + page.items)
         .firstOrNull { it.id == pendingOptionId }
-    var detail by remember(page.snapshotHtml) { mutableStateOf<BattleDetail?>(null) }
-    var enemyDetail by remember(page.snapshotHtml) { mutableStateOf<BattleEnemy?>(null) }
-    var showLog by remember(page.snapshotHtml) { mutableStateOf(false) }
+    var detail by remember(page.turnKey) { mutableStateOf<BattleDetail?>(null) }
+    var enemyDetail by remember(page.turnKey) { mutableStateOf<BattleEnemy?>(null) }
+    var showLog by remember(page.turnKey) { mutableStateOf(false) }
     val isComplete = page.isComplete
     val attackEnabled = page.controls.any { it.mode == "attack" && it.enabled }
     val actionEnabled = !busy && !isComplete

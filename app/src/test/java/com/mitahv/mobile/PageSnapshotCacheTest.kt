@@ -35,7 +35,7 @@ class PageSnapshotCacheTest {
     @Test fun doesNotStoreBattleRiddleOrIncompleteResponses() {
         val cache = PageSnapshotCache()
         val battle = BattlePage("", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
-            emptyList(), emptyList(), "", 0f, "")
+            emptyList(), emptyList(), "", 0f)
         val riddle = RiddlePage(RiddleImage("", null), emptyList(), null, 1, 3)
         val preview = snapshot(0)
         listOf(RequestState.BattleReady(battle), RequestState.BattleBusy(battle), RequestState.RiddleReady(riddle),
