@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mitahv.mobile.model.AppThemeMode
 import com.mitahv.mobile.data.JpxLibrary
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.FolderOpen
 import com.mitahv.mobile.model.AppLanguage
 import com.mitahv.mobile.i18n.messageText
@@ -40,6 +41,8 @@ internal fun AppSettingsScreen(
     strategy: BattleStrategy,
     siteIsAlt: Boolean,
     onSiteChanged: (Boolean) -> Unit,
+    autoNextRound: Boolean,
+    onAutoNextRoundChanged: (Boolean) -> Unit,
     themeMode: AppThemeMode,
     onThemeChanged: (AppThemeMode) -> Unit,
     language: AppLanguage,
@@ -108,6 +111,21 @@ internal fun AppSettingsScreen(
                         AppSettingChoiceRow(stringResource(R.string.jpx_title),
                             stringResource(if (configLibrary == null) R.string.jpx_sign_in else R.string.jpx_manage),
                             Icons.Filled.FolderOpen, configLibrary != null && !busy) { showConfigs = true }
+                    }
+                }
+                item("battle-automation-heading") { AppSettingsHeading(stringResource(R.string.battle_automation)) }
+                item("auto-next-round") {
+                    AppSettingCard {
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                                .toggleable(autoNextRound, enabled = !busy, role = Role.Switch, onValueChange = onAutoNextRoundChanged)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            Icon(Icons.Filled.SkipNext, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.battle_auto_next_round), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            Switch(checked = autoNextRound, onCheckedChange = null, enabled = !busy)
+                        }
                     }
                 }
                 item("appearance-heading") { AppSettingsHeading(stringResource(R.string.app_appearance)) }

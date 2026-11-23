@@ -32,7 +32,7 @@ data class BattlePage(
     val experienceBarWidth: Float,
     val scene: BattleScene? = null,
     val round: BattleRoundFacts = BattleRoundFacts(),
-    val encounterKey: Any = Any(), // New on full-page refresh, retained only by pane updates.
+    val encounterKey: Any = Any(), // Retained across pane updates and a confirmed next-round request.
     val turnKey: Any = Any(),
     val playerEffects: List<BattleEffect> = emptyList(),
     val controls: List<BattleControl> = emptyList(),
@@ -41,6 +41,11 @@ data class BattlePage(
     val completionLines: List<String> = emptyList(),
     val itemText: Map<String, BattleItemText> = emptyMap(),
 ) {
+    // The server's explicit "next round" control is the source of truth. Round log
+    // lines are optional and can be truncated or delayed on a full-page reload.
+    internal fun followsRound(previous: BattlePage): Boolean = !isComplete && previous.isComplete &&
+        previous.continuation?.isNextRound == true
+
     val canContinue: Boolean get() = continuation != null
 }
 
@@ -49,7 +54,9 @@ data class BattleContinuation(
     val label: String,
     val action: NativeAction? = null,
     val destination: HvRoute? = null,
-)
+) {
+    val isNextRound: Boolean get() = action == null && destination == null
+}
 
 data class BattleItemText(val name: String, val descriptionHtml: String)
 

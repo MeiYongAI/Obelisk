@@ -1,5 +1,9 @@
 package com.mitahv.mobile.data
 
+import com.mitahv.mobile.model.BattleContinuation
+import com.mitahv.mobile.model.BattlePage
+import com.mitahv.mobile.model.BattleRoundFacts
+import com.mitahv.mobile.model.BattleScene
 import com.mitahv.mobile.model.HvRoute
 import com.mitahv.mobile.model.HvSite
 import com.mitahv.mobile.model.HvWorld
@@ -25,6 +29,25 @@ class BattleCompletionParserTest {
         assertEquals(listOf("You are victorious!", "You gain 3643193 exp"), page.completionLines)
         assertTrue(page.controls.isNotEmpty())
         assertTrue(page.controls.none { it.enabled })
+    }
+
+    @Test fun explicitNextRoundResponseKeepsTheBattleEncounterEvenWithoutRoundLogFacts() {
+        val previous = BattlePage(
+            token = "token", playerVitals = emptyList(), enemies = emptyList(), quickActions = emptyList(),
+            skills = emptyList(), spells = emptyList(), items = emptyList(),
+            log = listOf("Initializing Item World (Round 1 / 5) ..."), completion = "victory", experienceBarWidth = 0f,
+            scene = BattleScene.Item, round = BattleRoundFacts(current = 1, total = 5, sawStart = true),
+            isComplete = true, continuation = BattleContinuation("下一轮"),
+        )
+        val next = previous.copy(
+            log = emptyList(), isComplete = false, continuation = null,
+            round = BattleRoundFacts(), scene = null, turnKey = Any(),
+        )
+
+        assertTrue(next.followsRound(previous))
+        assertTrue(next.copy(round = next.round.copy(current = 1), scene = BattleScene.Arena).followsRound(previous))
+        assertFalse(previous.followsRound(previous))
+        assertFalse(next.copy(isComplete = true).followsRound(previous))
     }
 
     @Test fun suppliedItemWorldFinalOutcomesPreserveActualArmoryReturnTargets() {

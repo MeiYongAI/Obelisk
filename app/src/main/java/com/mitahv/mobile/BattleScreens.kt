@@ -57,11 +57,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,6 +97,7 @@ internal fun BattleSessionScreen(
     strategy: BattleStrategy,
     onSettings: () -> Unit,
     settingsEnabled: Boolean,
+    autoNextRound: Boolean,
     loading: Boolean,
     nativeBusy: Boolean,
     error: String?,
@@ -101,20 +110,32 @@ internal fun BattleSessionScreen(
     onContinue: (BattleContinuation) -> Unit,
     onLeaveBattle: () -> Unit,
 ) {
-    var strategyOpen by rememberSaveable { mutableStateOf(false) }
     val page = when (state) {
         is RequestState.BattleReady -> state.page
         is RequestState.BattleBusy -> state.page
         else -> null
     }
-    val runner = key(page?.encounterKey, strategy.match?.entry?.id, strategy.published, world) { remember { RuleRunner() } }
-    val playable = state is RequestState.BattleReady && page?.isComplete == false && !loading && !nativeBusy &&
-        error == null && !needsRefresh && !strategyOpen
+    val runner = remember(page?.encounterKey, strategy.match?.entry?.id, strategy.published, world) { RuleRunner() }
+    val ready = state is RequestState.BattleReady && !loading && !nativeBusy && error == null && !needsRefresh
+    val playable = ready && page?.isComplete == false
+    val betweenRounds = page?.isComplete == true && page.continuation?.isNextRound == true
+    // Round navigation is independent from the rule runner. Auto advances the page
+    // when enabled, but every new round still needs an explicit rule-runner start.
+    val advancing = autoNextRound && betweenRounds && !nativeBusy && error == null && !needsRefresh &&
+        (ready || state is RequestState.BattleBusy)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val lifecycleState by lifecycle.currentStateFlow.collectAsState()
+    val latestContinue by rememberUpdatedState(onContinue)
+    LaunchedEffect(page?.turnKey, advancing, ready, lifecycleState) {
+        if (advancing && ready && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+            latestContinue(requireNotNull(page?.continuation))
+    }
     val rules = remember(strategy.published) { strategy.published?.let(::BattleRules) }
     RunBattleTurns(runner, rules, page, world, strategy.scene, loadout, playerLevel, playable,
-        interrupted = page == null || page.isComplete || loading || nativeBusy || error != null || needsRefresh || strategyOpen,
+        interrupted = page == null || page.isComplete ||
+            nativeBusy || error != null || needsRefresh,
         submit = onSubmitBattleAction)
-    BackHandler(enabled = !strategyOpen) {
+    BackHandler {
         val page = (state as? RequestState.BattleReady)?.page
         if (!loading && page?.isComplete == true) {
             val continuation = page.continuation
@@ -126,13 +147,7 @@ internal fun BattleSessionScreen(
     }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            BattleTopBar(onStrategy = { runner.pause(); strategyOpen = true }, onSettings = { runner.pause(); onSettings() }, settingsEnabled = settingsEnabled) {
-                if (page != null && !page.isComplete && rules != null) {
-                    FilledTonalButton(enabled = runner.running || playable, onClick = { if (runner.running) runner.pause() else runner.start() },
-                        contentPadding = PaddingValues(horizontal = 12.dp)) { Text(stringResource(if (runner.running) R.string.jpx_pause else R.string.jpx_run)) }
-                }
-            }
-            runner.notice?.let { RuleRunNotice(it) }
+            BattleTopBar(onSettings = { runner.pause(); onSettings() }, settingsEnabled = settingsEnabled)
             if (error != null) Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -152,8 +167,14 @@ internal fun BattleSessionScreen(
                         }
                         BattleScreen(
                             page = page,
-                            busy = loading || state is RequestState.BattleBusy || runner.running,
+                            busy = loading || state is RequestState.BattleBusy || (!page.isComplete && runner.running),
                             onSubmitAction = { if (!runner.running) onSubmitBattleAction(page, it) },
+                            advancing = advancing,
+                            autoAvailable = rules != null,
+                            running = runner.running,
+                            canStart = playable,
+                            onToggleAuto = { if (runner.running) runner.pause() else if (playable) runner.start() },
+                            notice = runner.notice,
                             onContinue = onContinue,
                             onLeaveBattle = onLeaveBattle,
                         )
@@ -184,7 +205,6 @@ internal fun BattleSessionScreen(
             }
         }
     }
-    if (strategyOpen) BattleStrategySheet(loadout, strategy) { strategyOpen = false }
 }
 
 @Composable
@@ -267,6 +287,12 @@ internal fun BattleScreen(
     page: BattlePage,
     busy: Boolean,
     onSubmitAction: (BattleAction) -> Unit,
+    advancing: Boolean,
+    autoAvailable: Boolean,
+    running: Boolean,
+    canStart: Boolean,
+    onToggleAuto: () -> Unit,
+    notice: com.mitahv.mobile.data.RuleTurn?,
     onContinue: (BattleContinuation) -> Unit,
     onLeaveBattle: () -> Unit,
 ) {
@@ -291,7 +317,9 @@ internal fun BattleScreen(
         HorizontalDivider()
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             val enemyColumns = if (maxWidth >= 600.dp) 4 else 2
-            if (!isComplete && panel != BattlePanel.Attack) {
+            if (advancing) {
+                LinearProgressIndicator(Modifier.align(Alignment.Center).fillMaxWidth(0.32f))
+            } else if (!isComplete && panel != BattlePanel.Attack) {
                 val choices = when (panel) {
                     BattlePanel.Skill -> page.skills
                     BattlePanel.Magic -> page.spells
@@ -400,18 +428,22 @@ internal fun BattleScreen(
             }
         }
         if (isComplete) {
-            val continuation = page.continuation
-            Button(
-                onClick = { if (continuation != null) onContinue(continuation) else onLeaveBattle() },
-                enabled = !busy,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 52.dp),
-            ) {
-                val label = continuation?.let { messageText(it.label) }
-                    ?: stringResource(R.string.game_ui_return_to_challenge)
-                Text(label)
+            if (!advancing) {
+                val continuation = page.continuation
+                Button(
+                    onClick = { if (continuation != null) onContinue(continuation) else onLeaveBattle() },
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 52.dp),
+                ) {
+                    val label = continuation?.let { messageText(it.label) }
+                        ?: stringResource(R.string.game_ui_return_to_challenge)
+                    Text(label)
+                }
             }
         } else {
-            BattleControls(page, panel, pendingOption, busy,
+            notice?.let { RuleRunNotice(it) }
+            BattleControls(page, panel, pendingOption, busy || isComplete,
+                autoAvailable = autoAvailable, running = running, canStart = canStart, onToggleAuto = onToggleAuto,
                 onCancelPending = { pendingOptionId = null },
                 onPanelSelected = { pendingOptionId = null; panel = it },
                 onChooseOption = ::chooseOption, onSubmitAction = onSubmitAction)
@@ -592,6 +624,10 @@ private fun BattleControls(
     panel: BattlePanel,
     pendingOption: BattleActionOption?,
     busy: Boolean,
+    autoAvailable: Boolean,
+    running: Boolean,
+    canStart: Boolean,
+    onToggleAuto: () -> Unit,
     onCancelPending: () -> Unit,
     onPanelSelected: (BattlePanel) -> Unit,
     onChooseOption: (BattleActionOption) -> Unit,
@@ -679,7 +715,26 @@ private fun BattleControls(
                     }
                 }
             }
+            if (autoAvailable) BattleAutoButton(running, canStart, onToggleAuto)
         }
+    }
+}
+
+@Composable
+private fun BattleAutoButton(
+    running: Boolean,
+    canStart: Boolean,
+    onToggleAuto: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilledTonalButton(
+        onClick = onToggleAuto,
+        enabled = running || canStart,
+        modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
+    ) {
+        Icon(if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow, null)
+        Text(stringResource(if (running) R.string.jpx_pause else R.string.jpx_auto_run),
+            Modifier.padding(start = 8.dp))
     }
 }
 
@@ -732,7 +787,7 @@ private fun battleActionGroupText(group: String): String = when (group) {
     "Deprecating" -> stringResource(R.string.game_ui_action_group_deprecating)
     "Curative" -> stringResource(R.string.game_ui_action_group_curative)
     "Supportive" -> stringResource(R.string.game_ui_action_group_supportive)
-    else -> gameActionText(group)
+    else -> gameText(group)
 }
 
 @Composable
@@ -760,16 +815,17 @@ private fun BattleEffectChips(effects: List<com.mitahv.mobile.model.BattleEffect
 
 @Composable
 private fun BattleOptionRow(option: BattleActionOption, selected: Boolean, busy: Boolean, onSelect: () -> Unit, onDetail: () -> Unit) {
+    val displayName = if (option.mode == "items") gameText(option.name) else gameActionText(option.name)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(onClick = onSelect, enabled = !busy && option.enabled, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(gameActionText(option.name), style = MaterialTheme.typography.labelLarge)
+                Text(displayName, style = MaterialTheme.typography.labelLarge)
                 option.costText().takeIf(String::isNotBlank)?.let { Text(messageText(it), style = MaterialTheme.typography.labelSmall) }
             }
             if (selected) Icon(Icons.Filled.Check, stringResource(R.string.game_ui_selected))
         }
         if (option.description.isNotBlank() || option.costText(true).isNotBlank()) {
-            androidx.compose.material3.IconButton(onClick = onDetail) { Icon(Icons.Filled.Info, stringResource(R.string.game_ui_named_details, gameText(option.name))) }
+            androidx.compose.material3.IconButton(onClick = onDetail) { Icon(Icons.Filled.Info, stringResource(R.string.game_ui_named_details, displayName)) }
         }
     }
 }

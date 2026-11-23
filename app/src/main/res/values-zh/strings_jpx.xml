@@ -84,7 +84,9 @@
     <string name="jpx_no_importable">文件中没有包含规则的配置</string>
     <string name="jpx_reorder">调整第 %1$d 条规则的位置</string>
     <string name="jpx_enable_row">启用第 %1$d 条规则</string>
-    <string name="jpx_run">运行规则</string>
+    <string name="jpx_auto_run">自动</string>
+    <string name="battle_automation">战斗自动化</string>
+    <string name="battle_auto_next_round">自动进入下一轮</string>
     <string name="jpx_pause">暂停</string>
     <string name="jpx_no_action">没有可执行的规则</string>
     <string name="jpx_halt_rule">规则 %1$d：%2$s</string>

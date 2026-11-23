@@ -162,6 +162,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     val preferences = remember { AppPreferences(context) }
     var site by remember { mutableStateOf(preferences.site) }
     var theme by remember { mutableStateOf(preferences.theme) }
+    var autoNextRound by remember { mutableStateOf(preferences.autoNextRound) }
     var dynamicColor by remember { mutableStateOf(preferences.dynamicColor) }
     val dark = when (theme) {
         AppThemeMode.System -> isSystemInDarkTheme()
@@ -248,7 +249,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
     suspend fun acceptPage(requestRoute: HvRoute, requestWorld: HvWorld, html: String,
         url: HttpUrl = requestRoute.url(requestWorld, site),
-        initialScripts: List<String> = emptyList(), requestSerial: Int = loadSerial): RequestState {
+        initialScripts: List<String> = emptyList(), requestSerial: Int = loadSerial, nextRoundFrom: BattlePage? = null): RequestState {
         val responseRoute = HvRoute.entries.firstOrNull {
             url.queryParameterValues("s") == listOf(it.section) &&
                 url.queryParameterValues("ss") == listOf(it.subsection) && it.isAvailableIn(requestWorld)
@@ -265,7 +266,9 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             ParsedPage(document, parsedNavigation, parsedPage, scripts, level)
         }
         val parsedNavigation = parsed.navigation
-        val parsedPage = parsed.state
+        val received = parsed.state
+        val parsedPage = if (received is RequestState.BattleReady && nextRoundFrom != null && received.page.followsRound(nextRoundFrom))
+            RequestState.BattleReady(received.page.copy(encounterKey = nextRoundFrom.encounterKey)) else received
         if (requestSerial != loadSerial) throw CancellationException("Page superseded")
         parsed.playerLevel?.let { playerLevel = it }
         observeEquipment(parsedPage)
@@ -303,8 +306,12 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 }
                 if (pageSource == source) {
                     observeEquipment(enriched)
-                    requestState = enriched
-                    pageSnapshots.put(PageSnapshot(source.route, source.url, navigation, enriched))
+                    // Dictionary enrichment is not another turn or a new encounter.
+                    val before = (requestState as? RequestState.BattleReady)?.page
+                    val ready = if (before != null && enriched is RequestState.BattleReady)
+                        RequestState.BattleReady(enriched.page.copy(encounterKey = before.encounterKey, turnKey = before.turnKey)) else enriched
+                    requestState = ready
+                    pageSnapshots.put(PageSnapshot(source.route, source.url, navigation, ready))
                 }
             }
             if (pageSource == source && details.failures.isNotEmpty()) {
@@ -552,7 +559,35 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
 
     fun continueBattle(continuation: BattleContinuation) {
-        if (pageLoading || requestState !is RequestState.BattleReady) return
+        val page = (requestState as? RequestState.BattleReady)?.page ?: return
+        if (pageLoading || !page.isComplete || page.continuation != continuation) return
+        if (continuation.isNextRound) {
+            val serial = ++loadSerial
+            val requestWorld = world
+            val requestRoute = route
+            val url = currentUrl.toHttpUrl()
+            pageSource = null
+            nativeError = null
+            pageLoading = true
+            requestState = RequestState.BattleBusy(page)
+            scope.launch {
+                try {
+                    val response = client.fetchPage(requestWorld, url)
+                    val next = acceptPage(requestRoute, requestWorld, response.html, response.url, requestSerial = serial, nextRoundFrom = page)
+                    requestState = next
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    if (serial == loadSerial) {
+                        requestState = RequestState.BattleReady(page)
+                        nativeError = failureMessage(error, context)
+                    }
+                } finally {
+                    if (serial == loadSerial) pageLoading = false
+                }
+            }
+            return
+        }
         continuation.action?.let { action ->
             currentUrl = world.urlAtSite(action.url, site).toString()
             route = requireNotNull(continuation.destination)
@@ -724,6 +759,8 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 },
                 themeMode = theme,
                 onThemeChanged = { theme = it; preferences.theme = it },
+                autoNextRound = autoNextRound,
+                onAutoNextRoundChanged = { autoNextRound = it; preferences.autoNextRound = it },
                 dynamicColorEnabled = dynamicColor,
                 onDynamicColorChanged = { dynamicColor = it; preferences.dynamicColor = it },
                 memberId = activeAccountId.orEmpty(),
@@ -750,6 +787,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     loadout = loadout,
                     world = world.name,
                     strategy = strategy,
+                    autoNextRound = autoNextRound,
                     onSettings = ::openSettings,
                     settingsEnabled = !pageLoading && !nativeBusy && !challengeBusy &&
                         requestState !is RequestState.BattleBusy && requestState !is RequestState.Loading,
@@ -1235,5 +1273,3 @@ private fun GameShell(
         }
     }
 }
-
-

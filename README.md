@@ -41,7 +41,7 @@ The APK is written to `app/build/outputs/apk/debug/`. To run the local unit test
 2. Sign in with your credentials, imported cookies, or the forum web login. Obelisk keeps one session on this device. To use a different login, sign out in **Obelisk settings** first.
 3. Choose a world, tap a bottom navigation category, then select a page from its list. Dismiss the list to stay on the current page. Battle controls appear when the server returns an active encounter.
 
-During combat, tap **Strategy panel** in the top bar to see the detected weapon style, spell affinity, and the bonuses behind them. The gear icon opens **Obelisk settings**; use Back to return to the encounter. The panel uses a pre-battle equipment snapshot, not a request on every turn. If no snapshot is available, open Equipment before the next encounter or let the battle lobby load.
+The gear icon in the battle top bar opens **Obelisk settings**; use Back to return to the encounter. Battlefield, style, and selected configuration are managed in **Battle configurations** before or during a fight.
 
 ### Unlock or upgrade an ability
 
@@ -55,16 +55,16 @@ Open **Obelisk settings → Battle configurations → Import file** and choose a
 - **Manage variants:** different imports can supply alternatives for the same mode. Use **⋮ → Set alias** to tell them apart. Re-importing the same file restores missing modes without resetting existing edits.
 - **Automatic (default):** the library shows the detected style and battlefield separately from the chosen strategy. It tries the battlefield-specific configuration first, then **General** for the same style. Empty modes are skipped; if multiple imports match, the first nonempty variant imported wins. Without a verified style, nothing is automatically selected.
 - **Assign by battlefield:** open **Battlefield strategies**, choose a style, then tap a battlefield. For example, assign **Staff · General** to Item World and a different staff variant to the Arena. Set a row back to **Match automatically** to remove its assignment. You can also assign a **General** fallback. These settings are per world and can be changed before or during battle.
-- **Manual:** choose **Apply configuration** on a profile to publish its edits and pin it across battlefields and styles. Turning off **Apply automatically** pins the current choice without publishing edits; turn it back on to resume routing. The in-battle strategy panel shows the chosen profile and why it was selected. Selecting or publishing a strategy never starts combat on its own.
+- **Manual:** choose **Apply configuration** on a profile to publish its edits and pin it across battlefields and styles. Turning off **Apply automatically** pins the current choice without publishing edits; turn it back on to resume routing. The battle screen does not open a separate strategy panel. Selecting or publishing a strategy never starts combat on its own.
 - **Export or remove:** either action in a configuration’s **⋮** menu affects only that entry. The exported JSON contains its saved rules, including unapplied edits, and can be imported again. Removing a variant clears its assignments and any manual pin to it; other modes and the original file stay intact. For example, choose **Staff · General → ⋮ → Export configuration** to save only that profile. Use **Import file** to add it back on its own; no full battle file is required.
 
 ### Run rules during a fight
 
-Tap **Run rules** in the battle top bar. Obelisk reads the selected configuration in order and submits the first available matching action through the same turn request as a manual tap. **Pause** stops the next action; it cannot cancel one already sent. Opening settings or the strategy panel, leaving the foreground, an uncertain response, or round completion stops execution. Resume explicitly; the app does not solve riddles or advance rounds.
+Tap **Auto** in the bottom battle controls. Obelisk reads the selected configuration in order and submits the first available matching action through the same turn request as a manual tap. The button changes to **Pause**; it cannot cancel an action already sent. Opening settings, leaving the foreground, an uncertain response, or a round boundary stops execution. Enable **Auto-advance rounds** in Obelisk settings to continue through verified successive rounds; final results and riddles remain manual.
 
 Rules can select targets, attack, cast skills or spells, use items, switch stances, apply smart debuffs, or stop. Put a **Target** rule before a normal attack or offensive spell; selecting a target does not itself spend a turn. `T1`–`T3` use the detected spell school. Keyboard groups are kept for editing and export, not executed by the loop. JPX custom JavaScript runs on a supported Android System WebView in an isolated engine, not the login browser. See **Custom scripts** below. Monster-database filters have no matches without the external database, as in JPX. If a built-in rule needs an unavailable input (for example historical action totals, an unknown spell school, or a player level not yet observed), the app pauses and identifies the rule instead of guessing.
 
-**Custom scripts:** Enable the rule, apply the configuration and tap **Run rules** in battle. For example, this JPX rule body attacks the first living monster; `false` lets the next rule run:
+**Custom scripts:** Enable the rule, apply the configuration and tap **Auto** in battle. For example, this JPX rule body attacks the first living monster; `false` lets the next rule run:
 
 ```js
 return jpx.doAttackGoNext(jpx.monstersObj.activeMonsters[0]);

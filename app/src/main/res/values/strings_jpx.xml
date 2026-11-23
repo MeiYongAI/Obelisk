@@ -85,7 +85,9 @@
     <string name="jpx_no_importable">No configurations with rules in this file</string>
     <string name="jpx_reorder">Reorder rule %1$d</string>
     <string name="jpx_enable_row">Enable rule %1$d</string>
-    <string name="jpx_run">Run rules</string>
+    <string name="jpx_auto_run">Auto</string>
+    <string name="battle_automation">Battle automation</string>
+    <string name="battle_auto_next_round">Auto-advance rounds</string>
     <string name="jpx_pause">Pause</string>
     <string name="jpx_no_action">No available rule</string>
     <string name="jpx_halt_rule">Rule %1$d: %2$s</string>

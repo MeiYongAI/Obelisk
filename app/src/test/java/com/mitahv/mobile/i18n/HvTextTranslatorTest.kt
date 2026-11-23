@@ -160,6 +160,16 @@ class HvTextTranslatorTest {
         assertTrue(resisted, resisted.contains("抵抗 25%"))
     }
 
+    @Test fun battleItemLabelsAndGroupsUseTheBattleScopedDictionary() {
+        val battle = translator.translatorFor("https://hentaiverse.org/?s=Battle&ss=ar", battle = true)
+        assertEquals("生命药水", battle("Health Potion"))
+        assertEquals("风暴魔药", battle("Infusion of Storms"))
+        assertEquals("神之卷轴", battle("Scroll of the Gods"))
+        assertEquals("道具", battle("Items"))
+        assertEquals("卷轴", battle("Scrolls"))
+        assertEquals("魔药", battle("Infusions"))
+    }
+
     @Test fun battleSpiritResourceDoesNotInheritTheStanceLabel() {
         val battle = translator.translatorFor("https://hentaiverse.org/?s=Battle&ss=ar", battle = true)
         assertEquals("灵力", battle("Spirit"))

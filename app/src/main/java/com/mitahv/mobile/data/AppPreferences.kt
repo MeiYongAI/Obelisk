@@ -16,6 +16,10 @@ internal class AppPreferences(context: Context) {
         get() = AppThemeMode.entries.firstOrNull { it.name == preferences.getString("theme", null) } ?: AppThemeMode.System
         set(value) { preferences.edit().putString("theme", value.name).apply() }
 
+    var autoNextRound: Boolean
+        get() = preferences.getBoolean("auto_next_round", false)
+        set(value) { preferences.edit().putBoolean("auto_next_round", value).apply() }
+
     var dynamicColor: Boolean
         get() = preferences.getBoolean("dynamic_color", true)
         set(value) { preferences.edit().putBoolean("dynamic_color", value).apply() }

@@ -104,10 +104,10 @@ class BattleStrategyScreenTest {
         val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
-                BattleSessionScreen(null, state.value, null, "Isekai", strategy, {}, true, false, false, null, false, 0,
+                BattleSessionScreen(null, state.value, null, "Isekai", strategy, {}, true, false, false, false, null, false, 0,
                     { byteArrayOf() }, {}, {}, { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) }, {}, {})
             } } } }
-            val start = context.getString(R.string.jpx_run); val pause = context.getString(R.string.jpx_pause)
+            val start = context.getString(R.string.jpx_auto_run); val pause = context.getString(R.string.jpx_pause)
             find(start); assertTrue(calls.isEmpty()); click(start); await { calls.size == 1 }
             val second = initial.copy(turnKey = Any())
             scenario.onActivity { state.value = RequestState.BattleReady(second) }; await { calls.size == 2 }
@@ -120,6 +120,65 @@ class BattleStrategyScreenTest {
             find(start); SystemClock.sleep(500); assertEquals(List(3) { BattleAction("attack", 7) }, calls.toList())
             scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(isComplete = true, turnKey = Any())) }
             SystemClock.sleep(500); assertEquals(3, calls.size)
+        }
+    }
+
+    @Test fun battleActionsRemainAccessibleBesideAutoControl() {
+        val page = BattlePage(
+            token = "fixture", playerVitals = emptyList(), enemies = emptyList(), quickActions = emptyList(),
+            skills = listOf(BattleActionOption("skill-1", "Fixture skill", "skill", 1, false)),
+            spells = listOf(BattleActionOption("spell-1", "Fixture spell", "magic", 2, false)),
+            items = listOf(BattleActionOption("item-1", "Fixture item", "items", 3, false)),
+            log = emptyList(), completion = "", experienceBarWidth = 0f,
+            controls = listOf(BattleControl("attack", true), BattleControl("skill", true), BattleControl("items", true)),
+        )
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                BattleScreen(page, false, {}, false, true, false, true, {}, null, {}, {})
+            } } } }
+            listOf(R.string.game_ui_attack, R.string.game_ui_skills, R.string.game_ui_magic, R.string.game_ui_items)
+                .forEach { find(context.getString(it)) }
+            find(context.getString(R.string.jpx_auto_run))
+            click(context.getString(R.string.game_ui_skills)); find("Fixture skill")
+            click(context.getString(R.string.game_ui_items)); find("Fixture item")
+        }
+    }
+
+    @Test fun autoRunnerStopsAtRoundBoundaryAndNeedsManualRestart() {
+        val draft = JpxImport.read(
+            """{"version":1,"Staff_General":{"rules":[{"type":"target"},{"type":"normalAttack"}]}}""".byteInputStream(),
+            "fixture", "Isekai",
+        )
+        val enemy = BattleEnemy(7, "Fixture", "1", 1f, targetable = true)
+        val initial = BattlePage("fixture", emptyList(), listOf(enemy), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0f,
+            controls = listOf(BattleControl("attack", true)))
+        val strategy = BattleStrategy(null, BattleStyle.Staff, BattleScene.General, true, published = draft)
+        val state = mutableStateOf<RequestState>(RequestState.BattleReady(initial))
+        val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
+        val continuations = java.util.concurrent.atomic.AtomicInteger()
+        val completed = initial.copy(isComplete = true, continuation = BattleContinuation("下一轮"), completion = "victory")
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                BattleSessionScreen(
+                    playerLevel = null, state = state.value, loadout = null, world = "Isekai", strategy = strategy,
+                    onSettings = {}, settingsEnabled = true, autoNextRound = true, loading = false, nativeBusy = false,
+                    error = null, needsRefresh = false, responseRevision = 0, loadImage = { byteArrayOf() },
+                    onRetry = {}, onRiddleAction = {},
+                    onSubmitBattleAction = { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) },
+                    onContinue = { continuations.incrementAndGet(); state.value = RequestState.BattleBusy(completed) },
+                    onLeaveBattle = {},
+                )
+            } } } }
+            val auto = context.getString(R.string.jpx_auto_run)
+            val pause = context.getString(R.string.jpx_pause)
+            find(auto); click(auto); await { calls.size == 1 }
+            scenario.onActivity { state.value = RequestState.BattleReady(completed) }
+            await { continuations.get() == 1 }
+            val nextRound = initial.copy(turnKey = Any(), round = BattleRoundFacts(current = 2), encounterKey = initial.encounterKey)
+            scenario.onActivity { state.value = RequestState.BattleReady(nextRound) }
+            find(auto); SystemClock.sleep(600)
+            assertEquals("Automation must stop when the next round is loaded", 1, calls.size)
+            click(auto); await { calls.size == 2 }; find(pause)
         }
     }
 
