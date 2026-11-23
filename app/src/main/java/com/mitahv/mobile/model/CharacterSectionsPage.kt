@@ -10,6 +10,7 @@ data class CharacterSectionsPage(
     val groups: List<CharacterSectionGroup> = emptyList(),
     val forms: List<CharacterSectionForm> = emptyList(),
     val trainingProgress: CharacterTrainingProgress? = null,
+    val battleLoadout: BattleLoadout? = null,
     val equipmentSelection: Boolean = false,
 ) {
     /** Settings groups share one HTML form, so edits across groups must be submitted together. */

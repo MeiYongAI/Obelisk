@@ -58,6 +58,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +69,7 @@ import com.mitahv.mobile.model.ArenaChallenge
 import com.mitahv.mobile.model.ArenaPage
 import com.mitahv.mobile.model.BattleAction
 import com.mitahv.mobile.model.BattleActionOption
+import com.mitahv.mobile.model.BattleLoadout
 import com.mitahv.mobile.model.BattlePage
 import com.mitahv.mobile.model.BattleContinuation
 import com.mitahv.mobile.model.BattleEnemy
@@ -78,6 +80,9 @@ import okhttp3.HttpUrl
 @Composable
 internal fun BattleSessionScreen(
     state: RequestState,
+    loadout: BattleLoadout?,
+    onSettings: () -> Unit,
+    settingsEnabled: Boolean,
     loading: Boolean,
     nativeBusy: Boolean,
     error: String?,
@@ -90,7 +95,8 @@ internal fun BattleSessionScreen(
     onContinue: (BattleContinuation) -> Unit,
     onLeaveBattle: () -> Unit,
 ) {
-    BackHandler {
+    var strategyOpen by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = !strategyOpen) {
         val page = (state as? RequestState.BattleReady)?.page
         if (!loading && page?.isComplete == true) {
             val continuation = page.continuation
@@ -102,6 +108,7 @@ internal fun BattleSessionScreen(
     }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+            BattleTopBar(onStrategy = { strategyOpen = true }, onSettings = onSettings, settingsEnabled = settingsEnabled)
             if (error != null) Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -153,6 +160,7 @@ internal fun BattleSessionScreen(
             }
         }
     }
+    if (strategyOpen) BattleStrategySheet(loadout) { strategyOpen = false }
 }
 
 @Composable

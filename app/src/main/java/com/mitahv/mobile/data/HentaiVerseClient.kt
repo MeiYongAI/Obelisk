@@ -17,6 +17,8 @@ import okhttp3.HttpUrl
 import okhttp3.CookieJar
 import okio.BufferedSink
 import org.json.JSONObject
+import com.mitahv.mobile.model.BattleLoadout
+import org.jsoup.Jsoup
 import com.mitahv.mobile.model.BattleAction
 import com.mitahv.mobile.model.HvRoute
 import com.mitahv.mobile.model.HvWorld
@@ -71,6 +73,14 @@ internal class HentaiVerseClient(
 
     suspend fun fetchPage(world: HvWorld, url: HttpUrl): HvPageResponse = withContext(Dispatchers.IO) {
         executePage(NativeRequests.build(world, NativeAction(url, "GET", label = "刷新"), site), world)
+    }
+
+    suspend fun fetchBattleLoadout(world: HvWorld): BattleLoadout? = withContext(Dispatchers.Default) {
+        val response = fetchPage(world, HvRoute.Equipment.url(world, site))
+        val doc = Jsoup.parse(response.html, response.url.toString())
+        if (doc.selectFirst("#eqch_outer #eqsb") == null) return@withContext null
+        val scripts = fetchSupplementalScripts(HvDataScriptRequests.fromPage(doc, world, site, response.url))
+        CharacterSectionsParser.parse(doc, HvRoute.Equipment, world, response.url, scripts.scripts).battleLoadout
     }
 
     suspend fun fetchSupplementalScripts(world: HvWorld, html: String, currentUrl: HttpUrl): HvSupplementalScripts =

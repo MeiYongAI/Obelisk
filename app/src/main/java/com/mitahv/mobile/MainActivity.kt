@@ -58,6 +58,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
@@ -100,6 +101,7 @@ import com.mitahv.mobile.data.BattleModesParser
 import com.mitahv.mobile.model.ArenaChallenge
 import com.mitahv.mobile.model.BattleAction
 import com.mitahv.mobile.model.BattleContinuation
+import com.mitahv.mobile.model.BattleLoadout
 import com.mitahv.mobile.model.BattlePage
 import com.mitahv.mobile.model.RiddlePage
 import com.mitahv.mobile.model.CharacterPage
@@ -199,6 +201,13 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var nativeBackStack by rememberSaveable(world, route, site) { mutableStateOf(listOf<String>()) }
     var requestState by remember { mutableStateOf<RequestState>(RequestState.Idle) }
     val pageSnapshots = remember(world, site, activeAccountId, hasSession) { PageSnapshotCache() }
+    // Save only the small, read-only observation; never persist raw account pages.
+    var loadout by key(world, site, activeAccountId, hasSession) {
+        rememberSaveable { mutableStateOf<BattleLoadout?>(null) }
+    }
+    var observedPersona by key(world, site, activeAccountId, hasSession) {
+        rememberSaveable { mutableStateOf<String?>(null) }
+    }
     var displayedRoute by remember(world, site, activeAccountId) { mutableStateOf(route) }
     var displayedUrl by remember(world, site, activeAccountId) { mutableStateOf(currentUrl) }
     var retryNonce by remember { mutableStateOf(0) }
@@ -220,6 +229,14 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var nativeNeedsRefresh by remember { mutableStateOf(false) }
     var nativeSubmissionUnconfirmed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    fun observeEquipment(state: RequestState) {
+        if (state is RequestState.CharacterReady) {
+            if (observedPersona != null && observedPersona != state.page.personaId) loadout = null
+            observedPersona = state.page.personaId
+        }
+        val page = (state as? RequestState.CharacterSectionReady)?.page ?: return
+        if (page.route == HvRoute.Equipment && !page.equipmentSelection) loadout = page.battleLoadout
+    }
     suspend fun acceptPage(requestRoute: HvRoute, requestWorld: HvWorld, html: String,
         url: HttpUrl = requestRoute.url(requestWorld, site),
         initialScripts: List<String> = emptyList(), requestSerial: Int = loadSerial): RequestState {
@@ -239,6 +256,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         val parsedNavigation = parsed.navigation
         val parsedPage = parsed.state
         if (requestSerial != loadSerial) throw CancellationException("Page superseded")
+        observeEquipment(parsedPage)
         if (parsedPage is RequestState.BattleReady || parsedPage is RequestState.RiddleReady) {
             pageSnapshots.clear()
             battleSessionActive = true
@@ -270,6 +288,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     parseLoadedPage(source.route, source.world, source.html, source.hasNavigation, source.url, details.scripts, source.document)
                 }
                 if (pageSource == source) {
+                    observeEquipment(enriched)
                     requestState = enriched
                     pageSnapshots.put(PageSnapshot(source.route, source.url, navigation, enriched))
                 }
@@ -281,6 +300,20 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             throw cancelled
         } catch (error: Exception) {
             if (pageSource == source) nativeError = context.getString(R.string.app_details_failed, failureMessage(error, context))
+        }
+    }
+    // Warm up in the lobby, not on the battle-start or turn submission path.
+    val inBattleLobby = !battleSessionActive && !pageLoading &&
+        (requestState is RequestState.ArenaReady || requestState is RequestState.BattleModeReady)
+    LaunchedEffect(client, world, inBattleLobby) {
+        if (!hasSession || !inBattleLobby) return@LaunchedEffect
+        val serial = loadSerial
+        try {
+            val observed = client.fetchBattleLoadout(world)
+            if (serial == loadSerial && !battleSessionActive) loadout = observed
+        } catch (_: IOException) {
+            // Optional read: never block a fight or present unverified equipment as current.
+            if (serial == loadSerial && !battleSessionActive) loadout = null
         }
     }
     LaunchedEffect(world, site, hasSession, activeAccountId, retryNonce) {
@@ -366,6 +399,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         pageSnapshots.clear()
         val requestWorld = world
         val requestRoute = route
+        if (requestRoute.category != HvSection.Battle && !battleSessionActive) loadout = null
         nativeBusy = true
         nativeError = null
         scope.launch {
@@ -394,6 +428,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         val before = (requestState as? RequestState.CharacterReady)?.page ?: return
         pageSnapshots.clear()
         val requestWorld = world
+        loadout = null
         characterActionBusy = true
         characterActionError = null
         scope.launch {
@@ -454,6 +489,11 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
 
     fun resetSessionPage() {
+        observedPersona = null
+        loadout = null
+        battleSessionActive = false
+        battleReturnUrl = null
+        battleReturnRoute = null
         loadSerial++
         pageSource = null
         pageSnapshots.clear()
@@ -582,6 +622,11 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     BackHandler(enabled = showLogin && (loginBusy || hasSession || showSettings) && !showWebLogin) {
         if (!loginBusy) showLogin = false
     }
+    fun openSettings() {
+        settingsError = null
+        accountRevision++
+        showSettings = true
+    }
     fun closeSettings() {
         showSettings = false
         if (!hasSession) showLogin = true
@@ -685,6 +730,10 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 battle = requestState is RequestState.BattleReady || requestState is RequestState.BattleBusy) {
                 if (battleSessionActive) BattleSessionScreen(
                     state = requestState,
+                    loadout = loadout,
+                    onSettings = ::openSettings,
+                    settingsEnabled = !pageLoading && !nativeBusy && !challengeBusy &&
+                        requestState !is RequestState.BattleBusy && requestState !is RequestState.Loading,
                     loading = pageLoading,
                     nativeBusy = nativeBusy,
                     error = nativeError,
@@ -731,7 +780,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                         nativeBackStack = emptyList()
                         navigatePage(it, it.url(world, site))
                     },
-                    onSettings = { settingsError = null; accountRevision++; showSettings = true },
+                    onSettings = ::openSettings,
                     onRetry = ::retryPage,
                     characterActionBusy = characterActionBusy,
                     challengeBusy = challengeBusy,

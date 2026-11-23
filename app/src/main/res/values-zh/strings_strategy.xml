@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="strategy_title">策略面板</string>
+    <string name="strategy_app_settings">Obelisk 设置</string>
+    <string name="strategy_no_snapshot">暂无战前装备记录</string>
+    <string name="strategy_no_snapshot_hint">下次开战前，打开装备总览，或在战斗大厅等装备资料加载完成。战斗中不会为此请求装备页。</string>
+    <string name="strategy_style">识别流派</string>
+    <string name="strategy_one">单手</string>
+    <string name="strategy_two">双手</string>
+    <string name="strategy_dual">双持</string>
+    <string name="strategy_niten">二天一流</string>
+    <string name="strategy_unarmed">空手</string>
+    <string name="strategy_staff">法杖</string>
+    <string name="strategy_unknown">未识别</string>
+    <string name="strategy_mage">%1$s · 战法</string>
+    <string name="strategy_physical">%1$s · 物理</string>
+    <string name="strategy_affinity">法术派系：%1$s</string>
+    <string name="strategy_missing_bonus">六系法伤数据不全，暂不判定派系。</string>
+    <string name="strategy_zero">六系法伤加成均为零</string>
+    <string name="strategy_tie">最高法伤并列，不指定派系。</string>
+    <string name="strategy_source">战前装备</string>
+    <string name="strategy_source_set">战前装备 · 套装 %1$s</string>
+    <string name="strategy_main">主手：%1$s</string>
+    <string name="strategy_off">副手：%1$s</string>
+    <string name="strategy_empty">未装备</string>
+    <string name="strategy_bonuses">法术伤害加成</string>
+    <string name="strategy_rule">最高加成超过 %1$d%% 才判为战法。</string>
+    <string name="strategy_percent">%1$.1f%%</string>
+    <string name="strategy_fire">火系</string>
+    <string name="strategy_cold">冰系</string>
+    <string name="strategy_elec">雷系</string>
+    <string name="strategy_wind">风系</string>
+    <string name="strategy_holy">圣系</string>
+    <string name="strategy_dark">暗系</string>
+</resources>

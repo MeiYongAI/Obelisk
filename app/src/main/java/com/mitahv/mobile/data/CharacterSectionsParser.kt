@@ -46,15 +46,22 @@ internal object CharacterSectionsParser {
                 formAction(setForm, url, "Set $set", "equip_set" to set) else null
             links += CharacterSectionLink("Set $set", action, active)
         }
+        val hands = mutableMapOf<String, String?>()
         val slotRows = doc.select("#eqsb .eqb, #equipselect_left > .eqb").map { slot ->
             val title = slot.children().firstOrNull().hvText()
             val detail = slot.children().getOrNull(1).hvText()
-            val equipmentId = slot.select("[onmouseover]").firstNotNullOfOrNull {
-                Regex("equips\\.set\\(\\s*(\\d+)").find(it.attr("onmouseover"))?.groupValues?.get(1)
-            } ?: currentEquipmentId.takeIf { slot.parent()?.id() == "equipselect_left" }
+            val equipmentId = slot.children().getOrNull(1)?.attr("data-eid")?.takeIf { it.toLongOrNull() != null }
+                ?: slot.select("[onmouseover]").firstNotNullOfOrNull {
+                    Regex("(?:equips\\.set|hover_equip)\\(\\s*(\\d+)").find(it.attr("onmouseover"))?.groupValues?.get(1)
+                } ?: currentEquipmentId.takeIf { slot.parent()?.id() == "equipselect_left" }
             val data = equipmentId?.let { equipment?.optJSONObject(it) }
             val originalName = data?.optString("n")?.takeIf(String::isNotBlank)
             val target = location(slot.attr("onclick"), url)
+            if (slot.parent()?.id() == "eqsb") {
+                val item = slot.children().getOrNull(1)
+                hands[title.lowercase()] = if (item?.hasClass("eqempty") == true) ""
+                    else originalName ?: data?.optString("t")?.takeIf(String::isNotBlank)
+            }
             val comparison = if (slot.parent()?.id() == "equipselect_left") doc.selectFirst("#equipcompare")?.html().orEmpty() else ""
             CharacterSectionRow(title, if (originalName != null) data?.optString("t")?.takeIf(String::isNotBlank) ?: detail else detail,
                 actions = listOfNotNull(target?.let {
@@ -94,7 +101,15 @@ internal object CharacterSectionsParser {
             }
         }
         val empty = doc.select("#equiplist p").map { it.hvText() }.filter { it.isNotBlank() }
-        return CharacterSectionsPage(HvRoute.Equipment, navigation = links, groups = groups, forms = forms, notices = empty,
+        val bonusRows = groups.firstOrNull { it.title.equals("Spell Damage Bonus", ignoreCase = true) }?.rows.orEmpty()
+        val bonuses = bonusRows.mapNotNull { row ->
+            val school = SpellSchool.entries.find { it.name.equals(row.title, ignoreCase = true) }
+            val value = row.value.removeSuffix("%").toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0 }
+            if (school != null && value != null) school to value else null
+        }.toMap()
+        val loadout = if (doc.selectFirst("#eqsb") == null) null else BattleLoadout(
+            links.singleOrNull { it.selected }?.label?.removePrefix("Set "), hands["main hand"], hands["off hand"], bonuses)
+        return CharacterSectionsPage(HvRoute.Equipment, battleLoadout = loadout, navigation = links, groups = groups, forms = forms, notices = empty,
             equipmentSelection = doc.selectFirst("#equipselect_outer") != null)
     }
 

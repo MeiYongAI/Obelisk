@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="strategy_title">Strategy panel</string>
+    <string name="strategy_app_settings">Obelisk settings</string>
+    <string name="strategy_no_snapshot">No pre-battle loadout</string>
+    <string name="strategy_no_snapshot_hint">Before your next fight, open Equipment or let the battle lobby load. No equipment requests are made during a fight.</string>
+    <string name="strategy_style">Detected style</string>
+    <string name="strategy_one">One-handed</string>
+    <string name="strategy_two">Two-handed</string>
+    <string name="strategy_dual">Dual wielding</string>
+    <string name="strategy_niten">Niten Ichiryu</string>
+    <string name="strategy_unarmed">Unarmed</string>
+    <string name="strategy_staff">Staff</string>
+    <string name="strategy_unknown">Unidentified</string>
+    <string name="strategy_mage">%1$s · Battlemage</string>
+    <string name="strategy_physical">%1$s · Physical</string>
+    <string name="strategy_affinity">Spell affinity: %1$s</string>
+    <string name="strategy_missing_bonus">Incomplete spell bonuses; affinity undetermined.</string>
+    <string name="strategy_zero">No elemental damage bonus</string>
+    <string name="strategy_tie">Highest bonus tied; no unique affinity.</string>
+    <string name="strategy_source">Pre-battle equipment</string>
+    <string name="strategy_source_set">Pre-battle equipment · Set %1$s</string>
+    <string name="strategy_main">Main hand: %1$s</string>
+    <string name="strategy_off">Off hand: %1$s</string>
+    <string name="strategy_empty">Empty</string>
+    <string name="strategy_bonuses">Spell damage bonuses</string>
+    <string name="strategy_rule">Battlemage if the highest bonus exceeds %1$d%%.</string>
+    <string name="strategy_percent">%1$.1f%%</string>
+    <string name="strategy_fire">Fire</string>
+    <string name="strategy_cold">Cold</string>
+    <string name="strategy_elec">Elec</string>
+    <string name="strategy_wind">Wind</string>
+    <string name="strategy_holy">Holy</string>
+    <string name="strategy_dark">Dark</string>
+</resources>
