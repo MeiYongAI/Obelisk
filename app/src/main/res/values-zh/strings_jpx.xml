@@ -51,7 +51,7 @@
     <string name="jpx_discard">放弃未保存的修改？</string>
     <string name="jpx_discard_yes">放弃修改</string>
     <string name="jpx_invalid">请检查必填项和数字范围（下限不能大于上限）。</string>
-    <string name="jpx_code">脚本文本（不会执行）</string>
+    <string name="jpx_code">JavaScript</string>
     <string name="jpx_keybind">快捷键：%1$s</string>
     <string name="jpx_options_rule">第 %1$d 条规则的选项</string>
     <string name="jpx_fraction">按比例填写：0.3 表示 30%。</string>
@@ -91,4 +91,5 @@
     <string name="jpx_stopped">已停止</string>
     <string name="jpx_refresh_run">请刷新后再运行规则</string>
     <string name="jpx_unavailable_rule">已暂停：规则 %1$d 的「%2$s」不可用</string>
+    <string name="jpx_script_error">规则 %1$d 已暂停：%2$s</string>
 </resources>

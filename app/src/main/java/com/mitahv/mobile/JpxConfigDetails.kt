@@ -33,6 +33,10 @@ internal fun JpxConfigDetails(doc: JpxDocument, subtitle: String, busy: Boolean,
     var deleting by remember { mutableStateOf<RuleAddress?>(null) }
     val list = rememberLazyListState()
     val groups = remember(doc) { doc.groups(mode).associateWith { doc.rules(mode, it).map { row -> row.asJsonObject } } }
+    val offsets = remember(groups) {
+        var offset = 0
+        groups.mapValues { (group, rows) -> if (group.startsWith("kb_")) 0 else offset.also { offset += rows.size } }
+    }
     val drag = remember(doc) { RuleReorder(list, groups.flatMap { (group, rows) -> rows.indices.map { RuleAddress(group, it) } }.associateBy { it.key }) }
     fun move(from: RuleAddress, to: Int) {
         if (!busy && from.index != to) onEdit(from.group, { it.add(to, it.removeAt(from.index)) }, {})
@@ -63,6 +67,7 @@ internal fun JpxConfigDetails(doc: JpxDocument, subtitle: String, busy: Boolean,
                 }
                 items(rows.size, key = { RuleAddress(group, it).key }) { index ->
                     val at = RuleAddress(group, index)
+                    val number = offsets.getValue(group) + index + 1
                     val rule = rows[index]
                     val enabled = rule.text("disabled") != "true"
                     val colors = MaterialTheme.colorScheme
@@ -72,8 +77,10 @@ internal fun JpxConfigDetails(doc: JpxDocument, subtitle: String, busy: Boolean,
                     Surface(color = if (dragging) colors.secondaryContainer else colors.surface) {
                         Box {
                             Row(Modifier.fillMaxWidth().heightIn(min = 60.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Filled.DragHandle, stringResource(R.string.jpx_reorder, index + 1), tint = colors.onSurfaceVariant)
+                                Column(Modifier.width(48.dp).heightIn(min = 48.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center) {
+                                    Text(number.toString(), style = MaterialTheme.typography.labelLarge, color = colors.onSurface)
+                                    Icon(Icons.Filled.DragHandle, stringResource(R.string.jpx_reorder, number), Modifier.size(16.dp), tint = colors.onSurfaceVariant)
                                 }
                                 Column(Modifier.weight(1f).clickable(enabled = !busy) { editing = at }.heightIn(min = 48.dp), verticalArrangement = Arrangement.Center) {
                                     val type = rule.text("type")
@@ -83,11 +90,11 @@ internal fun JpxConfigDetails(doc: JpxDocument, subtitle: String, busy: Boolean,
                                     val count = rule.getAsJsonArray("conditions")?.size() ?: 0
                                     if (count > 0) Text(stringResource(R.string.jpx_cond_count, count), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                                 }
-                                val switchLabel = stringResource(R.string.jpx_enable_row, index + 1)
+                                val switchLabel = stringResource(R.string.jpx_enable_row, number)
                                 Switch(checked = enabled, enabled = !busy, onCheckedChange = { on -> onEdit(group, { it[index].addProperty("disabled", !on) }, {}) },
                                     modifier = Modifier.semantics { contentDescription = switchLabel })
                                 Box {
-                                    IconButton(enabled = !busy, onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.jpx_options_rule, index + 1)) }
+                                    IconButton(enabled = !busy, onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.jpx_options_rule, number)) }
                                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                         for ((offset, label) in listOf(-1 to R.string.jpx_up, 1 to R.string.jpx_down)) DropdownMenuItem(
                                             text = { Text(stringResource(label)) }, enabled = index + offset in rows.indices,

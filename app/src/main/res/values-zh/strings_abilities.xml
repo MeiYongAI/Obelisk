@@ -30,4 +30,7 @@
     <string name="ability_ui_need_points">还差 %1$d 技能点</string>
     <string name="ability_ui_unlockable">可解锁</string>
     <string name="ability_ui_mastery_cost">%1$s 精通点</string>
+    <string name="ability_ui_equipped_upgrades">已装入可升级</string>
+    <string name="ability_ui_no_upgrades">当前没有可升级的已装入技能</string>
+    <string name="ability_ui_upgrades_failed">部分分类未能读取</string>
 </resources>

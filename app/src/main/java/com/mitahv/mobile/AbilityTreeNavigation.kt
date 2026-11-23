@@ -6,7 +6,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,38 +22,42 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mitahv.mobile.i18n.messageText
 import com.mitahv.mobile.model.CharacterSectionLink
-import com.mitahv.mobile.model.NativeAction
 
 @Composable
-internal fun AbilityTreeBar(links: List<CharacterSectionLink>, busy: Boolean, onBrowse: () -> Unit,
-    onAction: (NativeAction) -> Unit) {
+internal fun AbilityTreeBar(links: List<CharacterSectionLink>, selectedId: String?, enabled: Boolean,
+    onBrowse: () -> Unit, onSelect: (String) -> Unit) {
     if (links.isEmpty()) return
-    val selected = links.indexOfFirst { it.selected }
-    val scroll = rememberLazyListState(initialFirstVisibleItemIndex = selected.coerceAtLeast(0))
-    LaunchedEffect(selected) {
-        if (selected < 0) return@LaunchedEffect
-        val layout = scroll.layoutInfo
-        if (layout.visibleItemsInfo.none { it.index == selected && it.offset >= 0 && it.offset + it.size <= layout.viewportEndOffset }) {
-            scroll.scrollToItem(selected)
-        }
-    }
+    val scroll = rememberLazyListState(initialFirstVisibleItemIndex = links.indexOfFirst { it.abilityTreeId == selectedId }.coerceAtLeast(0))
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        LazyRow(state = scroll, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 12.dp),
+        LazyRow(state = scroll, modifier = Modifier.weight(1f).selectableGroup(), contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(links, key = { it.abilityTreeId ?: it.label }) { link ->
-                AbilityTreeChoice(link, busy) { if (!link.selected) link.action?.let(onAction) }
+                AbilityTreeChoice(link, selectedId, enabled, onSelect)
             }
         }
         VerticalDivider(Modifier.height(24.dp))
-        IconButton(onClick = onBrowse) { Icon(Icons.Default.GridView, stringResource(R.string.ability_ui_tree)) }
+        IconButton(onClick = onBrowse, enabled = enabled) { Icon(Icons.Default.GridView, stringResource(R.string.ability_ui_tree)) }
     }
 }
 
 @Composable
-private fun AbilityTreeChoice(link: CharacterSectionLink, busy: Boolean, onClick: () -> Unit) {
-    FilterChip(selected = link.selected, enabled = !busy && (link.selected || link.action != null), onClick = onClick,
-        label = { Text(messageText(link.label)) },
-        leadingIcon = if (link.selected) ({ Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }) else null)
+private fun AbilityTreeChoice(link: CharacterSectionLink, selectedId: String?, enabled: Boolean, onSelect: (String) -> Unit) {
+    val id = link.abilityTreeId ?: return
+    val selected = id == selectedId
+    val colors = MaterialTheme.colorScheme
+    val canSelect = enabled && (link.selected || link.action != null)
+    Box(Modifier.selectable(selected, enabled = canSelect, role = Role.Tab) { onSelect(id) }
+        .sizeIn(minWidth = 48.dp, minHeight = 48.dp), contentAlignment = Alignment.Center) {
+        Surface(shape = MaterialTheme.shapes.small,
+            color = if (selected) colors.secondaryContainer else colors.surface,
+            border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant)) {
+            Box(Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 36.dp).padding(horizontal = 12.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center) {
+                Text(messageText(link.label), textAlign = TextAlign.Center, maxLines = 1, softWrap = false,
+                    style = MaterialTheme.typography.labelLarge, color = if (canSelect) colors.onSurface else colors.outline)
+            }
+        }
+    }
 }
 
 private fun treeGroup(treeId: String?): Int = when (treeId) {
@@ -62,8 +70,8 @@ private fun treeGroup(treeId: String?): Int = when (treeId) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun AbilityTreeSheet(links: List<CharacterSectionLink>, busy: Boolean, onDismiss: () -> Unit,
-    onAction: (NativeAction) -> Unit) {
+internal fun AbilityTreeSheet(links: List<CharacterSectionLink>, selectedId: String?, enabled: Boolean, onDismiss: () -> Unit,
+    onSelect: (String) -> Unit) {
     val groups = remember(links) { links.groupBy { treeGroup(it.abilityTreeId) } }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Text(stringResource(R.string.ability_ui_tree), Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
@@ -77,9 +85,9 @@ internal fun AbilityTreeSheet(links: List<CharacterSectionLink>, busy: Boolean, 
                             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        trees.forEach { link -> AbilityTreeChoice(link, busy) {
+                        trees.forEach { link -> AbilityTreeChoice(link, selectedId, enabled) { id ->
                             onDismiss()
-                            if (!link.selected) link.action?.let(onAction)
+                            onSelect(id)
                         } }
                     }
                 }

@@ -275,8 +275,7 @@ internal object CharacterSectionsParser {
         val groups = mutableListOf<CharacterSectionGroup>()
         val summary = doc.select("#ability_top > div").filter { !it.hasClass("ability_slotbar") && it.selectFirst("img") == null }
             .map { it.hvText() }.filter { it.isNotBlank() }
-        val currentLevel = ABILITY_PLAYER_LEVEL.find(doc.selectFirst("#level_readout").hvText())
-            ?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull()
+        val currentLevel = doc.hvPlayerLevel()
         val availableAbilityPoints = summary.firstNotNullOfOrNull { text ->
             ABILITY_POINTS.matchEntire(text)?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull()
         }
@@ -291,11 +290,16 @@ internal object CharacterSectionsParser {
         fun action(formId: String, label: String, vararg fields: Pair<String, String>): NativeAction? =
             doc.selectFirst("#$formId")?.let { formAction(it, url, label, *fields) }
         val abilitySlots = doc.select("#ability_top [id^=slot_]").map { slot ->
+            val tooltip = jsStrings(slot.attr("onmouseover"))
+            val next = tooltip.getOrNull(3).orEmpty()
+            val requirements = abilityUpgradeRequirements(next, currentLevel, availableAbilityPoints)
             slot to CharacterAbilitySlotInfo(
                 id = slot.id().removePrefix("slot_"),
                 family = abilityFamily(slot),
                 unlocked = slot.parent()?.hasAttr("ondrop") == true,
-                equippedName = jsStrings(slot.attr("onmouseover")).firstOrNull().orEmpty(),
+                equippedName = tooltip.firstOrNull().orEmpty(),
+                mayUpgrade = next.isNotBlank() && next != "At Maximum" && requirements?.levelMet != false &&
+                    (requirements?.missingAbilityPoints ?: 0) == 0,
             )
         }
         val abilityOptions = mutableMapOf<String, MutableList<CharacterFieldOption>>()
@@ -503,7 +507,6 @@ internal object CharacterSectionsParser {
     )
     private val ABILITY_TIER_BAR = Regex("aw[0-9]+")
     private val ABILITY_TIER_IMAGE = Regex("/ab/[0-9]+([rgbp][fu]|x)\\.png")
-    private val ABILITY_PLAYER_LEVEL = Regex("\\bLv\\.\\s*([\\d,]+)\\b", RegexOption.IGNORE_CASE)
     private val ABILITY_POINTS = Regex("Ability Points:\\s*([\\d,]+)", RegexOption.IGNORE_CASE)
     private val ABILITY_REQUIREMENTS = Regex("Requires Level ([\\d,]+) and ([\\d,]+) Ability Points?")
 

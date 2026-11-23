@@ -8,6 +8,7 @@ import kotlin.math.round
 internal sealed interface RuleTurn {
     data class Submit(val action: BattleAction) : RuleTurn
     data class Stop(val number: Int, val message: String) : RuleTurn
+    data class ScriptError(val number: Int, val reason: String) : RuleTurn
     data class Unsupported(val number: Int, val field: String) : RuleTurn
     data object NoAction : RuleTurn
 }
@@ -17,7 +18,7 @@ internal fun unknown(field: String): Nothing = throw UnknownRuleField(field)
 internal val JsonElement?.string: String? get() = this?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString
 internal val JsonElement?.bool: Boolean? get() = this?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isBoolean }?.asBoolean
 
-/** Parsed once per published profile. An evaluation never submits, mutates the draft or runs script. */
+/** Parsed once per published profile. An evaluation chooses at most one action; only the turn runner can submit it. */
 internal class BattleRules(draft: JpxDraft) {
     private data class Row(val rule: JsonObject, val conditions: List<JsonObject>)
     private val rows = JpxDocument(draft).let { doc ->
@@ -28,9 +29,10 @@ internal class BattleRules(draft: JpxDraft) {
         } }
     }
 
-    fun next(page: BattlePage, world: String, scene: BattleScene?, school: SpellSchool?): RuleTurn {
+    suspend fun next(page: BattlePage, world: String, scene: BattleScene?, school: SpellSchool?, playerLevel: Int? = null,
+        script: suspend (String, RuleContext) -> ScriptDecision): RuleTurn {
         if (page.isComplete || page.token.isBlank() || page.enemies.none { it.targetable }) return RuleTurn.NoAction
-        val ctx = RuleContext(page, world, scene, school)
+        val ctx = RuleContext(page, world, scene, school, playerLevel)
         var target: Int? = null
         var locked = false
         rows.forEachIndexed { index, (rule, conditions) ->
@@ -65,6 +67,16 @@ internal class BattleRules(draft: JpxDraft) {
                         val aim = if (option.targetsEnemy) target?.let { page.enemies[it].target } ?: return@forEachIndexed else 0
                         BattleAction(option.mode, aim, option.skill)
                     }
+                    "kamisamaniNattaHi" -> {
+                        if (!ctx.matches(conditions, target)) return@forEachIndexed
+                        val code = rule["code"].string?.takeIf { it.isNotBlank() } ?: return RuleTurn.ScriptError(index + 1, "Empty JavaScript rule")
+                        when (val decision = script(code, ctx)) {
+                            is ScriptDecision.Action -> return RuleTurn.Submit(decision.action)
+                            is ScriptDecision.Stop -> return RuleTurn.Stop(index + 1, decision.message)
+                            is ScriptDecision.Error -> return RuleTurn.ScriptError(index + 1, decision.reason)
+                            ScriptDecision.Continue -> return@forEachIndexed
+                        }
+                    }
                     "stop" -> {
                         if (ctx.matches(conditions, target)) return RuleTurn.Stop(index + 1, rule["customMessage"].string.orEmpty().take(160))
                         null
@@ -79,7 +91,7 @@ internal class BattleRules(draft: JpxDraft) {
 }
 
 internal val JsonObject.targetCondition get() = this["key"].string?.startsWith("t") == true
-internal class RuleContext(val page: BattlePage, val world: String, val scene: BattleScene?, val school: SpellSchool?) {
+internal class RuleContext(val page: BattlePage, val world: String, val scene: BattleScene?, val school: SpellSchool?, val playerLevel: Int? = null) {
     val enemies = page.enemies
     val alive = enemies.indices.filter { enemies[it].targetable }
     fun control(mode: String) = page.controls.find { it.mode == mode }

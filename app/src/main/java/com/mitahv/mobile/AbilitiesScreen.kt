@@ -53,7 +53,9 @@ private fun CharacterSectionRow.actionFor(field: String) = actions.firstOrNull {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onAction: (NativeAction) -> Unit,
-    loading: Boolean = false) {
+    loading: Boolean = false, treeEnabled: Boolean = !busy, pendingTree: String? = null,
+    onTree: (String) -> Unit = { id -> page.navigation.find { it.abilityTreeId == id }?.takeUnless { it.selected }?.action?.let(onAction) },
+    loadTree: suspend (okhttp3.HttpUrl) -> CharacterSectionsPage, loadError: String? = null, onRetry: () -> Unit = {}) {
     val rows = page.groups.flatMap { it.rows }
     val abilities = rows.filter { it.ability != null }
     val slots = rows.filter { it.abilitySlot != null }
@@ -65,6 +67,9 @@ internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onActio
     var detailId by rememberSaveable(tree?.abilityTreeId) { mutableStateOf<String?>(null) }
     var slotId by rememberSaveable { mutableStateOf<String?>(null) }
     var assignAbilityId by rememberSaveable(tree?.abilityTreeId) { mutableStateOf<String?>(null) }
+    val selectedTree = pendingTree ?: tree?.abilityTreeId
+    var directorySelection by remember { mutableIntStateOf(0) }
+    var upgradesOpen by rememberSaveable { mutableStateOf(false) }
     val listStates = rememberSaveableStateHolder()
     val resetAll = rows.firstNotNullOfOrNull { it.actionFor("reset_all") }
     val selectedSlot = slots.firstOrNull { it.abilitySlot?.id == slotId }
@@ -103,11 +108,11 @@ internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onActio
             PrimaryTabRow(selectedTabIndex = familyIndex) {
                 slotFamilyLabels.forEachIndexed { index, label ->
                     Tab(selected = familyIndex == index, onClick = { familyIndex = index },
-                        text = { Text(stringResource(label), maxLines = 2) })
+                        text = { Text(stringResource(label), maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center) })
                 }
             }
         } else {
-            AbilityTreeBar(page.navigation, busy, onBrowse = { treePicker = true }, onAction = onAction)
+            key(directorySelection) { AbilityTreeBar(page.navigation, selectedTree, treeEnabled, { treePicker = true }, onTree) }
         }
         listStates.SaveableStateProvider(if (showingSlots) "slots:$familyIndex" else "tree:${tree?.abilityTreeId}") {
             if (showingSlots) {
@@ -124,6 +129,11 @@ internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onActio
                 LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (page.notices.isNotEmpty()) item(key = "notices") { AbilityNotices(page) }
+                    item(key = "equipped-upgrades") {
+                        OutlinedButton(onClick = { upgradesOpen = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.ability_ui_equipped_upgrades))
+                        }
+                    }
                     if (abilities.isEmpty()) item(key = "empty") {
                         Text(stringResource(R.string.ability_ui_empty), Modifier.padding(vertical = 24.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -136,8 +146,11 @@ internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onActio
         }
     }
 
-    if (treePicker) AbilityTreeSheet(if (selectedSlot == null) page.navigation else slotTrees, busy,
-        onDismiss = { treePicker = false }, onAction = onAction)
+    if (treePicker) AbilityTreeSheet(if (selectedSlot == null) page.navigation else slotTrees, selectedTree,
+        if (selectedSlot == null) treeEnabled else !busy, onDismiss = { treePicker = false }, onSelect = {
+            directorySelection++; onTree(it)
+        })
+    if (upgradesOpen) EquippedUpgradeDialog(page, busy, loadTree, loadError, onRetry, onAction) { upgradesOpen = false }
 
     abilities.firstOrNull { it.ability?.id == detailId }?.let { row ->
         AbilityDetailDialog(row, busy, onDismiss = { detailId = null }, onAction = onAction,
@@ -244,7 +257,7 @@ private fun AbilityRow(row: CharacterSectionRow, busy: Boolean, onAction: (Nativ
 }
 
 @Composable
-private fun AbilityAdvanceButton(row: CharacterSectionRow, action: NativeAction, busy: Boolean,
+internal fun AbilityAdvanceButton(row: CharacterSectionRow, action: NativeAction, busy: Boolean,
     onAction: (NativeAction) -> Unit, modifier: Modifier = Modifier) {
     val ability = requireNotNull(row.ability)
     val cost = ability.upgradeCost.takeIf { it.isNotBlank() }?.let { abilityCost(it) }
@@ -253,7 +266,7 @@ private fun AbilityAdvanceButton(row: CharacterSectionRow, action: NativeAction,
     val description = "${messageText(row.title)}, $label"
     FilledTonalButton(onClick = { onAction(action) }, enabled = !busy, modifier = modifier,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
-        Text(label, Modifier.clearAndSetSemantics { contentDescription = description }, style = MaterialTheme.typography.labelLarge)
+        Text(label, Modifier.clearAndSetSemantics { contentDescription = description }, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -288,7 +301,7 @@ private fun AbilitySlotTile(row: CharacterSectionRow, enabled: Boolean = true, c
 }
 
 @Composable
-private fun AbilityPickerDialog(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+internal fun AbilityPickerDialog(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxWidth().padding(16.dp), shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerLow) {

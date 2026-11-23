@@ -507,7 +507,7 @@ class CharacterSectionsParserTest {
         assertEquals(mapOf("unlock_ability" to "1101"), advance.fields.toMap())
         assertEquals(url, advance.url)
         val slot = page.groups.single { it.title == "Ability Slots" }.rows.first()
-        assertEquals(CharacterAbilitySlotInfo("101", "r", unlocked = true, equippedName = "HP Tank"), slot.abilitySlot)
+        assertEquals(CharacterAbilitySlotInfo("101", "r", unlocked = true, equippedName = "HP Tank", mayUpgrade = true), slot.abilitySlot)
         assertAbilityMetadata(CharacterAbilityInfo("1101", "r", acquired = true,
             equippedSlotIds = listOf("101"), upgradeCost = "1 AP"), page.groups.first().rows.first().ability)
         assertNotNull(slot.form)

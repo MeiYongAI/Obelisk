@@ -81,6 +81,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.core.view.WindowCompat
+import com.mitahv.mobile.data.hvPlayerLevel
 import com.mitahv.mobile.data.HvScriptCaches
 import com.mitahv.mobile.data.HvNetworkTiming
 import com.mitahv.mobile.data.HentaiVerseClient
@@ -215,6 +216,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var observedPersona by key(world, site, activeAccountId) {
         rememberSaveable { mutableStateOf<String?>(null) }
     }
+    var playerLevel by key(world, site, activeAccountId) { rememberSaveable { mutableStateOf<Int?>(null) } }
     var displayedRoute by remember(world, site, activeAccountId) { mutableStateOf(route) }
     var displayedUrl by remember(world, site, activeAccountId) { mutableStateOf(currentUrl) }
     var retryNonce by remember { mutableStateOf(0) }
@@ -258,11 +260,14 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             val parsedPage = parseLoadedPage(responseRoute, requestWorld, html, parsedNavigation != null, url, initialScripts, document)
             val scripts = if (parsedPage is RequestState.RiddleReady || initialScripts.isNotEmpty()) emptyList()
                 else HvDataScriptRequests.fromPage(document, requestWorld, site, url)
-            ParsedPage(document, parsedNavigation, parsedPage, scripts)
+            val level = if (parsedPage is RequestState.BattleReady || parsedPage is RequestState.RiddleReady) null
+                else document.hvPlayerLevel()
+            ParsedPage(document, parsedNavigation, parsedPage, scripts, level)
         }
         val parsedNavigation = parsed.navigation
         val parsedPage = parsed.state
         if (requestSerial != loadSerial) throw CancellationException("Page superseded")
+        parsed.playerLevel?.let { playerLevel = it }
         observeEquipment(parsedPage)
         if (parsedPage is RequestState.BattleReady || parsedPage is RequestState.RiddleReady) {
             pageSnapshots.clear()
@@ -398,6 +403,16 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             requestState = RequestState.Loading
         }
         retryNonce++
+    }
+
+    fun selectAbilityTree(id: String) {
+        if (route != HvRoute.Abilities || displayedRoute != route || nativeBusy || characterActionBusy ||
+            challengeBusy || staminaBusy || nativeNeedsRefresh || nativeSubmissionUnconfirmed) return
+        val page = (requestState as? RequestState.CharacterSectionReady)?.page ?: return
+        val link = page.navigation.singleOrNull { it.abilityTreeId == id } ?: return
+        val url = if (link.selected) displayedUrl.toHttpUrl() else link.action?.takeIf { it.method == "GET" }?.url ?: return
+        if (link.selected && !pageLoading) return
+        navigatePage(route, world.urlAtSite(url, site), pendingForwardUrl ?: displayedUrl)
     }
 
     fun executeNativeAction(action: NativeAction) {
@@ -730,6 +745,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             ProvideGameTextScope(displayedUrl,
                 battle = requestState is RequestState.BattleReady || requestState is RequestState.BattleBusy) {
                 if (battleSessionActive) BattleSessionScreen(
+                    playerLevel = playerLevel,
                     state = requestState,
                     loadout = loadout,
                     world = world.name,
@@ -760,6 +776,10 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     nativeNeedsRefresh = nativeNeedsRefresh,
                     nativeSubmissionUnconfirmed = nativeSubmissionUnconfirmed,
                     onNativeAction = ::executeNativeAction,
+                    onAbilityTree = ::selectAbilityTree,
+                    pendingAbilityTree = if (route == HvRoute.Abilities && pageLoading)
+                        currentUrl.toHttpUrl().queryParameter("tree") ?: "general" else null,
+                    loadAbilityTree = { url -> client.fetchAbilityTree(world, url) },
                     hasNativeBack = nativeBackStack.isNotEmpty(),
                     onNativeBack = {
                         nativeBackStack.lastOrNull()?.let { previous ->
@@ -862,6 +882,7 @@ private data class ParsedPage(
     val navigation: HvNavigation?,
     val state: RequestState,
     val scripts: List<Request>,
+    val playerLevel: Int?,
 )
 
 internal sealed interface RequestState {
@@ -926,6 +947,9 @@ private fun GameShell(
     nativeNeedsRefresh: Boolean,
     nativeSubmissionUnconfirmed: Boolean,
     onNativeAction: (NativeAction) -> Unit,
+    onAbilityTree: (String) -> Unit,
+    pendingAbilityTree: String?,
+    loadAbilityTree: suspend (HttpUrl) -> CharacterSectionsPage,
     hasNativeBack: Boolean,
     onNativeBack: () -> Unit,
     staminaBusy: Boolean,
@@ -1177,9 +1201,14 @@ private fun GameShell(
                         onStartChallenge = onStartChallenge,
                     )
                     is RequestState.BattleReady, is RequestState.BattleBusy, is RequestState.RiddleReady -> Unit
-                    is RequestState.CharacterSectionReady -> CharacterSectionsScreen(state.page,
+                    is RequestState.CharacterSectionReady -> if (state.page.route == HvRoute.Abilities) {
+                        AbilitiesScreen(state.page, !contentEnabled, ::nativeAction, pageLoading,
+                            treeEnabled = navigationEnabled && selectedRoute == HvRoute.Abilities && !nativeNeedsRefresh && !nativeSubmissionUnconfirmed,
+                            pendingTree = pendingAbilityTree, onTree = { navigate { onAbilityTree(it) } }, loadTree = loadAbilityTree,
+                            loadError = nativeError, onRetry = { navigate(onRetry) })
+                    } else CharacterSectionsScreen(state.page,
                         busy = !contentEnabled, onAction = ::nativeAction,
-                        onDraftChanged = { characterHasDraft = it }, responseRevision = characterRevision, loading = pageLoading)
+                        onDraftChanged = { characterHasDraft = it }, responseRevision = characterRevision)
                     is RequestState.BazaarSectionReady -> {
                         if (state.page.route == HvRoute.Bazaar) ItemShopScreen(state.page,
                             busy = !contentEnabled, onAction = ::nativeAction, responseRevision = characterRevision)

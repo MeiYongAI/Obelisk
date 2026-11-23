@@ -15,7 +15,7 @@ class BattleRulesTest {
     private val target = """{"type":"target","priorityRule":"Bottom Up"}"""
     private val attack = """{"type":"normalAttack"}"""
     private fun program(vararg rows: String) = BattleRules(JpxImport.read("""{"version":1,"Staff_General":{"rules":[${rows.joinToString()}],"kb_a":[{"type":"stop"}]}}""".byteInputStream(), "fixture", world.name))
-    private fun BattleRules.run(p: BattlePage = page, school: SpellSchool? = SpellSchool.Fire) = next(p, world.name, p.scene, school)
+    private fun BattleRules.run(p: BattlePage = page, school: SpellSchool? = SpellSchool.Fire) = runBlocking { next(p, world.name, p.scene, school) { _, _ -> ScriptDecision.Error("script failed") } }
 
     @Test fun matchedTierSpellGoesThroughRealClientAndNextPaneStopsTheLoop() = runBlocking {
         val program = program("""{"type":"stop","disabled":true}""", target, """{"type":"spellDamage","name":"T2"}""", attack)
@@ -62,7 +62,7 @@ class BattleRulesTest {
     }
 
     @Test fun unknownScriptsMissingAffinityOrUnknownConditionsNeverFallThroughToAttack() {
-        assertEquals(RuleTurn.Unsupported(2,"kamisamaniNattaHi"), program(target, """{"type":"kamisamaniNattaHi","code":"throw 1"}""", attack).run())
+        assertEquals(RuleTurn.ScriptError(2,"script failed"), program(target, """{"type":"kamisamaniNattaHi","code":"throw 1"}""", attack).run())
         assertEquals(RuleTurn.Unsupported(2,"pMaxSpellType"), program(target, """{"type":"spellDamage","name":"T1"}""", attack).run(school = null))
         assertEquals(RuleTurn.Unsupported(2,"mystery"), program(target, """{"type":"normalAttack","conditions":[{"key":"mystery"}]}""", attack).run())
         val rules = program("""{"type":"stop","conditions":[{"key":"mystery"},{"key":"world","value":["Isekai"]}]}""", target, attack)

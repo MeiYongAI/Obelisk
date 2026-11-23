@@ -35,19 +35,24 @@ internal class RuleRunner {
 
 @Composable
 internal fun RunBattleTurns(runner: RuleRunner, rules: BattleRules?, page: BattlePage?, world: String, scene: BattleScene?,
-    school: SpellSchool?, playable: Boolean, interrupted: Boolean, submit: (BattlePage, BattleAction) -> Unit) {
+    loadout: BattleLoadout?, playerLevel: Int?, playable: Boolean, interrupted: Boolean, submit: (BattlePage, BattleAction) -> Unit) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val context = androidx.compose.ui.platform.LocalContext.current.applicationContext
+    val scripts = remember(context) { BattleScriptSandbox(context) }
+    DisposableEffect(scripts) { onDispose { scripts.close() } }
     val latestSubmit by rememberUpdatedState(submit)
     DisposableEffect(runner, lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_PAUSE) runner.pause() }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer); runner.pause() }
     }
-    LaunchedEffect(runner, runner.running, page?.turnKey, playable, interrupted, rules, scene, school, world) {
+    LaunchedEffect(runner, runner.running, page?.turnKey, playable, interrupted, rules, scene, loadout, playerLevel, world) {
         if (interrupted) { runner.pause(); return@LaunchedEffect }
         if (!runner.running || !playable || page == null || rules == null) return@LaunchedEffect
         delay(300) // Leave a pause affordance between acknowledged turns, never poll the server.
-        val decision = withContext(Dispatchers.Default) { rules.next(page, world, scene, school) }
+        val decision = withContext(Dispatchers.Default) {
+            rules.next(page, world, scene, loadout?.school, playerLevel) { code, ctx -> scripts.evaluate(code, ctx, loadout) }
+        }
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) runner.accept(page.turnKey, decision) { latestSubmit(page, it) }
         else runner.pause()
     }
@@ -58,6 +63,7 @@ internal fun RuleRunNotice(result: RuleTurn) {
     val message = when (result) {
         RuleTurn.NoAction -> stringResource(R.string.jpx_no_action)
         is RuleTurn.Stop -> stringResource(R.string.jpx_halt_rule, result.number, result.message.ifBlank { stringResource(R.string.jpx_stopped) })
+        is RuleTurn.ScriptError -> stringResource(R.string.jpx_script_error, result.number, result.reason)
         is RuleTurn.Unsupported -> stringResource(R.string.jpx_unavailable_rule, result.number, fieldLabel(result.field))
         is RuleTurn.Submit -> return
     }

@@ -75,6 +75,11 @@ internal class HentaiVerseClient(
         executePage(NativeRequests.build(world, NativeAction(url, "GET", label = "刷新"), site), world)
     }
 
+    suspend fun fetchAbilityTree(world: HvWorld, url: HttpUrl) = withContext(Dispatchers.Default) {
+        val response = fetchPage(world, url)
+        CharacterSectionsParser.parse(response.html, HvRoute.Abilities, world, response.url)
+    }
+
     suspend fun fetchBattleLoadout(world: HvWorld): BattleLoadout? = withContext(Dispatchers.Default) {
         val response = fetchPage(world, HvRoute.Equipment.url(world, site))
         val doc = Jsoup.parse(response.html, response.url.toString())

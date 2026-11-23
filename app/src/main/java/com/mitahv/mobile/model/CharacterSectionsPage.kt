@@ -139,6 +139,7 @@ data class CharacterAbilitySlotInfo(
     val family: String,
     val unlocked: Boolean,
     val equippedName: String = "",
+    val mayUpgrade: Boolean = false,
 )
 
 enum class CharacterFieldKind { Text, Choice, Toggle }

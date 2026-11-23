@@ -75,6 +75,7 @@ class BattleStrategyScreenTest {
                 } }
                 click(context.getString(R.string.jpx_mode_label, context.getString(R.string.strategy_staff), context.getString(R.string.jpx_scene_general)))
                 fun handle(n: Int) = find(context.getString(R.string.jpx_reorder, n)).let { node -> android.graphics.Rect().also(node::getBoundsInScreen) }
+                find("1"); find("3")
                 val from = handle(1); val to = handle(3)
                 assertFalse(instrument.uiAutomation.rootInActiveWindow.let(::flattened).any { it.text == context.getString(R.string.jpx_import) })
                 instrument.uiAutomation.executeShellCommand("input swipe ${from.centerX()} ${from.centerY()} ${to.centerX()} ${to.centerY()} 450").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
@@ -88,8 +89,13 @@ class BattleStrategyScreenTest {
         } } finally { context.deleteDatabase(filename) }
     }
 
-    @Test fun battleOnlySubmitsAfterStartAndWaitsForFreshAcknowledgedTurn() {
-        val draft = JpxImport.read("""{"version":1,"Staff_General":{"rules":[{"type":"target"},{"type":"normalAttack"}]}}""".byteInputStream(), "fixture", "Isekai")
+    @Test fun battleOnlySubmitsAfterStartAndWaitsForFreshAcknowledgedTurn() = verifyTurnLoop("""{"type":"target"},{"type":"normalAttack"}""")
+
+    @Test fun importedScriptUsesTheSameAcknowledgedTurnLoop() = verifyTurnLoop(
+        """{"type":"kamisamaniNattaHi","code":"return jpx.doAttackGoNext(jpx.monstersObj.activeMonsters[0])"}""")
+
+    private fun verifyTurnLoop(rows: String) {
+        val draft = JpxImport.read("""{"version":1,"Staff_General":{"rules":[$rows]}}""".byteInputStream(), "fixture", "Isekai")
         val enemy = BattleEnemy(7,"Fixture", "1", 1f, targetable = true)
         val initial = BattlePage("fixture", emptyList(), listOf(enemy), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0f,
             controls = listOf(BattleControl("attack", true)))
@@ -98,7 +104,7 @@ class BattleStrategyScreenTest {
         val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
-                BattleSessionScreen(state.value, null, "Isekai", strategy, {}, true, false, false, null, false, 0,
+                BattleSessionScreen(null, state.value, null, "Isekai", strategy, {}, true, false, false, null, false, 0,
                     { byteArrayOf() }, {}, {}, { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) }, {}, {})
             } } } }
             val start = context.getString(R.string.jpx_run); val pause = context.getString(R.string.jpx_pause)

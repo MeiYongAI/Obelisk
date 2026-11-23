@@ -1,7 +1,12 @@
 package com.mitahv.mobile.data
 
+import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
+
+private val playerLevelPattern = Regex("""\bLv\.\s*([\d,]+)\b""", RegexOption.IGNORE_CASE)
+internal fun Document.hvPlayerLevel(): Int? = playerLevelPattern.find(selectFirst("#level_readout").hvText())
+    ?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull()
 
 /** Reads both custom-font text and the bitmap fonts defined by HV's hvg.css. */
 internal fun Element?.hvText(): String {

@@ -61,6 +61,7 @@ private fun RuleContext.test(c: JsonObject, target: Int?): Boolean {
     return when (key) {
         "world" -> world in names()
         "battleTypes" -> (scene?.name ?: unknown(key)) in names()
+        "pLevel" -> range(playerLevel)
         "pMaxSpellType" -> (school?.name?.lowercase() ?: unknown(key)) in names()
         "pSpiritStatus" -> (control("spirit")?.selected ?: unknown(key)) == (value.bool ?: unknown(key))
         "pHP", "pMP", "pSP", "pOC" -> {
@@ -99,4 +100,4 @@ private val bossTypes = buildMap {
     add("Arena400", "New Game +|Bottomless Dungeon|Recycled Boss Rush|Time Trial Mode|Achievement Grind|Hardcore Mode")
     add("Arena500", "Angel Bunny|Applejack|Fluttershy|Gummy|Pinkie Pie|Rarity|Spike|Rainbow Dash|Twilight Sparkle")
 }
-private fun bossType(name: String) = bossTypes[name] ?: "Normal"
+internal fun bossType(name: String) = bossTypes[name] ?: "Normal"

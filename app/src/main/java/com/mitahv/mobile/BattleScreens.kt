@@ -82,6 +82,7 @@ import okhttp3.HttpUrl
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun BattleSessionScreen(
+    playerLevel: Int?,
     state: RequestState,
     loadout: BattleLoadout?,
     world: String,
@@ -110,7 +111,7 @@ internal fun BattleSessionScreen(
     val playable = state is RequestState.BattleReady && page?.isComplete == false && !loading && !nativeBusy &&
         error == null && !needsRefresh && !strategyOpen
     val rules = remember(strategy.published) { strategy.published?.let(::BattleRules) }
-    RunBattleTurns(runner, rules, page, world, strategy.scene, loadout?.school, playable,
+    RunBattleTurns(runner, rules, page, world, strategy.scene, loadout, playerLevel, playable,
         interrupted = page == null || page.isComplete || loading || nativeBusy || error != null || needsRefresh || strategyOpen,
         submit = onSubmitBattleAction)
     BackHandler(enabled = !strategyOpen) {

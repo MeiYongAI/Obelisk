@@ -39,10 +39,8 @@ internal fun CharacterSectionsScreen(
     onAction: (NativeAction) -> Unit,
     onDraftChanged: (Boolean) -> Unit = {},
     responseRevision: Int = 0,
-    loading: Boolean = false,
 ) {
     when (page.route) {
-        HvRoute.Abilities -> AbilitiesScreen(page, busy, onAction, loading)
         HvRoute.Equipment -> EquipmentScreen(page, busy, onAction, onDraftChanged, responseRevision)
         HvRoute.Training -> TrainingScreen(page, busy, responseRevision, onAction)
         HvRoute.ItemInventory -> InventoryScreen(page, busy, responseRevision, onAction)

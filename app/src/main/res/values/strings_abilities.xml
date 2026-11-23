@@ -30,4 +30,7 @@
     <string name="ability_ui_need_points">Short %1$d AP</string>
     <string name="ability_ui_unlockable">Can unlock</string>
     <string name="ability_ui_mastery_cost">%1$s mastery</string>
+    <string name="ability_ui_equipped_upgrades">Equipped upgrades</string>
+    <string name="ability_ui_no_upgrades">No equipped abilities can be upgraded.</string>
+    <string name="ability_ui_upgrades_failed">Could not check all categories.</string>
 </resources>

@@ -9,13 +9,14 @@ Obelisk is an unofficial native Android client for HentaiVerse. It presents supp
 - A focused battle screen with a scrollable enemy list, action selection, and controls placed for portrait use.
 - English and Simplified Chinese interface options.
 - Searchable selectors, dialogs, and confirmation prompts for supported forms and consequential actions.
-- Page parsing and requests handled with Jsoup and OkHttp; WebView is limited to the optional forum sign-in flow.
+- Page parsing and requests handled with Jsoup and OkHttp; the optional forum sign-in opens a WebView.
 
 Supported actions and page availability depend on the response returned by HentaiVerse. Obelisk is not affiliated with, endorsed by, or supported by E-Hentai or HentaiVerse.
 
 ## Requirements
 
 - Android 8.0 (API 26) or later.
+- For custom battle scripts: a system WebView that supports isolated JavaScript execution.
 - For development: Android Studio, JDK 17 or later, and Android SDK Platform 37.
 
 ## Build on Windows
@@ -44,7 +45,7 @@ During combat, tap **Strategy panel** in the top bar to see the detected weapon 
 
 ### Unlock or upgrade an ability
 
-Open **Character → Abilities**. Tap a category above the list, or use the grid button to see all categories grouped by weapon, armor, and magic. Each ability shows its rank. Tap **Unlock** or **Upgrade** beside the name to spend the displayed AP; tap the **name** instead to inspect effects or choose a slot without spending points. Locked rows show known level or point shortfalls. **Slots** manages equipped abilities; unlocking a slot uses mastery points, not AP.
+Open **Character → Abilities**. Tap a category above the list, or use the grid button to see all categories grouped by weapon, armor, and magic. Each ability shows its rank. Tap **Unlock** or **Upgrade** beside the name to spend the displayed AP; tap the **name** instead to inspect effects or choose a slot without spending points. Locked rows show known level or point shortfalls. **Equipped upgrades** checks equipped abilities across categories and lists only upgrades offered by the game. Spending AP is always a separate tap. **Slots** manages equipped abilities; unlocking a slot uses mastery points, not AP.
 
 ### Choose a JPX battle configuration
 
@@ -61,7 +62,15 @@ Open **Obelisk settings → Battle configurations → Import file** and choose a
 
 Tap **Run rules** in the battle top bar. Obelisk reads the selected configuration in order and submits the first available matching action through the same turn request as a manual tap. **Pause** stops the next action; it cannot cancel one already sent. Opening settings or the strategy panel, leaving the foreground, an uncertain response, or round completion stops execution. Resume explicitly; the app does not solve riddles or advance rounds.
 
-Rules can select targets, attack, cast skills or spells, use items, switch stances, apply smart debuffs, or stop. Put a **Target** rule before a normal attack or offensive spell; selecting a target does not itself spend a turn. `T1`–`T3` use the detected spell school. Keyboard groups are kept for editing and export, not executed by the loop. No JavaScript is evaluated. Monster-database filters have no matches without the external database, as in JPX. If a rule needs an unavailable input (for example historical action totals, an unknown spell school, or a player level that the battle page does not provide), the app pauses and identifies the rule instead of guessing.
+Rules can select targets, attack, cast skills or spells, use items, switch stances, apply smart debuffs, or stop. Put a **Target** rule before a normal attack or offensive spell; selecting a target does not itself spend a turn. `T1`–`T3` use the detected spell school. Keyboard groups are kept for editing and export, not executed by the loop. JPX custom JavaScript runs on a supported Android System WebView in an isolated engine, not the login browser. See **Custom scripts** below. Monster-database filters have no matches without the external database, as in JPX. If a built-in rule needs an unavailable input (for example historical action totals, an unknown spell school, or a player level not yet observed), the app pauses and identifies the rule instead of guessing.
+
+**Custom scripts:** Enable the rule, apply the configuration and tap **Run rules** in battle. For example, this JPX rule body attacks the first living monster; `false` lets the next rule run:
+
+```js
+return jpx.doAttackGoNext(jpx.monstersObj.activeMonsters[0]);
+```
+
+Scripts can read vitals, rounds, cooldown availability, equipped spell school and monster effects, and call `doAttackGoNext`, `doSpellGoNext` or `doToggleGoNext`. The bridge only accepts actions currently available in the game; at most one is submitted per turn. Each invocation has fresh globals, no DOM, network, cookies or persistent storage. `localStorage.getItem` supports only JPX’s player-level key (null until observed). Like JPX, script cast counts start from the observed log, and missing monster spawn HP uses a relative 100-point scale. Browser plugins, nested handler conditions and the full JPX-PLUS API are not emulated. Errors and timeouts pause on the displayed rule number; they never fall through to an attack.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 
