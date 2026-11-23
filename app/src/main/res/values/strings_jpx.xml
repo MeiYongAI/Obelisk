@@ -2,16 +2,14 @@
 <resources>
     <string name="jpx_title">Battle configurations</string>
     <string name="jpx_scope">Current account · %1$s</string>
-    <string name="jpx_hint">Import a JPX battle file (.txt or .json, up to 2 MiB). Saving selects it for this world. Rules and custom scripts are stored, not executed.</string>
-    <string name="jpx_import">Choose file</string>
+    <string name="jpx_hint">Choose a JPX battle export (.txt or .json, up to 2 MiB).</string>
+    <string name="jpx_import">Import file</string>
     <string name="jpx_large">File exceeds 2 MiB. Choose a smaller battle export.</string>
     <string name="jpx_wrong_world">This file is for another world. Switch worlds before importing it.</string>
     <string name="jpx_format">Not a supported JPX battle export. Choose a battle or battle-mode configuration containing rules.</string>
     <string name="jpx_io">Could not read or save the configuration. Check file access and available storage, then retry.</string>
-    <string name="jpx_empty">No saved configurations in this world.</string>
-    <string name="jpx_current">Selected</string>
+    <string name="jpx_empty">No battle configurations yet</string>
     <string name="jpx_summary">%1$d modes · %2$d rules</string>
-    <string name="jpx_select">Select</string>
     <string name="jpx_remove">Remove</string>
     <string name="jpx_preview">Import preview</string>
     <string name="jpx_save">Save and select</string>
@@ -19,16 +17,13 @@
     <string name="jpx_sign_in">Sign in to manage configurations</string>
     <string name="jpx_manage">Import and select JPX files</string>
     <string name="jpx_battle_selection">Selected configuration: %1$s</string>
-    <string name="jpx_defaults">JPX built-in defaults</string>
-    <string name="jpx_defaults_hint">Preview a single mode below, or choose the complete battle preset. Zero means JPX ships no rules for that mode.</string>
-    <string name="jpx_rule_count">%1$d rules</string>
-    <string name="jpx_export_defaults">Export original JSON</string>
-    <string name="jpx_export_battle">Battle settings and rules</string>
-    <string name="jpx_export_stats">Statistics settings</string>
-    <string name="jpx_export_shortcuts">Keyboard shortcuts</string>
-    <string name="jpx_whole_preset">Preview full preset</string>
-    <string name="jpx_exported">JSON file saved.</string>
     <string name="jpx_scene_general">General</string>
-    <string name="jpx_scene_tower">Tower</string>
     <string name="jpx_mode_label">%1$s · %2$s</string>
+    <string name="jpx_saved">Saved configurations (%1$d)</string>
+    <string name="jpx_options">Options for %1$s</string>
+    <string name="jpx_preview_hint">Saving selects this file for the current world. Its rules are not run automatically.</string>
+    <string name="jpx_scene_arena">Arena</string>
+    <string name="jpx_scene_encounter">Encounter</string>
+    <string name="jpx_scene_colosseum">Ring of Blood</string>
+    <string name="jpx_scene_item">Item World</string>
 </resources>

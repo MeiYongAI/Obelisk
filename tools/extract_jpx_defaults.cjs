@@ -1,5 +1,5 @@
 // Extract only the three settings declarations from the pinned local sources.
-// Usage: node tools/extract_jpx_defaults.cjs /path/to/jpx20261111.js /path/to/JPX-PLUS.user.js [--check]
+// Usage: node tools/extract_jpx_defaults.cjs /path/to/jpx20261111.js /path/to/JPX-PLUS.user.js /path/to/output-directory [--check]
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -9,9 +9,9 @@ const sources = [
   ['jpx', '2026.11.11', '766eb2573dfcdd0f407ba2f250a2b9e1ae76b607126dc008cee483a4b4c519a9'],
   ['jpx-plus', '2026.11.20.1', '4c7717955147ebe8d48fe466caba867cfc4920b93ad81e3a0abdca7a34786d4c'],
 ];
-const [base, plus, flag] = process.argv.slice(2);
-assert(base && plus && (!flag || flag === '--check'), 'Expected two pinned userscripts and optional --check');
-const assets = path.join(__dirname, '../app/src/main/assets/jpx-defaults');
+const [base, plus, output, flag] = process.argv.slice(2);
+assert(base && plus && output && !output.startsWith('-') && (!flag || flag === '--check'), 'Expected two pinned userscripts, output directory and optional --check');
+const assets = path.resolve(output);
 for (const [i, [id, version, hash]] of sources.entries()) {
   const src = fs.readFileSync([base, plus][i], 'utf8').replace(/\r\n/g, '\n');
   assert.equal(crypto.createHash('sha256').update(src).digest('hex'), hash, 'Unreviewed source: ' + id);

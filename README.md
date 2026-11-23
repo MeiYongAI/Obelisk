@@ -44,12 +44,9 @@ During combat, tap **Strategy panel** in the top bar to see the detected weapon 
 
 ### Choose a JPX battle configuration
 
-Open **Obelisk settings → Battle configurations** before or during a fight:
+Open **Obelisk settings → Battle configurations → Import file** before or during a fight. Choose a JPX battle export (`.txt` or `.json`, up to 2 MiB), review its modes and rule count, then tap **Save and select**. No presets are bundled. Tap a saved configuration to switch to it; use its overflow menu to remove it without deleting the original file.
 
-- **JPX built-in defaults:** choose JPX `2026.11.11` or JPX-PLUS `2026.11.20.1`. Each includes 137 rules across four populated modes: one-handed general (36), one-handed tower (33), two-handed general (27), and staff general (41). The seven other modes are empty in the source scripts. Preview one mode, or preview the full preset to include global battle settings.
-- **Choose file:** import a JPX battle export (`.txt` or `.json`, up to 2 MiB).
-
-Tap **Save and select** in the preview. Saved configurations are separate for each account and world; the current selection appears in the combat strategy panel. Selecting a configuration does not execute scripts or play turns automatically. The built-in picker also exports the original battle, statistics, and keyboard shortcut settings as separate JSON files. Statistics and shortcuts are export-only.
+Configurations are local to the current account and world. The selected name appears in the combat strategy panel; selecting it does not execute scripts or play turns automatically.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 
@@ -57,10 +54,10 @@ The app needs an internet connection and a valid HentaiVerse session. Account co
 
 The Android app is under `app/`. Kotlin UI code is in `app/src/main/java/com/mitahv/mobile/`; parsers and networking code are in its `data/` package. Unit tests and sanitized HTML fixtures are under `app/src/test/`.
 
-The bundled defaults are extracted from the pinned userscripts, not from community strategy packs. To verify the assets against your local copies, run:
+To extract standalone reference JSON from the pinned JPX and JPX-PLUS userscripts, run the optional command below. Choose an output folder **outside the app**. Only `battle.json` is a battle import; `stats.json` and `shortcuts.json` are for reference. Add `--check` to verify the output without writing files.
 
 ```powershell
-node tools/extract_jpx_defaults.cjs ../jpx20261111.js ../JPX-PLUS/JPX-PLUS.user.js --check
+node tools/extract_jpx_defaults.cjs ../jpx20261111.js ../JPX-PLUS/JPX-PLUS.user.js ../configs/jpx-defaults
 ```
 
 Before opening a pull request, run the relevant unit tests and Android lint checks:
