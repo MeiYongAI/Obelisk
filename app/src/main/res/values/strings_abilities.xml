@@ -5,8 +5,7 @@
     <string name="ability_ui_supportive">Support</string>
     <string name="ability_ui_protection">Protection</string>
     <string name="ability_ui_drain">Drain</string>
-    <string name="ability_ui_tree">Ability tree</string>
-    <string name="ability_ui_upgradable">Upgradable</string>
+    <string name="ability_ui_tree">All categories</string>
     <string name="ability_ui_empty">No abilities</string>
     <string name="ability_ui_equipped_change">Equipped · Change slot</string>
     <string name="ability_ui_choose_slot">Choose slot</string>
@@ -16,16 +15,19 @@
     <string name="ability_ui_no_slots">No compatible slots are unlocked.</string>
     <string name="ability_ui_point_cost">%1$s AP</string>
     <string name="ability_ui_rank">Tier %1$d/%2$d</string>
-    <string name="ability_ui_rank_compact">%1$d/%2$d</string>
     <string name="ability_ui_current_rank">Current · Tier %1$d</string>
     <string name="ability_ui_next_rank">Next · Tier %1$d</string>
-    <string name="ability_ui_tier_state">Tier %1$d: %2$s</string>
     <string name="ability_ui_maxed">Maxed</string>
-    <string name="ability_ui_learned">Acquired</string>
-    <string name="ability_ui_pending">Pending</string>
-    <string name="ability_ui_next_short">Next tier</string>
     <string name="ability_ui_player_level">Player Lv.%1$d</string>
     <string name="ability_ui_condition_met">Met</string>
     <string name="ability_ui_condition_unmet">Unmet</string>
     <string name="ability_ui_upgrade_unavailable">Upgrade unavailable</string>
+    <string name="ability_ui_magic">Magic</string>
+    <string name="ability_ui_other">Other</string>
+    <string name="ability_ui_balance_ap">AP: %1$s</string>
+    <string name="ability_ui_balance_mp">Mastery: %1$s</string>
+    <string name="ability_ui_need_level">Requires Lv. %1$d</string>
+    <string name="ability_ui_need_points">Short %1$d AP</string>
+    <string name="ability_ui_unlockable">Can unlock</string>
+    <string name="ability_ui_mastery_cost">%1$s mastery</string>
 </resources>

@@ -281,10 +281,11 @@ internal object CharacterSectionsParser {
             ABILITY_POINTS.matchEntire(text)?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull()
         }
         val links = doc.select("#ability_treelist img").mapNotNull { image ->
-            val tree = Regex("/t[ad]([a-z0-9]+)\\.png").find(image.attr("src"))?.groupValues?.get(1) ?: return@mapNotNull null
+            val sprite = Regex("/t([ad])([a-z0-9]+)\\.png").find(image.attr("src")) ?: return@mapNotNull null
+            val (state, tree) = sprite.destructured
             val target = location(image.attr("onclick"), url)
             val title = TREE_NAMES[tree] ?: tree.replaceFirstChar { it.uppercase() }
-            CharacterSectionLink(title, target?.let { NativeAction(it, "GET", label = title) }, target == null,
+            CharacterSectionLink(title, target?.let { NativeAction(it, "GET", label = title) }, selected = state == "a",
                 abilityTreeId = tree, abilityFamilies = TREE_FAMILIES[tree].orEmpty())
         }
         fun action(formId: String, label: String, vararg fields: Pair<String, String>): NativeAction? =
@@ -303,11 +304,14 @@ internal object CharacterSectionsParser {
             val id = slot.id().removePrefix("slot_")
             val hover = jsStrings(slot.attr("onmouseover"))
             val name = hover.getOrNull(0) ?: row.children().firstOrNull().hvText()
+            val family = abilityFamily(slot)
+            val acquired = slot.attr("draggable") == "true" || slot.hasAttr("ondragstart") ||
+                slot.attr("onclick").contains("do_equip_ability(")
             val actions = mutableListOf<NativeAction>()
             row.select("[onclick]:not([disabled])").forEach { control ->
                 val call = control.attr("onclick")
                 callNumber(call, "do_unlock_ability")?.let { ability ->
-                    action("form_unlockability", "升级", "unlock_ability" to ability)?.let(actions::add)
+                    action("form_unlockability", if (acquired) "升级" else "解锁", "unlock_ability" to ability)?.let(actions::add)
                 }
                 callNumber(call, "do_reset_ability")?.let { ability ->
                     val cost = callNumbers(call, "do_reset_ability").getOrNull(1) ?: "0"
@@ -319,9 +323,6 @@ internal object CharacterSectionsParser {
                     action("form_equipslot", "装入", "equip_ability" to ability)?.let(actions::add)
                 }
             }
-            val family = abilityFamily(slot)
-            val acquired = slot.attr("draggable") == "true" || slot.hasAttr("ondragstart") ||
-                slot.attr("onclick").contains("do_equip_ability(")
             if (acquired) {
                 abilityOptions.getOrPut(family) { mutableListOf() } += CharacterFieldOption(id, name)
             }

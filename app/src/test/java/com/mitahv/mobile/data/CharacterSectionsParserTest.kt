@@ -427,6 +427,7 @@ class CharacterSectionsParserTest {
         assertEquals("Requires Level 0 and 1 Ability Points", hp.ability!!.tiers.first().requirements)
         assertEquals("Direct Player Stat Modification\n+10% Maximum Health", hp.ability!!.tiers.first().effects)
         assertTrue(hp.ability!!.tiers.drop(1).all { it.requirements.isEmpty() && it.effects.isEmpty() })
+        assertEquals("解锁", hp.actions.single().label)
         assertEquals(mapOf("unlock_ability" to "1101"), hp.actions.single().fields.toMap())
         assertNull(hp.actions.single().confirmation)
         val slots = page.groups.single { it.title == "Ability Slots" }.rows
@@ -442,6 +443,15 @@ class CharacterSectionsParserTest {
         val resetAll = page.groups.flatMap { it.rows }.flatMap { it.actions }.single { it.label == "重置全部" }
         assertEquals(mapOf("reset_all" to "1"), resetAll.fields.toMap())
         assertTrue(resetAll.confirmation!!.contains("0 Soul Fragments"))
+    }
+
+    @Test
+    fun inactiveCategoryWithoutNavigationIsNotTheSelectedTree() {
+        val doc = Jsoup.parse(fixture("abilities"))
+        doc.selectFirst("img[src$=tdonehanded.png]")!!.removeAttr("onclick")
+        val links = CharacterSectionsParser.parse(doc.outerHtml(), HvRoute.Abilities, HvWorld.Persistent).navigation
+        assertEquals("general", links.single { it.selected }.abilityTreeId)
+        assertNull(links.single { it.abilityTreeId == "onehanded" }.action)
     }
 
     @Test
@@ -493,6 +503,9 @@ class CharacterSectionsParserTest {
             .attr("onclick", "do_equip_slot(101)")
         val url = "https://hentaiverse.org/?s=Character&ss=ab&tree=general".toHttpUrl()
         val page = CharacterSectionsParser.parse(doc.outerHtml(), HvRoute.Abilities, HvWorld.Persistent, url)
+        val advance = page.groups.first().rows.first().actions.single { it.label == "升级" }
+        assertEquals(mapOf("unlock_ability" to "1101"), advance.fields.toMap())
+        assertEquals(url, advance.url)
         val slot = page.groups.single { it.title == "Ability Slots" }.rows.first()
         assertEquals(CharacterAbilitySlotInfo("101", "r", unlocked = true, equippedName = "HP Tank"), slot.abilitySlot)
         assertAbilityMetadata(CharacterAbilityInfo("1101", "r", acquired = true,

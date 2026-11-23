@@ -42,6 +42,10 @@ The APK is written to `app/build/outputs/apk/debug/`. To run the local unit test
 
 During combat, tap **Strategy panel** in the top bar to see the detected weapon style, spell affinity, and the bonuses behind them. The gear icon opens **Obelisk settings**; use Back to return to the encounter. The panel uses a pre-battle equipment snapshot, not a request on every turn. If no snapshot is available, open Equipment before the next encounter or let the battle lobby load.
 
+### Unlock or upgrade an ability
+
+Open **Character → Abilities**. Tap a category above the list, or use the grid button to see all categories grouped by weapon, armor, and magic. Each ability shows its rank. Tap **Unlock** or **Upgrade** beside the name to spend the displayed AP; tap the **name** instead to inspect effects or choose a slot without spending points. Locked rows show known level or point shortfalls. **Slots** manages equipped abilities; unlocking a slot uses mastery points, not AP.
+
 ### Choose a JPX battle configuration
 
 Open **Obelisk settings → Battle configurations → Import file** and choose a JPX `.txt` or `.json` (up to 2 MiB). Check the preview and tap **Add to library**. A file such as `battle.json` is just a container: **One-handed · General**, **Two-handed · General**, and other modes with rules appear directly in your list. Empty slots are omitted from the preview and the library. If you imported that file before, re-importing the same file also clears its untouched empty entries; it preserves renamed, edited, or assigned entries. No presets are bundled.
