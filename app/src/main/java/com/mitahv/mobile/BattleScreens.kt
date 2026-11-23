@@ -81,6 +81,7 @@ import okhttp3.HttpUrl
 internal fun BattleSessionScreen(
     state: RequestState,
     loadout: BattleLoadout?,
+    configLibrary: com.mitahv.mobile.data.JpxLibrary?,
     onSettings: () -> Unit,
     settingsEnabled: Boolean,
     loading: Boolean,
@@ -160,7 +161,7 @@ internal fun BattleSessionScreen(
             }
         }
     }
-    if (strategyOpen) BattleStrategySheet(loadout) { strategyOpen = false }
+    if (strategyOpen) BattleStrategySheet(loadout, configLibrary) { strategyOpen = false }
 }
 
 @Composable

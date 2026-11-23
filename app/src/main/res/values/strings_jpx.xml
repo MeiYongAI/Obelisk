@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="jpx_title">Battle configurations</string>
+    <string name="jpx_scope">Current account · %1$s</string>
+    <string name="jpx_hint">Import a JPX battle file (.txt or .json, up to 2 MiB). Saving selects it for this world. Rules and custom scripts are stored, not executed.</string>
+    <string name="jpx_import">Choose file</string>
+    <string name="jpx_large">File exceeds 2 MiB. Choose a smaller battle export.</string>
+    <string name="jpx_wrong_world">This file is for another world. Switch worlds before importing it.</string>
+    <string name="jpx_format">Not a supported JPX battle export. Choose a battle or battle-mode configuration containing rules.</string>
+    <string name="jpx_io">Could not read or save the configuration. Check file access and available storage, then retry.</string>
+    <string name="jpx_empty">No saved configurations in this world.</string>
+    <string name="jpx_current">Selected</string>
+    <string name="jpx_summary">%1$d modes · %2$d rules</string>
+    <string name="jpx_select">Select</string>
+    <string name="jpx_remove">Remove</string>
+    <string name="jpx_preview">Import preview</string>
+    <string name="jpx_save">Save and select</string>
+    <string name="jpx_confirm_remove">Remove “%1$s” from Obelisk? The original file will not change.</string>
+    <string name="jpx_sign_in">Sign in to manage configurations</string>
+    <string name="jpx_manage">Import and select JPX files</string>
+    <string name="jpx_battle_selection">Selected configuration: %1$s</string>
+</resources>

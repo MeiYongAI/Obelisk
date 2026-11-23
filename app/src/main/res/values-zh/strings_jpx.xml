@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="jpx_title">战斗配置</string>
+    <string name="jpx_scope">当前账号 · %1$s</string>
+    <string name="jpx_hint">导入 JPX 战斗配置（.txt 或 .json，最大 2 MiB）。保存后将在当前世界选用；规则和自定义脚本只保存，不执行。</string>
+    <string name="jpx_import">选择配置文件</string>
+    <string name="jpx_large">文件超过 2 MiB，请选择较小的战斗配置。</string>
+    <string name="jpx_wrong_world">配置适用于另一个世界。请先切换世界，再导入。</string>
+    <string name="jpx_format">不是支持的 JPX 战斗配置。请选择包含流派规则的战斗配置或单模式导出文件。</string>
+    <string name="jpx_io">无法读取或保存配置。请检查文件访问权限和可用空间，再重试。</string>
+    <string name="jpx_empty">当前世界还没有已保存的配置。</string>
+    <string name="jpx_current">当前选用</string>
+    <string name="jpx_summary">%1$d 个模式 · %2$d 条规则</string>
+    <string name="jpx_select">选用</string>
+    <string name="jpx_remove">移除</string>
+    <string name="jpx_preview">导入预览</string>
+    <string name="jpx_save">保存并选用</string>
+    <string name="jpx_confirm_remove">从 Obelisk 移除“%1$s”？原文件不会改变。</string>
+    <string name="jpx_sign_in">登录后可管理配置</string>
+    <string name="jpx_manage">导入和选用 JPX 配置</string>
+    <string name="jpx_battle_selection">当前选用配置：%1$s</string>
+</resources>

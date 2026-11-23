@@ -7,6 +7,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import androidx.compose.runtime.produceState
+import com.mitahv.mobile.data.JpxLibrary
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +39,13 @@ internal fun BattleTopBar(onStrategy: () -> Unit, onSettings: () -> Unit, settin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BattleStrategySheet(loadout: BattleLoadout?, onDismiss: () -> Unit) {
+internal fun BattleStrategySheet(loadout: BattleLoadout?, configLibrary: JpxLibrary?, onDismiss: () -> Unit) {
+    val selection = produceState<String?>(null, configLibrary) {
+        value = withContext(Dispatchers.IO) {
+            try { configLibrary?.entries()?.firstOrNull { it.selected }?.name }
+            catch (_: android.database.SQLException) { null }
+        }
+    }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -44,6 +54,7 @@ internal fun BattleStrategySheet(loadout: BattleLoadout?, onDismiss: () -> Unit)
         }
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            selection.value?.let { Text(stringResource(R.string.jpx_battle_selection, it), style = MaterialTheme.typography.labelLarge) }
             if (loadout == null) {
                 Text(stringResource(R.string.strategy_no_snapshot), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.strategy_no_snapshot_hint), style = MaterialTheme.typography.bodyMedium)

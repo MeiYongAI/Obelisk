@@ -34,11 +34,14 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.mitahv.mobile.model.AppSettingsAccount
 import com.mitahv.mobile.model.AppThemeMode
+import com.mitahv.mobile.data.JpxLibrary
+import androidx.compose.material.icons.filled.FolderOpen
 import com.mitahv.mobile.model.AppLanguage
 import com.mitahv.mobile.i18n.messageText
 
 @Composable
 internal fun AppSettingsScreen(
+    configLibrary: JpxLibrary?,
     siteIsAlt: Boolean,
     onSiteChanged: (Boolean) -> Unit,
     themeMode: AppThemeMode,
@@ -57,6 +60,11 @@ internal fun AppSettingsScreen(
     error: String? = null,
     onClearError: () -> Unit = {},
 ) {
+    var showConfigs by rememberSaveable { mutableStateOf(false) }
+    if (showConfigs && configLibrary != null) {
+        key(configLibrary) { BattleConfigsScreen(configLibrary) { showConfigs = false } }
+        return
+    }
     var sitePickerOpen by rememberSaveable { mutableStateOf(false) }
     var themePickerOpen by rememberSaveable { mutableStateOf(false) }
     var languagePickerOpen by rememberSaveable { mutableStateOf(false) }
@@ -102,6 +110,13 @@ internal fun AppSettingsScreen(
                     AppSettingCard {
                         AppSettingChoiceRow(stringResource(R.string.app_site), if (siteIsAlt) "alt.hentaiverse.org" else "hentaiverse.org",
                             Icons.Filled.Public, !busy) { sitePickerOpen = true }
+                    }
+                }
+                item("battle-configs") {
+                    AppSettingCard {
+                        AppSettingChoiceRow(stringResource(R.string.jpx_title),
+                            stringResource(if (configLibrary == null) R.string.jpx_sign_in else R.string.jpx_manage),
+                            Icons.Filled.FolderOpen, configLibrary != null && !busy) { showConfigs = true }
                     }
                 }
                 item("appearance-heading") { AppSettingsHeading(stringResource(R.string.app_appearance)) }

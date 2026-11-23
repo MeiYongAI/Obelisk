@@ -83,6 +83,7 @@ import androidx.core.view.WindowCompat
 import com.mitahv.mobile.data.HvScriptCaches
 import com.mitahv.mobile.data.HvNetworkTiming
 import com.mitahv.mobile.data.HentaiVerseClient
+import com.mitahv.mobile.data.JpxLibrary
 import com.mitahv.mobile.data.AppPreferences
 import com.mitahv.mobile.data.BattlePageParser
 import com.mitahv.mobile.data.RiddlePageParser
@@ -193,6 +194,11 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var loginError by remember { mutableStateOf<String?>(null) }
     val loginClient = remember(cookieJar, site) { LoginSessionClient(cookieJar, site) }
     var world by rememberSaveable { mutableStateOf(HvWorld.Persistent) }
+    val configDb = remember { JpxLibrary.Database(context) }
+    androidx.compose.runtime.DisposableEffect(configDb) { onDispose { configDb.close() } }
+    val configLibrary = remember(activeAccountId, world, hasSession) {
+        activeAccountId?.takeIf { hasSession }?.let { JpxLibrary(configDb, it, world.name) }
+    }
     var route by rememberSaveable { mutableStateOf(HvRoute.Character) }
     var battleSessionActive by rememberSaveable(world) { mutableStateOf(false) }
     var battleReturnUrl by rememberSaveable(world) { mutableStateOf<String?>(null) }
@@ -678,6 +684,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             }
         } else if (showSettings) {
             AppSettingsScreen(
+                configLibrary = configLibrary,
                 siteIsAlt = site == HvSite.Alt,
                 onSiteChanged = { useAlt ->
                     site = if (useAlt) HvSite.Alt else HvSite.Main
@@ -731,6 +738,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 if (battleSessionActive) BattleSessionScreen(
                     state = requestState,
                     loadout = loadout,
+                    configLibrary = configLibrary,
                     onSettings = ::openSettings,
                     settingsEnabled = !pageLoading && !nativeBusy && !challengeBusy &&
                         requestState !is RequestState.BattleBusy && requestState !is RequestState.Loading,
