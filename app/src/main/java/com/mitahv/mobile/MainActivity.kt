@@ -75,6 +75,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.core.view.WindowCompat
 import com.mitahv.mobile.data.HvScriptCaches
@@ -193,16 +195,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var battleSessionActive by rememberSaveable(world) { mutableStateOf(false) }
     var battleReturnUrl by rememberSaveable(world) { mutableStateOf<String?>(null) }
     var battleReturnRoute by rememberSaveable(world) { mutableStateOf<HvRoute?>(null) }
-    var lastCharacter by rememberSaveable(world) { mutableStateOf(HvRoute.Character) }
-    var lastBazaar by rememberSaveable(world) { mutableStateOf(HvRoute.Bazaar) }
-    var lastBattle by rememberSaveable(world) { mutableStateOf(HvRoute.Battle) }
-    LaunchedEffect(world, route) {
-        when (route.category) {
-            HvSection.Character -> lastCharacter = route
-            HvSection.Bazaar -> lastBazaar = route
-            HvSection.Battle -> lastBattle = route
-        }
-    }
     var currentUrl by rememberSaveable(world, site) { mutableStateOf(route.url(world, site).toString()) }
     var nativeBackStack by rememberSaveable(world, route, site) { mutableStateOf(listOf<String>()) }
     var requestState by remember { mutableStateOf<RequestState>(RequestState.Idle) }
@@ -708,9 +700,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     world = world,
                     route = displayedRoute,
                     selectedRoute = route,
-                    lastCharacter = lastCharacter,
-                    lastBazaar = lastBazaar,
-                    lastBattle = lastBattle,
                     state = requestState,
                     pageLoading = pageLoading,
                     navigation = navigation,
@@ -875,9 +864,6 @@ private fun GameShell(
     world: HvWorld,
     route: HvRoute,
     selectedRoute: HvRoute,
-    lastCharacter: HvRoute,
-    lastBazaar: HvRoute,
-    lastBattle: HvRoute,
     state: RequestState,
     pageLoading: Boolean,
     navigation: HvNavigation?,
@@ -1020,7 +1006,7 @@ private fun GameShell(
         topBar = {
             if (!focusedSubpage) TopAppBar(
                 title = {
-                    SectionPageTitle(route, navigationEnabled, expanded = menuSection == route.category) { menuSection = route.category }
+                    SectionPageTitle(route)
                 },
                 actions = {
                     if (compactMarketHeader) {
@@ -1064,22 +1050,13 @@ private fun GameShell(
         bottomBar = {
             if (!focusedSubpage) NavigationBar {
                 HvSection.entries.forEach { item ->
+                    val label = gameText(item.label)
+                    val menuLabel = stringResource(R.string.game_ui_select_section, label)
                     NavigationBarItem(
+                        modifier = Modifier.semantics { contentDescription = menuLabel },
                         selected = selectedRoute.category == item,
-                        onClick = {
-                            if (item == selectedRoute.category) menuSection = item
-                            else {
-                                val previous = when (item) {
-                                    HvSection.Character -> lastCharacter
-                                    HvSection.Bazaar -> lastBazaar
-                                    HvSection.Battle -> lastBattle
-                                }
-                                val destination = previous.takeIf { it in pages(item) }
-                                    ?: pages(item).firstOrNull() ?: item.defaultRoute
-                                navigate { onRouteSelected(destination) }
-                            }
-                        },
-                        enabled = navigationEnabled,
+                        onClick = { menuSection = item },
+                        enabled = navigationEnabled && pages(item).isNotEmpty(),
                         icon = {
                             Icon(
                                 imageVector = when (item) {
@@ -1090,7 +1067,7 @@ private fun GameShell(
                                 contentDescription = null,
                             )
                         },
-                        label = { Text(gameText(item.label)) },
+                        label = { Text(label) },
                     )
                 }
             }

@@ -38,7 +38,7 @@ The APK is written to `app/build/outputs/apk/debug/`. To run the local unit test
 
 1. Install and open the debug build on an Android device.
 2. Sign in using the available account login, cookie import, or forum web-login option.
-3. Choose a world and use the app navigation to open a supported page. Battle controls appear when the server returns an active encounter.
+3. Choose a world, tap a bottom navigation category, then select a page from its list. Dismiss the list to stay on the current page. Battle controls appear when the server returns an active encounter.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 

@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,7 +59,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.collectionInfo
@@ -70,7 +68,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mitahv.mobile.model.HvRoute
@@ -79,44 +76,14 @@ import com.mitahv.mobile.model.HvWorld
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun SectionPageTitle(
-    route: HvRoute,
-    enabled: Boolean,
-    expanded: Boolean = false,
-    onClick: () -> Unit,
-) {
-    val pageLabel = gameText(route.label)
-    val menuLabel = stringResource(R.string.game_ui_select_section, gameText(route.category.label))
-    val menuState = stringResource(
-        if (expanded) R.string.game_ui_menu_expanded else R.string.game_ui_menu_collapsed,
+internal fun SectionPageTitle(route: HvRoute) {
+    Text(
+        gameText(route.label),
+        style = MaterialTheme.typography.titleLarge,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.semantics { heading() },
     )
-    TextButton(
-        onClick = onClick,
-        enabled = enabled,
-        shape = MaterialTheme.shapes.large,
-        colors = ButtonDefaults.textButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
-        contentPadding = PaddingValues(horizontal = 12.dp),
-        modifier = Modifier.heightIn(min = 48.dp).semantics {
-            contentDescription = "$pageLabel, $menuLabel"
-            stateDescription = menuState
-        },
-    ) {
-        Text(
-            pageLabel,
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
-        )
-        Icon(
-            Icons.Filled.ExpandMore,
-            null,
-            Modifier.padding(start = 4.dp).size(24.dp).rotate(if (expanded) 180f else 0f),
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
