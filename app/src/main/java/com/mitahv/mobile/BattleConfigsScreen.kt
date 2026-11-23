@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,11 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.saveable.rememberSaveable
 import android.widget.Toast
-import android.database.sqlite.SQLiteConstraintException
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.*
@@ -33,18 +35,19 @@ import java.io.IOException
 @Composable
 internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val resolver = context.contentResolver
     fun notify(message: Int) = Toast.makeText(context,message,Toast.LENGTH_SHORT).show()
     var openId by rememberSaveable { mutableStateOf<Long?>(null) }
     var document by remember { mutableStateOf<JpxDocument?>(null) }
     var applyId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var applyMode by rememberSaveable { mutableStateOf<String?>(null) }
     var exportId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var exportMode by rememberSaveable { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var entries by remember { mutableStateOf(emptyList<JpxEntry>()) }
     var draft by remember { mutableStateOf<JpxDraft?>(null) }
     var deleting by remember { mutableStateOf<JpxEntry?>(null) }
+    var renaming by remember { mutableStateOf<JpxEntry?>(null) }
     var busy by remember { mutableStateOf(true) }
     var error by remember { mutableIntStateOf(0) }
     suspend fun perform(block: suspend () -> Unit) {
@@ -52,7 +55,6 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
         error = 0
         try { block() }
         catch (e: CancellationException) { throw e }
-        catch (_: SQLiteConstraintException) { error = R.string.jpx_both_digests }
         catch (_: OversizedConfig) { error = R.string.jpx_large }
         catch (_: WrongConfigWorld) { error = R.string.jpx_wrong_world }
         catch (_: JsonParseException) { error = R.string.jpx_format }
@@ -68,21 +70,20 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
         document = if (id == null) null else withContext(Dispatchers.IO) { JpxDocument(library.load(id)) }
     } }
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        val id = exportId; val mode = exportMode
-        exportId = null; exportMode = null
+        val id = exportId
+        exportId = null
         if (id != null && uri != null) scope.launch { perform {
             withContext(Dispatchers.IO) {
-                val text = JpxDocument(library.load(id)).export(mode)
+                val text = library.load(id).source
                 resolver.openOutputStream(uri,"wt")?.bufferedWriter(Charsets.UTF_8)?.use { it.write(text) } ?: throw IOException()
             }; notify(R.string.jpx_export_ok)
         } }
     }
-    fun export(entry: JpxEntry, mode: String?) {
-        exportId = entry.id; exportMode = mode
-        val stem = entry.name.replace(Regex("(?i)\\.(txt|json)$"), "").replace(Regex("[^\\p{L}\\p{N}_. -]"), "_")
-        exporter.launch(stem + (mode?.let { "_$it" } ?: "") + ".json")
+    fun export(entry: JpxEntry) {
+        exportId = entry.id
+        val suffix = entry.nickname.replace(Regex("[^\\p{L}\\p{N}_. -]"), "_").let { if (it.isEmpty()) "" else "_$it" }
+        exporter.launch("${entry.mode}$suffix.json")
     }
-    fun confirmApply(entry: JpxEntry, mode: String?) { applyMode = mode; applyId = entry.id }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch { perform {
             draft = withContext(Dispatchers.IO) {
@@ -95,24 +96,30 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
         } }
     }
     BackHandler(onBack = onBack)
+    val variants = remember(entries) { entries.groupingBy { it.mode }.eachCount() }
+    val sameOrigins = remember(entries) { entries.groupingBy { it.mode to it.origin }.eachCount() }
+    fun variant(entry: JpxEntry): String = entry.nickname.ifEmpty {
+        if ((variants[entry.mode] ?: 0) < 2) ""
+        else if ((sameOrigins[entry.mode to entry.origin] ?: 0) > 1) "${entry.origin} #${entry.id}" else entry.origin
+    }
     val entry = entries.find { it.id == openId }; val doc = document
-    if (entry != null && doc != null) JpxConfigDetails(doc, busy, error, onBack={ document=null; openId=null },
-        onApply={ confirmApply(entry,it) },onExport={ export(entry,it) }) { mode, group, edit, done ->
+    if (entry != null && doc != null) JpxConfigDetails(doc, variant(entry).ifEmpty { stringResource(R.string.jpx_rows,entry.rules) }, busy, error,
+        onBack={ document=null; openId=null }, onApply={ applyId=entry.id }, onExport={ export(entry) }) { group, edit, done ->
         scope.launch { perform {
             document = withContext(Dispatchers.IO) {
-                val edited = doc.update(mode,group,library.world,edit)
+                val edited = doc.update(entry.mode,group,library.world,edit)
                 library.update(entry.id,edited); JpxDocument(edited)
             }; reload(); done(); notify(R.string.jpx_edit_saved)
         } }
     } else ConfigLibraryContent(
-        world = library.world, entries = entries, busy = busy, error = error, onBack = onBack,
-        onImport = { picker.launch(arrayOf("*/*")) },
-        onOpen = { document=null; openId=it.id }, onApply = { confirmApply(it,null) }, onExport={export(it,null)}, onRemove = { deleting = it },
+        world = library.world, entries = entries, busy = busy, error = error, onBack = onBack, listState = listState, variant = ::variant,
+        onImport = { picker.launch(arrayOf("*/*")) }, onOpen = { document=null; openId=it.id }, onApply = { applyId=it.id },
+        onExport=::export, onRename={ renaming=it }, onRemove = { deleting = it },
     )
     val applying = entries.find { it.id == applyId }
     if (applying != null) AlertDialog(onDismissRequest={applyId=null},title={Text(stringResource(R.string.jpx_apply))},
-        text={ Text(stringResource(R.string.jpx_apply_body,applyMode?.let { modeLabel(it) } ?: applying.name,optionLabel(library.world))) },
-        confirmButton={TextButton(enabled=!busy,onClick={val mode=applyMode; applyId=null;scope.launch { perform { withContext(Dispatchers.IO) { library.apply(applying.id,mode) }; reload();notify(R.string.jpx_application_ok) } }}){Text(stringResource(R.string.jpx_apply))}},
+        text={ Text(stringResource(R.string.jpx_apply_body, profileLabel(applying, variant(applying)), optionLabel(library.world))) },
+        confirmButton={TextButton(enabled=!busy,onClick={applyId=null;scope.launch { perform { withContext(Dispatchers.IO) { library.apply(applying.id) }; reload();notify(R.string.jpx_application_ok) } }}){Text(stringResource(R.string.jpx_apply))}},
         dismissButton={TextButton(onClick={applyId=null}){Text(stringResource(R.string.game_ui_cancel))}})
     draft?.let { candidate -> AlertDialog(onDismissRequest = { draft = null }, title = { Text(stringResource(R.string.jpx_preview)) },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -122,10 +129,26 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
             for (mode in candidate.modes) Text(modeLabel(mode), style = MaterialTheme.typography.bodyMedium)
             Text(stringResource(R.string.jpx_preview_hint), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } }, confirmButton = { TextButton(onClick = { draft = null; scope.launch { perform { val id = withContext(Dispatchers.IO) { library.save(candidate) }; reload(); openId = id } } }) { Text(stringResource(R.string.jpx_library_save)) } },
+        } }, confirmButton = { TextButton(onClick = {
+            draft = null
+            scope.launch { perform {
+                val added = withContext(Dispatchers.IO) { library.save(candidate) }
+                reload()
+                listState.scrollToItem(0)
+                val message = if (added == 0) resources.getString(R.string.jpx_already_imported) else resources.getQuantityString(R.plurals.jpx_imported, added, added)
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            } }
+        }) { Text(stringResource(R.string.jpx_library_save)) } },
         dismissButton = { TextButton(onClick = { draft = null }) { Text(stringResource(R.string.game_ui_cancel)) } }) }
+    renaming?.let { target ->
+        var text by rememberSaveable(target.id) { mutableStateOf(target.nickname) }
+        AlertDialog(onDismissRequest={renaming=null}, title={Text(modeLabel(target.mode))},
+            text={ OutlinedTextField(value=text, onValueChange={text=it.take(80)}, singleLine=true, label={Text(stringResource(R.string.jpx_nickname))}) },
+            confirmButton={ TextButton(onClick={renaming=null; change { library.rename(target.id,text) }}) { Text(stringResource(R.string.jpx_save_edit)) } },
+            dismissButton={ TextButton(onClick={renaming=null}) { Text(stringResource(R.string.game_ui_cancel)) } })
+    }
     deleting?.let { entry -> AlertDialog(onDismissRequest = { deleting = null }, title = { Text(stringResource(R.string.jpx_remove)) },
-        text = { Text(stringResource(R.string.jpx_confirm_remove, entry.name)) },
+        text = { Text(stringResource(R.string.jpx_confirm_remove, profileLabel(entry, variant(entry)))) },
         confirmButton = { TextButton(onClick = { deleting = null; change { library.remove(entry.id) } }) { Text(stringResource(R.string.jpx_remove)) } },
         dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.game_ui_cancel)) } }) }
 }
@@ -133,6 +156,7 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
 @Composable
 private fun ConfigLibraryContent(
     world: String, entries: List<JpxEntry>, busy: Boolean, error: Int,
+    listState: LazyListState, variant: (JpxEntry) -> String, onRename: (JpxEntry) -> Unit,
     onBack: () -> Unit, onImport: () -> Unit, onOpen: (JpxEntry) -> Unit, onApply: (JpxEntry) -> Unit, onExport: (JpxEntry) -> Unit, onRemove: (JpxEntry) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -152,7 +176,7 @@ private fun ConfigLibraryContent(
                 }
             }
             LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
+                state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
                 if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                 if (error != 0) item {
                     Text(stringResource(error), Modifier.padding(vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Polite }, color = colors.error)
@@ -174,7 +198,7 @@ private fun ConfigLibraryContent(
                         style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant)
                 }
                 items(entries, key = { it.id }) { entry ->
-                    ConfigRow(entry, !busy, onOpen = { onOpen(entry) }, onApply={onApply(entry)}, onExport={onExport(entry)}, onRemove = { onRemove(entry) })
+                    ConfigRow(entry, variant(entry), !busy, onRename = { onRename(entry) }, onOpen = { onOpen(entry) }, onApply={onApply(entry)}, onExport={onExport(entry)}, onRemove = { onRemove(entry) })
                 }
             }
         }
@@ -182,7 +206,7 @@ private fun ConfigLibraryContent(
 }
 
 @Composable
-private fun ConfigRow(entry: JpxEntry, enabled: Boolean, onOpen: () -> Unit, onApply: () -> Unit, onExport: () -> Unit, onRemove: () -> Unit) {
+private fun ConfigRow(entry: JpxEntry, variant: String, enabled: Boolean, onRename: () -> Unit, onOpen: () -> Unit, onApply: () -> Unit, onExport: () -> Unit, onRemove: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     Surface(shape = MaterialTheme.shapes.medium, color = if (entry.selected) colors.secondaryContainer else colors.surface) {
@@ -191,17 +215,19 @@ private fun ConfigRow(entry: JpxEntry, enabled: Boolean, onOpen: () -> Unit, onA
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(if(entry.selected) Icons.Filled.CheckCircle else Icons.Filled.Description,null)
                 Column {
-                    Text(stringResource(if(entry.changed) R.string.jpx_modified else if(entry.selected) R.string.jpx_applied else R.string.jpx_stored), style=MaterialTheme.typography.labelMedium)
-                    Text(entry.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(stringResource(R.string.jpx_summary, entry.modes.split(", ").size, entry.rules), style = MaterialTheme.typography.bodySmall)
+                    Text(modeLabel(entry.mode), style = MaterialTheme.typography.titleMedium)
+                    if (variant.isNotBlank()) Text(variant, style=MaterialTheme.typography.bodySmall, maxLines=1, overflow=TextOverflow.Ellipsis)
+                    val status = stringResource(if(entry.changed) R.string.jpx_modified else if(entry.selected) R.string.jpx_applied else R.string.jpx_stored)
+                    Text("${stringResource(R.string.jpx_rows, entry.rules)} · $status", style = MaterialTheme.typography.bodySmall)
                 }
             }
             Box {
                 IconButton(enabled = enabled, onClick = { menu = true }) {
-                    Icon(Icons.Filled.MoreVert, stringResource(R.string.jpx_options, entry.name))
+                    Icon(Icons.Filled.MoreVert, stringResource(R.string.jpx_options, profileLabel(entry, variant)))
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text={Text(stringResource(R.string.jpx_apply))},onClick={menu=false;onApply()})
+                    DropdownMenuItem(text={Text(stringResource(R.string.jpx_nickname))},onClick={menu=false;onRename()})
                     DropdownMenuItem(text={Text(stringResource(R.string.jpx_export))},onClick={menu=false;onExport()})
                     DropdownMenuItem(text = { Text(stringResource(R.string.jpx_remove)) }, onClick = { menu = false; onRemove() })
                 }
@@ -209,6 +235,10 @@ private fun ConfigRow(entry: JpxEntry, enabled: Boolean, onOpen: () -> Unit, onA
         }
     }
 }
+
+@Composable
+internal fun profileLabel(entry: JpxEntry, variant: String): String =
+    if (variant.isBlank()) modeLabel(entry.mode) else "${modeLabel(entry.mode)} · $variant"
 
 @Composable
 internal fun modeLabel(key: String): String {

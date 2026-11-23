@@ -34,6 +34,13 @@ class JpxDocumentTest {
         assertThrows(WrongConfigWorld::class.java) { JpxImport.read(out.byteInputStream(),"out.json","Persistent") }
         assertEquals(setOf(single,"battleVersion"),tree(doc(bare).export(single)).keySet())
     }
+    @Test fun fullSizedPlusFileStillExportsAnImportableSingleProfile() {
+        val text = wrap("""{"battleVersion":1,"$single":{"rules":[{"type":"custom","code":"PAD"}]}}""")
+        val full = text.replace("PAD", "a".repeat(JpxImport.MAX_BYTES - text.toByteArray().size + 3))
+        assertEquals(JpxImport.MAX_BYTES, full.toByteArray().size)
+        val out = doc(full).export(single); assertTrue(out.toByteArray().size <= JpxImport.MAX_BYTES)
+        assertEquals(listOf(single),doc(out).draft.modes); assertEquals("Isekai",tree(out)["world"].asString)
+    }
     @Test fun applySingleModePatchesOnlyItsSlotAndUsesAnIndependentCopy() {
         val active=doc(bare).application(null).toMutableMap();val initial=active.toMap()
         assertEquals(setOf(single,other,"customOption"),active.keys)

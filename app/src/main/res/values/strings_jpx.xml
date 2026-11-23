@@ -11,10 +11,10 @@
     <string name="jpx_empty">No battle configurations yet</string>
     <string name="jpx_summary">%1$d modes · %2$d rules</string>
     <string name="jpx_remove">Remove</string>
-    <string name="jpx_preview">Import preview</string>
-    <string name="jpx_confirm_remove">Remove “%1$s” from Obelisk? The original file will not change.</string>
+    <string name="jpx_preview">Import battle configurations</string>
+    <string name="jpx_confirm_remove">Remove “%1$s”? This also stops using it if applied. Other configurations and the original file stay unchanged.</string>
     <string name="jpx_sign_in">Sign in to manage configurations</string>
-    <string name="jpx_manage">Import and select JPX files</string>
+    <string name="jpx_manage">Manage JPX battle configurations</string>
     <string name="jpx_scene_general">General</string>
     <string name="jpx_mode_label">%1$s · %2$s</string>
     <string name="jpx_saved">Saved configurations (%1$d)</string>
@@ -24,20 +24,17 @@
     <string name="jpx_scene_colosseum">Ring of Blood</string>
     <string name="jpx_scene_item">Item World</string>
     <string name="jpx_library_save">Add to library</string>
-    <string name="jpx_preview_hint">Importing does not apply this file.</string>
-    <string name="jpx_scope_hint">Tap a mode to view and edit its rules.</string>
+    <string name="jpx_preview_hint">Each mode becomes a separate configuration. Importing does not apply rules or overwrite your edits.</string>
     <string name="jpx_apply">Apply configuration</string>
-    <string name="jpx_apply_mode">Apply this mode</string>
-    <string name="jpx_apply_body">Copy %1$s to the active configuration for %2$s? Other modes not in this file keep their rules. No battle actions will run.</string>
+    <string name="jpx_apply_body">Apply %1$s in %2$s? Only the active rules for this mode are replaced. No battle actions will run.</string>
     <string name="jpx_applied">Applied</string>
     <string name="jpx_modified">Saved changes to apply</string>
     <string name="jpx_stored">In library</string>
-    <string name="jpx_export">Export file</string>
-    <string name="jpx_export_mode">Export this mode</string>
+    <string name="jpx_export">Export configuration</string>
+    <string name="jpx_export_mode">Export this configuration</string>
     <string name="jpx_export_ok">File exported</string>
     <string name="jpx_application_ok">Configuration applied</string>
     <string name="jpx_edit_saved">Rule changes saved · apply separately</string>
-    <string name="jpx_mode">Modes</string>
     <string name="jpx_rows">%1$d rules</string>
     <string name="jpx_empty_group">No rules in this group</string>
     <string name="jpx_add_rule">Add rule</string>
@@ -66,9 +63,14 @@
     <string name="jpx_keybind">Key: %1$s</string>
     <string name="jpx_options_rule">Options for rule %1$d</string>
     <string name="jpx_fraction">Use a ratio: 0.3 means 30%.</string>
-    <string name="jpx_applied_label">Last applied: %1$s</string>
-    <string name="jpx_both_digests">Another saved file already has these contents.</string>
+    <string name="jpx_applied_label">Applied: %1$s</string>
     <string name="jpx_cond_count">%1$d conditions</string>
     <string name="jpx_add_value">No values selected</string>
     <string name="jpx_pick_values">Choose values</string>
+    <string name="jpx_nickname">Set alias</string>
+    <plurals name="jpx_imported">
+        <item quantity="one">Added %1$d configuration</item>
+        <item quantity="other">Added %1$d configurations</item>
+    </plurals>
+    <string name="jpx_already_imported">Already in your list. Existing edits were kept.</string>
 </resources>

@@ -44,11 +44,12 @@ During combat, tap **Strategy panel** in the top bar to see the detected weapon 
 
 ### Choose a JPX battle configuration
 
-Open **Obelisk settings → Battle configurations → Import file**, choose a JPX battle `.txt` or `.json` (up to 2 MiB), then tap **Add to library**. Importing opens the file without applying it. No presets are bundled.
+Open **Obelisk settings → Battle configurations → Import file** and choose a JPX `.txt` or `.json` (up to 2 MiB). Check the preview and tap **Add to library**. A file such as `battle.json` is just a container: **One-handed · General**, **Two-handed · General**, and each other mode it contains appear directly in your list. Previously imported files are split automatically; nothing is applied on import and no presets are bundled.
 
-- **Inspect and edit:** tap a saved file, then a mode to see its ordered rules. Tap a rule to edit its action and conditions. You can also add rules, disable them, or use the row menu to move or delete them. Saving changes edits the library copy only.
-- **Apply:** use **Apply configuration** for the whole file or **Apply this mode** for one mode. Confirm to update the active snapshot in the current account and world. Other modes stay intact. This does not execute custom scripts or play battle turns automatically.
-- **Export:** use **⋮ → Export file** in the library, or the export icon inside a file or mode. Pick a destination in the Android file picker. The JSON contains the saved edits, whether applied or not. Exporting a mode excludes unrelated global settings and modes.
+- **Edit:** tap a configuration to go straight to its rules. Add or edit actions and conditions, disable rules, or use a rule’s menu to move or delete it. Edits stay in your library until you apply them.
+- **Manage variants:** different imports can supply alternatives for the same mode. Use **⋮ → Set alias** to tell them apart. Re-importing the same file restores missing modes without resetting existing edits.
+- **Apply:** choose **Apply configuration** to replace just that mode’s active rules in the current account and world. This does not run custom scripts or play battle turns automatically.
+- **Export or remove:** either action in a configuration’s **⋮** menu affects only that entry. The exported JSON contains its saved rules, including unapplied edits, and can be imported again. Removing the active variant also clears its active rules; other modes and the original file stay intact.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 

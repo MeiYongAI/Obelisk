@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.produceState
+import com.mitahv.mobile.data.JpxEntry
 import com.mitahv.mobile.data.JpxLibrary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -40,9 +41,9 @@ internal fun BattleTopBar(onStrategy: () -> Unit, onSettings: () -> Unit, settin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BattleStrategySheet(loadout: BattleLoadout?, configLibrary: JpxLibrary?, onDismiss: () -> Unit) {
-    val selection = produceState<List<String>>(emptyList(), configLibrary) {
+    val selection = produceState<List<JpxEntry>>(emptyList(), configLibrary) {
         value = withContext(Dispatchers.IO) {
-            try { configLibrary?.entries()?.filter { it.selected }?.map { it.name }.orEmpty() }
+            try { configLibrary?.entries()?.filter { it.selected }.orEmpty() }
             catch (_: android.database.SQLException) { emptyList() }
         }
     }
@@ -54,7 +55,7 @@ internal fun BattleStrategySheet(loadout: BattleLoadout?, configLibrary: JpxLibr
         }
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            selection.value.forEach { Text(stringResource(R.string.jpx_applied_label, it), style = MaterialTheme.typography.labelLarge) }
+            selection.value.forEach { Text(stringResource(R.string.jpx_applied_label, profileLabel(it, it.nickname)), style = MaterialTheme.typography.labelLarge) }
             if (loadout == null) {
                 Text(stringResource(R.string.strategy_no_snapshot), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.strategy_no_snapshot_hint), style = MaterialTheme.typography.bodyMedium)

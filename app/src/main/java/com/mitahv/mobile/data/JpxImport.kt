@@ -26,6 +26,14 @@ internal object JpxImport {
             out.write(buf, 0, n)
         }
         val source = Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(out.toByteArray())).toString().removePrefix("\uFEFF")
+        return parse(source, filename, world)
+    }
+
+    // A PLUS single-mode envelope can be a few bytes larger than its original full export.
+    // Bound external streams at import, not a document reconstructed from validated SQLite data.
+    fun readStoredMode(source: String, filename: String, world: String) = parse(source, filename, world).also { it.modes.single() }
+
+    private fun parse(source: String, filename: String, world: String): JpxDraft {
         val root = JsonReader(source.reader()).use { reader ->
             reader.strictness = Strictness.STRICT
             JsonParser.parseReader(reader).also { require(it.isJsonObject && reader.peek() == JsonToken.END_DOCUMENT) }.asJsonObject

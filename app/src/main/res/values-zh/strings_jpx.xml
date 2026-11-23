@@ -11,8 +11,8 @@
     <string name="jpx_empty">还没有战斗配置</string>
     <string name="jpx_summary">%1$d 个模式 · %2$d 条规则</string>
     <string name="jpx_remove">移除</string>
-    <string name="jpx_preview">导入预览</string>
-    <string name="jpx_confirm_remove">从 Obelisk 移除“%1$s”？原文件不会改变。</string>
+    <string name="jpx_preview">导入战斗配置</string>
+    <string name="jpx_confirm_remove">移除“%1$s”？如果正在使用，也会取消应用。其他配置和原文件不变。</string>
     <string name="jpx_sign_in">登录后可管理配置</string>
     <string name="jpx_manage">导入和选用 JPX 配置</string>
     <string name="jpx_scene_general">通用</string>
@@ -24,20 +24,17 @@
     <string name="jpx_scene_colosseum">浴血擂台</string>
     <string name="jpx_scene_item">道具界</string>
     <string name="jpx_library_save">加入配置库</string>
-    <string name="jpx_preview_hint">导入只加入配置库，不会自动应用。</string>
-    <string name="jpx_scope_hint">点选一个模式，查看或编辑其中的规则。</string>
+    <string name="jpx_preview_hint">每个模式会在列表中成为一项独立配置。导入不会应用，也不会覆盖已有修改。</string>
     <string name="jpx_apply">应用配置</string>
-    <string name="jpx_apply_mode">应用此模式</string>
-    <string name="jpx_apply_body">将“%1$s”写入%2$s的当前配置？未涉及的模式不变，不会自动出招。</string>
+    <string name="jpx_apply_body">在%2$s应用“%1$s”？只替换该模式的生效规则，其他模式不变，不会自动出招。</string>
     <string name="jpx_applied">已应用</string>
     <string name="jpx_modified">有改动待应用</string>
     <string name="jpx_stored">未应用</string>
-    <string name="jpx_export">导出文件</string>
-    <string name="jpx_export_mode">导出此模式</string>
+    <string name="jpx_export">导出配置</string>
+    <string name="jpx_export_mode">导出此配置</string>
     <string name="jpx_export_ok">文件已导出</string>
     <string name="jpx_application_ok">配置已应用</string>
     <string name="jpx_edit_saved">规则修改已保存，需手动应用</string>
-    <string name="jpx_mode">配置模式</string>
     <string name="jpx_rows">%1$d 条规则</string>
     <string name="jpx_empty_group">此分组还没有规则</string>
     <string name="jpx_add_rule">添加规则</string>
@@ -66,9 +63,13 @@
     <string name="jpx_keybind">快捷键：%1$s</string>
     <string name="jpx_options_rule">第 %1$d 条规则的选项</string>
     <string name="jpx_fraction">按比例填写：0.3 表示 30%。</string>
-    <string name="jpx_applied_label">已应用来源：%1$s</string>
-    <string name="jpx_both_digests">配置库中已有内容完全相同的文件。</string>
+    <string name="jpx_applied_label">已应用：%1$s</string>
     <string name="jpx_cond_count">%1$d 个条件</string>
     <string name="jpx_add_value">尚未选择匹配项</string>
     <string name="jpx_pick_values">选择匹配项</string>
+    <string name="jpx_nickname">设置别名</string>
+    <plurals name="jpx_imported">
+        <item quantity="other">已添加 %1$d 项配置</item>
+    </plurals>
+    <string name="jpx_already_imported">这些配置已在列表中，已有修改保持不变。</string>
 </resources>

@@ -28,17 +28,46 @@ internal class JpxDocument(val draft: JpxDraft) {
         return copy.toString().byteInputStream().use { JpxImport.read(it, draft.name, world) }
     }
 
+    /** Stored once per import, so envelope metadata and legacy global options survive migration. */
+    fun header(): String {
+        val options = JsonObject().apply {
+            config.entrySet().filter { it.key !in draft.modes }.forEach { add(it.key, it.value) }
+        }
+        if (root === config) return options.toString()
+        return JsonObject().apply {
+            root.entrySet().filter { it.key != "config" }.forEach { add(it.key, it.value) }
+            add("config", options)
+        }.toString()
+    }
+
     /** JPX native single-mode export. A PLUS envelope keeps its world restriction and metadata. */
     fun export(mode: String? = null): String {
         if (mode == null) return draft.source
         require(mode in draft.modes)
-        val slice = JsonObject().apply {
-            add("battleVersion", config["battleVersion"] ?: config["version"])
-            add(mode, config[mode])
+        return modeSource(header(), mode, config[mode].toString())
+    }
+
+    companion object {
+        fun modeSource(header: String, mode: String, payload: String): String {
+            val root = JsonParser.parseString(header).asJsonObject
+            val options = root.getAsJsonObject("config") ?: root
+            val slice = JsonObject().apply {
+                add("battleVersion", options["battleVersion"] ?: options["version"])
+                add(mode, JsonParser.parseString(payload))
+            }
+            if (root === options) return slice.toString()
+            root.add("config", slice)
+            val originalKind = root.get("kind").asString
+            val originalMode = root.get("mode")
+            root.addProperty("kind", "battle-mode"); root.addProperty("mode", mode)
+            val result = root.toString()
+            if (result.toByteArray().size <= JpxImport.MAX_BYTES) return result
+            // At the exact import limit the extra PLUS mode tag can make the export too big
+            // to re-import. Its original battle envelope with just this slot is also valid JPX.
+            root.addProperty("kind", originalKind)
+            if (originalMode == null) root.remove("mode") else root.add("mode", originalMode)
+            return root.toString()
         }
-        return if (config === root) slice.toString() else root.deepCopy().apply {
-            addProperty("kind", "battle-mode"); addProperty("mode", mode); add("config", slice)
-        }.toString()
     }
 
     /** Each key is an independent applied slot. Single-mode files never overwrite global settings. */
