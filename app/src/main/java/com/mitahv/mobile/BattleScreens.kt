@@ -336,7 +336,7 @@ internal fun BattleScreen(
                                         ) {
                                             Text("#${enemy.target}", style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.primary)
-                                            Text(gameText(enemy.name), modifier = Modifier.weight(1f).padding(start = 6.dp),
+                                            Text(enemy.name, modifier = Modifier.weight(1f).padding(start = 6.dp),
                                                 style = MaterialTheme.typography.labelLarge, maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis)
                                             androidx.compose.material3.IconButton(
@@ -345,7 +345,7 @@ internal fun BattleScreen(
                                             ) {
                                                 Icon(
                                                     Icons.Filled.Info,
-                                                    contentDescription = stringResource(R.string.game_ui_named_details, gameText(enemy.name)),
+                                                    contentDescription = stringResource(R.string.game_ui_named_details, enemy.name),
                                                     modifier = Modifier.size(16.dp),
                                                 )
                                             }
@@ -391,7 +391,7 @@ internal fun BattleScreen(
             onDismissRequest = { enemyDetail = null },
             title = {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(gameText(enemy.name))
+                    Text(enemy.name)
                     if (enemy.level.isNotBlank()) Text(
                         stringResource(R.string.game_ui_level, enemy.level),
                         style = MaterialTheme.typography.labelMedium,

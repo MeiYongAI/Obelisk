@@ -125,7 +125,7 @@ internal fun BattleModesScreen(
 private fun ChallengeCard(challenge: BattleModesChallenge, busy: Boolean, onStartBattle: (NativeAction) -> Unit) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(gameText(challenge.name), style = MaterialTheme.typography.titleLarge)
+            Text(challenge.name, style = MaterialTheme.typography.titleLarge)
             Text(messageText(listOf(challenge.minimumLevel, challenge.rounds.takeIf(String::isNotBlank)?.let { stringResource(R.string.game_ui_round_count, it) },
                 challenge.experienceMultiplier).filterNotNull().filter(String::isNotBlank).joinToString(" · ")),
                 style = MaterialTheme.typography.bodyMedium)
@@ -134,7 +134,9 @@ private fun ChallengeCard(challenge: BattleModesChallenge, busy: Boolean, onStar
             BattleModeStat(stringResource(R.string.game_ui_clear_bonus), challenge.clearBonus)
             if (challenge.status.isNotBlank()) Text(messageText(challenge.status), style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            StartBattleButton(challenge.start, busy, stringResource(R.string.game_ui_unavailable), onStartBattle)
+            StartBattleButton(challenge.start, busy, stringResource(R.string.game_ui_unavailable), onStartBattle) {
+                listOf(challenge.name, messageText(challenge.entryCost)).filter(String::isNotBlank).joinToString("\n")
+            }
         }
     }
 }
@@ -194,7 +196,10 @@ private fun BattleModeStat(label: String, value: String) {
 }
 
 @Composable
-private fun StartBattleButton(action: NativeAction?, busy: Boolean, fallback: String, onStartBattle: (NativeAction) -> Unit) {
+private fun StartBattleButton(
+    action: NativeAction?, busy: Boolean, fallback: String, onStartBattle: (NativeAction) -> Unit,
+    confirmationText: (@Composable () -> String)? = null,
+) {
     var confirmStart by remember(action) { mutableStateOf(false) }
     Button(onClick = {
         action?.let {
@@ -208,7 +213,7 @@ private fun StartBattleButton(action: NativeAction?, busy: Boolean, fallback: St
         AlertDialog(
             onDismissRequest = { confirmStart = false },
             title = { Text(messageText(action.label)) },
-            text = { Text(messageText(action.confirmation.orEmpty()), Modifier.verticalScroll(rememberScrollState())) },
+            text = { Text(confirmationText?.invoke() ?: messageText(action.confirmation.orEmpty()), Modifier.verticalScroll(rememberScrollState())) },
             confirmButton = {
                 TextButton(enabled = !busy, onClick = {
                     confirmStart = false
