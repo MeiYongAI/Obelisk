@@ -1,5 +1,6 @@
 package com.mitahv.mobile
 
+import com.mitahv.mobile.data.BattleRules
 import com.mitahv.mobile.data.BattleStrategy
 import androidx.compose.ui.res.stringResource
 import com.mitahv.mobile.i18n.gameText
@@ -56,6 +57,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,6 +84,7 @@ import okhttp3.HttpUrl
 internal fun BattleSessionScreen(
     state: RequestState,
     loadout: BattleLoadout?,
+    world: String,
     strategy: BattleStrategy,
     onSettings: () -> Unit,
     settingsEnabled: Boolean,
@@ -98,6 +101,18 @@ internal fun BattleSessionScreen(
     onLeaveBattle: () -> Unit,
 ) {
     var strategyOpen by rememberSaveable { mutableStateOf(false) }
+    val page = when (state) {
+        is RequestState.BattleReady -> state.page
+        is RequestState.BattleBusy -> state.page
+        else -> null
+    }
+    val runner = key(page?.encounterKey, strategy.match?.entry?.id, strategy.published, world) { remember { RuleRunner() } }
+    val playable = state is RequestState.BattleReady && page?.isComplete == false && !loading && !nativeBusy &&
+        error == null && !needsRefresh && !strategyOpen
+    val rules = remember(strategy.published) { strategy.published?.let(::BattleRules) }
+    RunBattleTurns(runner, rules, page, world, strategy.scene, loadout?.school, playable,
+        interrupted = page == null || page.isComplete || loading || nativeBusy || error != null || needsRefresh || strategyOpen,
+        submit = onSubmitBattleAction)
     BackHandler(enabled = !strategyOpen) {
         val page = (state as? RequestState.BattleReady)?.page
         if (!loading && page?.isComplete == true) {
@@ -110,7 +125,13 @@ internal fun BattleSessionScreen(
     }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            BattleTopBar(onStrategy = { strategyOpen = true }, onSettings = onSettings, settingsEnabled = settingsEnabled)
+            BattleTopBar(onStrategy = { runner.pause(); strategyOpen = true }, onSettings = { runner.pause(); onSettings() }, settingsEnabled = settingsEnabled) {
+                if (page != null && !page.isComplete && rules != null) {
+                    FilledTonalButton(enabled = runner.running || playable, onClick = { if (runner.running) runner.pause() else runner.start() },
+                        contentPadding = PaddingValues(horizontal = 12.dp)) { Text(stringResource(if (runner.running) R.string.jpx_pause else R.string.jpx_run)) }
+                }
+            }
+            runner.notice?.let { RuleRunNotice(it) }
             if (error != null) Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -130,8 +151,8 @@ internal fun BattleSessionScreen(
                         }
                         BattleScreen(
                             page = page,
-                            busy = loading || state is RequestState.BattleBusy,
-                            onSubmitAction = { onSubmitBattleAction(page, it) },
+                            busy = loading || state is RequestState.BattleBusy || runner.running,
+                            onSubmitAction = { if (!runner.running) onSubmitBattleAction(page, it) },
                             onContinue = onContinue,
                             onLeaveBattle = onLeaveBattle,
                         )

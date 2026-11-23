@@ -114,11 +114,18 @@ internal class JpxLibrary(private val db: Database, private val account: String,
     /** Re-import restores missing modes but leaves edited profiles alone. */
     fun save(draft: JpxDraft): Int = transaction { sql ->
         val hash = MessageDigest.getInstance("SHA-256").digest(draft.source.toByteArray()).joinToString("") { "%02x".format(it) }
+        val doc = JpxDocument(draft)
         val existing = sql.rawQuery("SELECT slot FROM profiles WHERE $owned AND import_hash=?", scope + hash).use { c ->
             buildSet { while (c.moveToNext()) add(c.getString(0)) }
         }
-        val doc = JpxDocument(draft)
-        val missing = doc.config.keySet().filter { it in draft.modes && it !in existing }
+        val slots = doc.config.keySet().filter { it in draft.modes }
+        // Only the exact original file proves that a row was imported empty (not emptied by its owner).
+        for (slot in existing - slots.toSet()) {
+            if (doc.config.has(slot) && doc.count(slot) == 0) sql.delete("profiles", """$owned AND import_hash=? AND slot=?
+                AND rules=0 AND nickname='' AND id NOT IN (SELECT profile FROM profile_edits)
+                AND id NOT IN (SELECT profile FROM strategy_routes WHERE profile IS NOT NULL)""", scope + arrayOf(hash, slot))
+        }
+        val missing = slots.filter { it !in existing && doc.count(it) > 0 }
         // The library shows new imports first; keep the file's mode order within each import.
         for (mode in missing.asReversed()) sql.insertOrThrow("profiles", null, ContentValues().apply {
             put("account", account); put("world", world); put("import_hash", hash); put("origin", draft.name)

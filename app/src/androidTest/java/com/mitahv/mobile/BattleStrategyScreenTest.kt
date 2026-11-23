@@ -8,8 +8,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.mitahv.mobile.data.JpxImport
 import com.mitahv.mobile.data.JpxLibrary
 import com.mitahv.mobile.i18n.ProvideLocalizedText
-import com.mitahv.mobile.model.BattleScene
-import com.mitahv.mobile.model.BattleStyle
+import com.mitahv.mobile.model.*
+import com.mitahv.mobile.data.BattleStrategy
+import androidx.compose.runtime.mutableStateOf
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,6 +60,63 @@ class BattleStrategyScreenTest {
         } finally { context.deleteDatabase(filename) }
     }
 
+    @Test fun dragAndSwitchChangeOnlyTheDraftUntilApplied() {
+        val filename = "editor-${UUID.randomUUID()}.db"
+        try { JpxLibrary.Database(context, filename).use { db ->
+            val library = JpxLibrary(db, "fixture", "Isekai")
+            val mode = "Staff_General"
+            val raw = """{"version":1,"$mode":{"rules":[{"type":"stop"},{"type":"target"},{"type":"normalAttack"}]},"Staff_Item":{}}"""
+            assertEquals(1, library.save(JpxImport.read(raw.byteInputStream(), "battle.json", library.world)))
+            val entry = library.catalog().entries.single()
+            fun rules(published: Boolean = false) = com.mitahv.mobile.data.JpxDocument(library.load(entry.id, published)).rules(mode,"rules").map { it.asJsonObject }
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                scenario.onActivity { activity -> activity.setContent {
+                    ProvideLocalizedText { MaterialTheme { BattleConfigsScreen(library, rememberStrategy(library, null, null, false)) {} } }
+                } }
+                click(context.getString(R.string.jpx_mode_label, context.getString(R.string.strategy_staff), context.getString(R.string.jpx_scene_general)))
+                fun handle(n: Int) = find(context.getString(R.string.jpx_reorder, n)).let { node -> android.graphics.Rect().also(node::getBoundsInScreen) }
+                val from = handle(1); val to = handle(3)
+                assertFalse(instrument.uiAutomation.rootInActiveWindow.let(::flattened).any { it.text == context.getString(R.string.jpx_import) })
+                instrument.uiAutomation.executeShellCommand("input swipe ${from.centerX()} ${from.centerY()} ${to.centerX()} ${to.centerY()} 450").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
+                await { rules().last()["type"].asString == "stop" }
+                click(context.getString(R.string.jpx_enable_row, 3))
+                await { rules().last()["disabled"]?.asBoolean == true }
+                assertEquals("stop", rules(true).first()["type"].asString)
+                click(context.getString(R.string.jpx_apply)); await { instrument.uiAutomation.rootInActiveWindow?.let { flattened(it).any { n -> n.text?.contains(context.getString(R.string.game_ui_cancel)) == true } } == true }
+                click(context.getString(R.string.jpx_apply)); await { rules(true).last()["disabled"]?.asBoolean == true }
+            }
+        } } finally { context.deleteDatabase(filename) }
+    }
+
+    @Test fun battleOnlySubmitsAfterStartAndWaitsForFreshAcknowledgedTurn() {
+        val draft = JpxImport.read("""{"version":1,"Staff_General":{"rules":[{"type":"target"},{"type":"normalAttack"}]}}""".byteInputStream(), "fixture", "Isekai")
+        val enemy = BattleEnemy(7,"Fixture", "1", 1f, targetable = true)
+        val initial = BattlePage("fixture", emptyList(), listOf(enemy), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0f,
+            controls = listOf(BattleControl("attack", true)))
+        val strategy = BattleStrategy(null, BattleStyle.Staff, BattleScene.Item, true, published = draft)
+        val state = mutableStateOf<RequestState>(RequestState.BattleReady(initial))
+        val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                BattleSessionScreen(state.value, null, "Isekai", strategy, {}, true, false, false, null, false, 0,
+                    { byteArrayOf() }, {}, {}, { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) }, {}, {})
+            } } } }
+            val start = context.getString(R.string.jpx_run); val pause = context.getString(R.string.jpx_pause)
+            find(start); assertTrue(calls.isEmpty()); click(start); await { calls.size == 1 }
+            val second = initial.copy(turnKey = Any())
+            scenario.onActivity { state.value = RequestState.BattleReady(second) }; await { calls.size == 2 }
+            find(pause); SystemClock.sleep(180) // Let the busy composition commit before replaying the same page.
+            scenario.onActivity { state.value = RequestState.BattleReady(second) } // Replay must not submit twice.
+            SystemClock.sleep(650); find(start); assertEquals(2, calls.size)
+            scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(turnKey = Any())) }
+            click(start); await { calls.size == 3 }; click(pause)
+            scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(turnKey = Any())) }
+            find(start); SystemClock.sleep(500); assertEquals(List(3) { BattleAction("attack", 7) }, calls.toList())
+            scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(isComplete = true, turnKey = Any())) }
+            SystemClock.sleep(500); assertEquals(3, calls.size)
+        }
+    }
+
     private fun flattened(node: AccessibilityNodeInfo): Sequence<AccessibilityNodeInfo> = sequence {
         yield(node)
         for (i in 0 until node.childCount) node.getChild(i)?.let { yieldAll(flattened(it)) }
@@ -78,8 +136,13 @@ class BattleStrategyScreenTest {
     }
 
     private fun click(label: String) {
-        val node = generateSequence(find(label)) { it.parent }.first { it.isClickable }
-        assertTrue(node.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+        await({ "No clickable control for '$label'" }) {
+            val root = instrument.uiAutomation.rootInActiveWindow ?: return@await false
+            val control = flattened(root).filter { n -> n.isVisibleToUser && (n.contentDescription?.toString() == label ||
+                n.text?.toString()?.lineSequence()?.any { it == label || it.startsWith("$label · ") } == true) }
+                .firstNotNullOfOrNull { generateSequence(it) { child -> child.parent }.firstOrNull { parent -> parent.isClickable && parent.isEnabled } }
+            control?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+        }
     }
 
     private fun await(message: () -> String = { "Timed out waiting for the strategy screen" }, check: () -> Boolean) {

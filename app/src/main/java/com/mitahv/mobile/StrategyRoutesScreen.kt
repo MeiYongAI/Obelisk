@@ -29,7 +29,6 @@ import com.mitahv.mobile.model.BattleStyle
 internal fun StrategyControls(automatic: Boolean, enabled: Boolean, onAutomatic: (Boolean) -> Unit, onRoutes: () -> Unit) {
     ListItem(modifier = Modifier.toggleable(value = automatic, enabled = enabled, role = Role.Switch, onValueChange = onAutomatic),
         content = { Text(stringResource(R.string.jpx_auto)) },
-        supportingContent = { Text(stringResource(if (automatic) R.string.jpx_auto_hint else R.string.jpx_manual_hint)) },
         trailingContent = { Switch(checked = automatic, onCheckedChange = null, enabled = enabled) })
     ListItem(modifier = Modifier.clickable(enabled = enabled, onClick = onRoutes),
         content = { Text(stringResource(R.string.jpx_routes)) },
@@ -56,7 +55,6 @@ internal fun StrategyRoutesScreen(catalog: JpxCatalog, detected: BattleStyle?, w
                 }
                 LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
                     item {
-                        Text(stringResource(R.string.jpx_routes_hint), style = MaterialTheme.typography.bodyMedium)
                         if (error != 0) Text(stringResource(error), color = MaterialTheme.colorScheme.error)
                         ListItem(modifier = Modifier.clickable { pickingStyle = true }, content = { Text(styleLabel(style)) },
                             overlineContent = { Text(stringResource(R.string.jpx_route_style)) },

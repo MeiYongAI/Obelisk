@@ -68,6 +68,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
@@ -149,6 +150,7 @@ class MainActivity : AppCompatActivity() {
 @Composable
 private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val configuration = LocalConfiguration.current
     var language by remember {
         mutableStateOf(AppLanguage.fromTag(AppCompatDelegate.getApplicationLocales().get(0)?.toLanguageTag()))
@@ -301,12 +303,12 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 }
             }
             if (pageSource == source && details.failures.isNotEmpty()) {
-                nativeError = context.getString(R.string.app_details_failed, failureMessage(details.failures.first(), context))
+                nativeError = resources.getString(R.string.app_details_failed, failureMessage(details.failures.first(), context))
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
-            if (pageSource == source) nativeError = context.getString(R.string.app_details_failed, failureMessage(error, context))
+            if (pageSource == source) nativeError = resources.getString(R.string.app_details_failed, failureMessage(error, context))
         }
     }
     // Observe in the lobby or in settings before a battle, never on turn submission.
@@ -423,7 +425,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             } catch (error: Exception) {
                 nativeNeedsRefresh = action.method == "GET"
                 nativeSubmissionUnconfirmed = action.method == "POST"
-                nativeError = if (nativeSubmissionUnconfirmed) context.getString(R.string.app_submission_unconfirmed, failureMessage(error, context))
+                nativeError = if (nativeSubmissionUnconfirmed) resources.getString(R.string.app_submission_unconfirmed, failureMessage(error, context))
                     else failureMessage(error, context)
             } finally {
                 nativeBusy = false
@@ -458,7 +460,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                characterActionError = context.getString(R.string.app_submission_unconfirmed, failureMessage(error, context))
+                characterActionError = resources.getString(R.string.app_submission_unconfirmed, failureMessage(error, context))
             } finally {
                 characterActionBusy = false
             }
@@ -485,13 +487,13 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 val after = navigation?.stamina
                 staminaMessage = navigation?.messages?.takeIf { it.isNotEmpty() }?.joinToString("\n")
                     ?: if (after != null && after.value != before.value) after.value
-                    else context.getString(R.string.app_stamina_unconfirmed)
+                    else resources.getString(R.string.app_stamina_unconfirmed)
                 staminaNeedsRefresh = after == null || after.value == before.value
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 staminaNeedsRefresh = true
-                staminaMessage = context.getString(R.string.app_restorative_unconfirmed, failureMessage(error, context))
+                staminaMessage = resources.getString(R.string.app_restorative_unconfirmed, failureMessage(error, context))
             } finally {
                 staminaBusy = false
             }
@@ -557,7 +559,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
 
     fun submitBattleAction(page: BattlePage, action: BattleAction) {
-        if (pageLoading || requestState !is RequestState.BattleReady) return
+        if (pageLoading || (requestState as? RequestState.BattleReady)?.page?.turnKey !== page.turnKey || page.isComplete) return
         loadSerial++
         pageSource = null
         val requestWorld = world
@@ -590,7 +592,8 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                         // briefly present it as a normal page load.
                         updated.scene?.let { battleScene = it }
                         requestState = RequestState.BattleReady(updated)
-                        nativeError = null
+                        nativeError = if (!updated.isComplete && !BattlePageParser.hasCombatPane(response))
+                            resources.getString(R.string.jpx_refresh_run) else null
                     } else {
                         // An unknown successful response cannot safely update the local
                         // battle model. Refresh once so the next action uses authoritative
@@ -717,7 +720,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                         loginError = null
                         resetSessionPage()
                     }
-                    else settingsError = context.getString(R.string.app_account_logout_failed)
+                    else settingsError = resources.getString(R.string.app_account_logout_failed)
                 },
                 onBack = ::closeSettings,
                 error = settingsError,
@@ -729,6 +732,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 if (battleSessionActive) BattleSessionScreen(
                     state = requestState,
                     loadout = loadout,
+                    world = world.name,
                     strategy = strategy,
                     onSettings = ::openSettings,
                     settingsEnabled = !pageLoading && !nativeBusy && !challengeBusy &&

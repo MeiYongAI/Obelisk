@@ -103,7 +103,6 @@ internal fun JpxRuleEditor(original: JsonObject?, busy: Boolean, error: Int, onB
             BoolRow(stringResource(R.string.jpx_enabled), rule.text("disabled") != "true") { mutate { addProperty("disabled", !it) } }
             HorizontalDivider()
             Text(stringResource(R.string.jpx_conds), style = MaterialTheme.typography.titleMedium)
-            if (conditions.isEmpty) Text(stringResource(R.string.jpx_always), style = MaterialTheme.typography.bodySmall)
             conditions.forEachIndexed { index, element ->
                 val cond = element.asJsonObject
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

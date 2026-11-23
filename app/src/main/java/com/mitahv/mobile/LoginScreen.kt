@@ -59,6 +59,7 @@ import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.error
@@ -202,6 +203,7 @@ internal fun ForumLoginScreen(
     onCookiesCaptured: (String) -> Unit,
 ) {
     var webView by remember { mutableStateOf<WebView?>(null) }
+    val resources = LocalResources.current
     val context = LocalContext.current
     var loading by remember { mutableStateOf(true) }
     var pageError by remember { mutableStateOf<String?>(null) }
@@ -214,7 +216,7 @@ internal fun ForumLoginScreen(
         if (currentBusy) return
         val header = forumAuthCookieHeader()
         if (header == null) {
-            if (!automatic) pageError = context.getString(R.string.app_forum_login_first)
+            if (!automatic) pageError = resources.getString(R.string.app_forum_login_first)
             return
         }
         if (automatic && (header == initialCookies || header == lastSubmittedCookies)) return
@@ -292,14 +294,14 @@ internal fun ForumLoginScreen(
                             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                                 if (request.isForMainFrame) {
                                     loading = false
-                                    pageError = context.getString(R.string.app_forum_load_failed)
+                                    pageError = resources.getString(R.string.app_forum_load_failed)
                                 }
                             }
 
                             override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
                                 if (request.isForMainFrame) {
                                     loading = false
-                                    pageError = context.getString(R.string.app_forum_http_error, response.statusCode)
+                                    pageError = resources.getString(R.string.app_forum_http_error, response.statusCode)
                                 }
                             }
                         }

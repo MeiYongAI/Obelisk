@@ -21,11 +21,12 @@ import com.mitahv.mobile.model.SpellSchool
 import com.mitahv.mobile.model.WeaponFamily
 
 @Composable
-internal fun BattleTopBar(onStrategy: () -> Unit, onSettings: () -> Unit, settingsEnabled: Boolean) {
+internal fun BattleTopBar(onStrategy: () -> Unit, onSettings: () -> Unit, settingsEnabled: Boolean, runControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 16.dp, end = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.hv_settings_battle), Modifier.weight(1f).semantics { heading() },
             style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        runControl()
         TextButton(onClick = onStrategy) { Text(stringResource(R.string.strategy_title)) }
         IconButton(onClick = onSettings, enabled = settingsEnabled, modifier = Modifier.size(48.dp)) {
             Icon(Icons.Filled.Settings, stringResource(R.string.strategy_app_settings))

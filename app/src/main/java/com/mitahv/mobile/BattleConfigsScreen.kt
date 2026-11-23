@@ -60,6 +60,7 @@ internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, 
         try { block() }
         catch (e: CancellationException) { throw e }
         catch (_: OversizedConfig) { error = R.string.jpx_large }
+        catch (_: EmptyConfig) { error = R.string.jpx_no_importable }
         catch (_: WrongConfigWorld) { error = R.string.jpx_wrong_world }
         catch (_: JsonParseException) { error = R.string.jpx_format }
         catch (_: IllegalArgumentException) { error = R.string.jpx_format }
@@ -106,14 +107,21 @@ internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, 
         return
     }
     val entry = entries.find { it.id == openId }; val doc = document
-    if (entry != null && doc != null) JpxConfigDetails(doc, variant(entry).ifEmpty { stringResource(R.string.jpx_rows,entry.rules) }, busy, error,
-        onBack={ document=null; openId=null }, onApply={ applyId=entry.id }, onExport={ export(entry) }) { group, edit, done ->
+    if (entry != null && doc != null) JpxConfigDetails(doc, variant(entry), busy, error,
+        onBack={ document=null; openId=null }, onApply={ applyId=entry.id }) { group, edit, done ->
         scope.launch { perform {
             document = withContext(Dispatchers.IO) {
                 val edited = doc.update(entry.mode,group,library.world,edit)
                 library.update(entry.id,edited); JpxDocument(edited)
-            }; done(); notify(R.string.jpx_edit_saved)
+            }; done()
         } }
+    } else if (openId != null) {
+        BackHandler { openId = null }
+        Column(Modifier.safeDrawingPadding()) {
+            IconButton(onClick = { openId = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back)) }
+            val failure = if (error != 0) error else if (catalog?.readFailed == true || (catalog != null && entry == null)) R.string.jpx_io else 0
+            if (failure != 0) Text(stringResource(failure)) else LinearProgressIndicator(Modifier.fillMaxWidth())
+        }
     } else ConfigLibraryContent(
         strategy = strategy, onRoutes = { configuringRoutes = true },
         onAutomatic = { enabled -> change { library.setAutomatic(enabled, strategy.match?.entry?.id) } },
@@ -132,8 +140,6 @@ internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, 
             Text(stringResource(R.string.jpx_summary, candidate.modes.size, candidate.rules))
             HorizontalDivider()
             for (mode in candidate.modes) Text(modeLabel(mode), style = MaterialTheme.typography.bodyMedium)
-            Text(stringResource(R.string.jpx_preview_hint), style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
         } }, confirmButton = { TextButton(onClick = {
             draft = null
             scope.launch { perform {

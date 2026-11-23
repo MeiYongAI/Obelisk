@@ -6,6 +6,7 @@ import com.mitahv.mobile.model.BattleActionOption
 import com.mitahv.mobile.model.BattleItemText
 import com.mitahv.mobile.model.BattleEnemy
 import com.mitahv.mobile.model.BattlePage
+import com.mitahv.mobile.model.BattleRoundFacts
 import com.mitahv.mobile.model.BattleScene
 import com.mitahv.mobile.model.BattleVital
 import com.mitahv.mobile.model.BattleEffect
@@ -99,6 +100,7 @@ internal object BattlePageParser {
             spells = groupedActions(document.selectFirst("#table_magic")).ifEmpty { document.select("#pane_magic .btsd").mapNotNull(::actionOption) },
             items = items(document, itemText),
             log = log,
+            round = BattleRoundFacts().observe(log),
             scene = BattleScene.fromLog(log),
             completion = completion.hvText(),
             experienceBarWidth = document.selectFirst("#expbar")?.let(::barWidth) ?: 0f,
@@ -118,37 +120,32 @@ internal object BattlePageParser {
         val vitalPrefix = if (utilitarianVitals) "d" else ""
         // hvb.css defines both Standard and Utilitarian bars. Their IDs and
         // full widths differ; the health readout can use either hb or hd.
+        fun vital(name: String, readout: String, image: String, fullWidth: Float): BattleVital? {
+            val text = vitalPane.selectFirst(readout) ?: return null
+            val width = vitalPane.selectFirst(image)?.let { WIDTH.find(it.attr("style"))?.groupValues?.get(1)?.toFloatOrNull() }
+            return BattleVital(name, text.hvText(), ((width ?: 0f) / fullWidth).coerceIn(0f, 1f), measured = width != null)
+        }
         return listOfNotNull(
-            vitalPane.selectFirst("#${vitalPrefix}vrhb, #${vitalPrefix}vrhd")?.let { value ->
-                BattleVital("Health", value.hvText(), vitalPane.selectFirst("#${vitalPrefix}vbh img")
-                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 496f) } ?: 0f)
-            },
-            vitalPane.selectFirst("#${vitalPrefix}vrm")?.let { value ->
-                BattleVital("Mana", value.hvText(), vitalPane.selectFirst("#${vitalPrefix}vbm img")
-                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 207f) } ?: 0f)
-            },
-            vitalPane.selectFirst("#${vitalPrefix}vrs")?.let { value ->
-                BattleVital("Spirit", value.hvText(), vitalPane.selectFirst("#${vitalPrefix}vbs img")
-                    ?.let { barFraction(it, if (utilitarianVitals) 414f else 207f) } ?: 0f)
-            },
-            vitalPane.selectFirst("#dvrc")?.let { value ->
-                BattleVital("Overcharge", value.hvText(), vitalPane.selectFirst("#dvbc img")
-                    ?.let { barFraction(it, 414f) } ?: 0f)
-            } ?: if (!utilitarianVitals) standardOvercharge(vitalPane) else null,
+            vital("Health", "#${vitalPrefix}vrhb, #${vitalPrefix}vrhd", "#${vitalPrefix}vbh img", if (utilitarianVitals) 414f else 496f),
+            vital("Mana", "#${vitalPrefix}vrm", "#${vitalPrefix}vbm img", if (utilitarianVitals) 414f else 207f),
+            vital("Spirit", "#${vitalPrefix}vrs", "#${vitalPrefix}vbs img", if (utilitarianVitals) 414f else 207f),
+            vital("Overcharge", "#dvrc", "#dvbc img", 414f) ?: if (!utilitarianVitals) standardOvercharge(vitalPane) else null,
         )
     }
 
     private fun enemies(root: Element) = root.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
         val target = enemy.id().substringAfter("mkey_").toIntOrNull() ?: return@mapNotNull null
         val level = enemy.selectFirst(".btm2").hvText()
+        fun fraction(stat: String) = enemy.selectFirst(".chbd img[alt=$stat]")?.let { img ->
+            WIDTH.find(img.attr("style"))?.groupValues?.get(1)?.toFloatOrNull()?.let { (it / 120f).coerceIn(0f, 1f) }
+        }
+        val health = fraction("health")
         BattleEnemy(
             target = target,
             name = enemy.selectFirst(".btm3").hvText(),
             level = level,
-            healthFraction = enemy.selectFirst(".chbd img[alt=health]")
-                ?.let { barFraction(it, 120f) } ?: 0f,
-            magicFraction = enemy.selectFirst(".chbd img[alt=magic]")?.let { barFraction(it, 120f) },
-            spiritFraction = enemy.selectFirst(".chbd img[alt=spirit]")?.let { barFraction(it, 120f) },
+            healthFraction = health ?: 0f, healthMeasured = health != null,
+            magicFraction = fraction("magic"), spiritFraction = fraction("spirit"),
             effects = effects(enemy.selectFirst(".btm6")),
             targetable = enabled(enemy) && COMMIT_TARGET.find(enemy.attr("onclick"))?.groupValues?.get(1)?.toIntOrNull() == target,
         )
@@ -169,7 +166,7 @@ internal object BattlePageParser {
         val mode = control.id().substringAfter("ckey_")
         if (mode !in setOf("attack", "skill", "items", "spirit", "defend", "focus")) return@mapNotNull null
         BattleControl(mode, enabled(control) && CONTROL_ACTION.find(control.attr("onclick"))?.groupValues?.get(1) == mode,
-            control.attr("src").substringBefore('?').endsWith("_s.png"))
+            control.attr("src").substringBefore('?').let { it.endsWith("_s.png") || (mode == "spirit" && it.endsWith("spirit_a.png")) })
     }
 
     private fun continuation(container: Element, world: HvWorld, currentUrl: HttpUrl): BattleContinuation? {
@@ -215,17 +212,18 @@ internal object BattlePageParser {
         val completion = pane("pane_completion")
         val completionText = completion.hvText()
         val logBatch = response.optJSONArray("textlog")
-        val log = if (logBatch == null || logBatch.length() == 0) current.log else buildList {
+        val additions = if (logBatch == null) emptyList() else buildList {
             for (i in logBatch.length() - 1 downTo 0) {
                 val entry = logBatch.optJSONObject(i) ?: continue
                 val text = Element("td").html(entry.optString("t")).hvText()
                 if (text.isNotBlank()) add(text)
-                if (size == 100) break
             }
-            addAll(current.log.take(100 - size))
         }
+        val log = if (additions.isEmpty()) current.log else (additions + current.log).take(100)
         return current.copy(
+            encounterKey = if (additions.any { it.startsWith("Initializing ") }) Any() else current.encounterKey,
             turnKey = Any(),
+            round = current.round.observe(additions),
             playerVitals = pane("pane_vitals")?.let(::vitals) ?: current.playerVitals,
             enemies = pane("pane_monster")?.let(::enemies) ?: current.enemies,
             quickActions = pane("pane_quickbar")?.select("#quickbar > div")?.mapNotNull(::actionOption) ?: current.quickActions,
@@ -245,8 +243,10 @@ internal object BattlePageParser {
         )
     }
 
+    fun hasCombatPane(response: JSONObject): Boolean = ACTION_UPDATE_IDS.any(response::has)
+
     fun hasActionUpdate(response: JSONObject): Boolean =
-        ACTION_UPDATE_IDS.any(response::has) || response.has("textlog") || response.has("exp")
+        hasCombatPane(response) || response.has("textlog") || response.has("exp")
 
     private fun applyActionResponse(document: Document, response: JSONObject) {
         val refreshIds = listOf(

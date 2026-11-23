@@ -9,7 +9,7 @@ class JpxDocumentTest {
     private val single = "Staff_General"
     private val other = "OneHanded_Tower"
     private val bare = """{"battleVersion":20251216,"customOption":{"future":true},"$single":{"rules":[{"type":"item","name":"Spirit Gem","conditions":[{"key":"pSP","value":[0,0.9],"extension":true}]},{"type":"custom","code":"opaque"}],"kb_x":[{"type":"stop"}]},"$other":{}}"""
-    private fun doc(text: String) = JpxDocument(JpxImport.read(text.byteInputStream(),"file.txt","Isekai"))
+    private fun doc(text: String) = JpxDocument(JpxImport.parse(text,"file.txt","Isekai"))
     private fun tree(text: String) = JsonParser.parseString(text).asJsonObject
     private fun wrap(cfg: String) = """{"schemaVersion":1,"kind":"battle","world":"Isekai","title":"Mixed","description":"test","extra":7,"config":$cfg}"""
 

@@ -25,7 +25,7 @@ internal class JpxDocument(val draft: JpxDraft) {
         val values = slot.getAsJsonArray(group)?.map { it.asJsonObject }?.toMutableList() ?: mutableListOf()
         edit(values)
         slot.add(group, JsonArray().apply { values.forEach { add(it) } })
-        return copy.toString().byteInputStream().use { JpxImport.read(it, draft.name, world) }
+        return JpxImport.parse(copy.toString(), draft.name, world)
     }
 
     /** Export only this mode. PLUS metadata (including the target world) stays with it. */

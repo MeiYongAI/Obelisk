@@ -9,6 +9,7 @@ import java.nio.ByteBuffer
 
 internal data class JpxDraft(val name: String, val modes: List<String>, val rules: Int, val source: String)
 internal class WrongConfigWorld : IllegalArgumentException()
+internal class EmptyConfig : IllegalArgumentException()
 internal class OversizedConfig : IllegalArgumentException()
 
 internal object JpxImport {
@@ -26,6 +27,11 @@ internal object JpxImport {
             out.write(buf, 0, n)
         }
         val source = Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(out.toByteArray())).toString().removePrefix("\uFEFF")
+        return parse(source, filename, world, importing = true)
+    }
+
+    fun parse(source: String, filename: String, world: String, importing: Boolean = false): JpxDraft {
+        if (source.toByteArray().size > MAX_BYTES) throw OversizedConfig()
         val root = JsonReader(source.reader()).use { reader ->
             reader.strictness = Strictness.STRICT
             JsonParser.parseReader(reader).also { require(it.isJsonObject && reader.peek() == JsonToken.END_DOCUMENT) }.asJsonObject
@@ -43,9 +49,11 @@ internal object JpxImport {
         val modes = config.keySet().filter { modeKey.matches(it) }.sorted()
         require(modes.isNotEmpty())
         if (wrapped && root["kind"].text() == "battle-mode") require(modes.size == 1 && modes.single() == root["mode"].text())
-        val rules = modes.sumOf { key -> countRules(requireNotNull(config[key].takeIf { it.isJsonObject }?.asJsonObject)) }
+        val counts = modes.associateWith { key -> countRules(requireNotNull(config[key].takeIf { it.isJsonObject }?.asJsonObject)) }
         val name = (if (wrapped) root["title"].text() else null)?.takeIf { it.isNotBlank() } ?: filename
-        return JpxDraft(name.trim().take(120).ifBlank { "JPX" }, modes, rules, source)
+        val included = if (importing) modes.filter { counts.getValue(it) > 0 } else modes
+        if (included.isEmpty()) throw EmptyConfig()
+        return JpxDraft(name.trim().take(120).ifBlank { "JPX" }, included, counts.values.sum(), source)
     }
 
     private fun countRules(mode: JsonObject): Int {

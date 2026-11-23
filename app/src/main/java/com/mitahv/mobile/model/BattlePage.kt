@@ -31,6 +31,8 @@ data class BattlePage(
     val completion: String,
     val experienceBarWidth: Float,
     val scene: BattleScene? = null,
+    val round: BattleRoundFacts = BattleRoundFacts(),
+    val encounterKey: Any = Any(), // New on full-page refresh, retained only by pane updates.
     val turnKey: Any = Any(),
     val playerEffects: List<BattleEffect> = emptyList(),
     val controls: List<BattleControl> = emptyList(),
@@ -51,7 +53,7 @@ data class BattleContinuation(
 
 data class BattleItemText(val name: String, val descriptionHtml: String)
 
-data class BattleVital(val name: String, val value: String, val fraction: Float)
+data class BattleVital(val name: String, val value: String, val fraction: Float, val measured: Boolean = true)
 
 data class BattleEnemy(
     val target: Int,
@@ -62,6 +64,7 @@ data class BattleEnemy(
     val spiritFraction: Float? = null,
     val effects: List<BattleEffect> = emptyList(),
     val targetable: Boolean = false,
+    val healthMeasured: Boolean = true,
 )
 
 data class BattleEffect(val name: String, val description: String, val duration: String)

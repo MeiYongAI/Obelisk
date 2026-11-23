@@ -28,38 +28,50 @@ class JpxLibraryTest {
     @After fun cleanUp() { db.close(); context.deleteDatabase(filename) }
 
     @Test fun importingEditingExportingAndRemovingTargetOnlyOneMode() {
-        assertEquals(3, lib.save(parse(bundle)))
-        val entries = profiles(); assertEquals(setOf(one,two,blank), entries.keys)
-        assertEquals(0, entries.getValue(blank).rules); assertFalse(lib.catalog().manual)
+        assertEquals(2, lib.save(parse(bundle)))
+        val entries = profiles(); assertEquals(setOf(one,two), entries.keys)
+        assertFalse(lib.catalog().manual)
         val a = entries.getValue(one).id; val b = entries.getValue(two).id
         val bBefore = lib.load(b)
         lib.apply(a); lib.apply(b)
         val active = published(a); assertEquals(b, lib.catalog().manualId)
         lib.rename(a,"Shield"); lib.update(a, JpxDocument(lib.load(a)).update(one,"rules",lib.world) { it.clear() })
         assertEquals(active,published(a)); assertTrue(profiles().getValue(one).changed); assertFalse(profiles().getValue(two).changed)
-        val export = parse(lib.load(a).source)
+        val export = lib.load(a)
         assertEquals(listOf(one),export.modes); assertEquals(0,export.rules); assertFalse(JpxDocument(export).config.has("setting"))
         assertEquals(0,lib.save(parse(bundle))); assertEquals(0,lib.load(a).rules); assertEquals("Shield",profiles().getValue(one).nickname)
         lib.apply(a); assertNotEquals(active,published(a)); assertEquals(bBefore.source,published(b)); assertFalse(profiles().getValue(one).changed)
-        lib.remove(a); assertNull(lib.catalog().manualId); assertEquals(setOf(two,blank),profiles().keys); assertEquals(bBefore,lib.load(b))
+        lib.remove(a); assertNull(lib.catalog().manualId); assertEquals(setOf(two),profiles().keys); assertEquals(bBefore,lib.load(b))
         assertEquals(1,lib.save(parse(bundle))); assertEquals(1,profiles().getValue(one).rules); assertNull(lib.catalog().manualId)
+    }
+
+    @Test fun reimportRemovesOnlyUntouchedPlaceholdersFromThatExactFile() {
+        lib.save(parse(bundle))
+        val sql = db.writableDatabase
+        fun insertPlaceholder() = sql.execSQL("""INSERT INTO profiles(account,world,import_hash,origin,slot,rules,source)
+            SELECT account,world,import_hash,origin,?,0,? FROM profiles WHERE slot=?""", arrayOf(blank,"""{"version":1,"$blank":{}}""",one))
+        insertPlaceholder(); assertTrue(blank in profiles()); lib.save(parse(bundle)); assertFalse(blank in profiles())
+        insertPlaceholder(); val id = profiles().getValue(blank).id
+        lib.rename(id,"My draft"); lib.save(parse(bundle)); assertEquals(id,profiles().getValue(blank).id)
+        lib.rename(id,""); val draft = JpxDocument(lib.load(id)).update(blank,"rules",lib.world) { it.add(JsonParser.parseString("""{"type":"stop"}""").asJsonObject) }
+        lib.update(id, draft); lib.save(parse(bundle)); assertEquals(draft.source,lib.load(id).source)
     }
 
     @Test fun alternativesWithSameFilenameAreIndependentWithinTheirAccountAndWorld() {
         lib.save(parse(bundle)); val original = profiles().getValue(one); lib.apply(original.id)
-        val alternate = parse("""{"version":1,"$one":{}}"""); assertEquals(1,lib.save(alternate))
+        val alternate = parse("""{"version":1,"$one":$stop}"""); assertEquals(1,lib.save(alternate))
         val copy = lib.catalog().entries.single { it.mode==one && it.id!=original.id }; assertEquals(original.id, lib.catalog().manualId)
         lib.apply(copy.id); lib.remove(original.id); assertEquals(copy.id, lib.catalog().manualId)
         for (other in listOf(JpxLibrary(db,"other","Isekai"),JpxLibrary(db,"sample","Persistent"))) {
             assertTrue(other.catalog().entries.isEmpty()); assertTrue(runCatching { other.remove(copy.id) }.isFailure)
-            assertEquals(3,other.save(parse(bundle))); assertFalse(other.catalog().manual)
+            assertEquals(2,other.save(parse(bundle))); assertFalse(other.catalog().manual)
         }
         assertEquals(lib.load(copy.id).source, published(copy.id))
     }
 
     @Test fun staffGeneralExportCanBeImportedOnItsOwn() {
         val staff = "Staff_General"
-        val raw = """{"battleVersion":1,"$staff":$stop,"$two":{},"globalOption":true}"""
+        val raw = """{"battleVersion":1,"$staff":$stop,"$two":$stop,"globalOption":true}"""
         for (file in listOf(raw, """{"schemaVersion":1,"kind":"battle","world":"Isekai","config":$raw}""")) {
             lib.save(parse(file))
             val before = profiles(); val id = before.getValue(staff).id
@@ -128,7 +140,7 @@ class JpxLibraryTest {
 
     @Test fun largePlusProfileRoundTripsWithoutCursorWindowTruncation() {
         val text = """{"schemaVersion":1,"kind":"battle","world":"Isekai","description":"keep","config":{"version":1,"$one":{"rules":[{"type":"custom","code":"${"測".repeat(698900)}"}]},"$blank":{}}}"""
-        val src = parse(text); assertEquals(2,lib.save(src))
+        val src = parse(text); assertEquals(1,lib.save(src))
         val result = lib.load(profiles().getValue(one).id)
         val root = JsonParser.parseString(result.source).asJsonObject; assertEquals("battle-mode",root["kind"].asString); assertEquals("keep",root["description"].asString)
         assertEquals("Isekai",root["world"].asString); assertEquals(listOf(one),parse(result.source).modes)

@@ -50,7 +50,7 @@ class BattlePageParserTest {
                 JSONObject().put("pane_completion", "").put("pane_monster", ""), JSONObject().put("exp", 1))) {
             val next = applyTurn(current, turn)
             html = BattlePageParser.mergeActionResponse(html, turn)
-            assertEquals(BattlePageParser.parseBattle(html).copy(turnKey = next.turnKey), next)
+            assertEquals(BattlePageParser.parseBattle(html).copy(encounterKey = next.encounterKey, turnKey = next.turnKey), next)
             if (!turn.has("table_magic")) org.junit.Assert.assertSame(current.spells, next.spells)
             current = next
         }
