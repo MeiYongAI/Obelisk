@@ -19,4 +19,16 @@
     <string name="jpx_sign_in">登录后可管理配置</string>
     <string name="jpx_manage">导入和选用 JPX 配置</string>
     <string name="jpx_battle_selection">当前选用配置：%1$s</string>
+    <string name="jpx_defaults">JPX 内置默认配置</string>
+    <string name="jpx_defaults_hint">可点选单个模式预览，也可选用整套战斗配置。0 条表示原脚本没有为该模式预设规则。</string>
+    <string name="jpx_rule_count">%1$d 条</string>
+    <string name="jpx_export_defaults">导出原始 JSON</string>
+    <string name="jpx_export_battle">战斗设置与规则</string>
+    <string name="jpx_export_stats">统计设置</string>
+    <string name="jpx_export_shortcuts">快捷键</string>
+    <string name="jpx_whole_preset">预览整套战斗配置</string>
+    <string name="jpx_exported">JSON 文件已保存。</string>
+    <string name="jpx_scene_general">通用</string>
+    <string name="jpx_scene_tower">塔楼</string>
+    <string name="jpx_mode_label">%1$s · %2$s</string>
 </resources>

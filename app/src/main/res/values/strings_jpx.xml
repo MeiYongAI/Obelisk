@@ -19,4 +19,16 @@
     <string name="jpx_sign_in">Sign in to manage configurations</string>
     <string name="jpx_manage">Import and select JPX files</string>
     <string name="jpx_battle_selection">Selected configuration: %1$s</string>
+    <string name="jpx_defaults">JPX built-in defaults</string>
+    <string name="jpx_defaults_hint">Preview a single mode below, or choose the complete battle preset. Zero means JPX ships no rules for that mode.</string>
+    <string name="jpx_rule_count">%1$d rules</string>
+    <string name="jpx_export_defaults">Export original JSON</string>
+    <string name="jpx_export_battle">Battle settings and rules</string>
+    <string name="jpx_export_stats">Statistics settings</string>
+    <string name="jpx_export_shortcuts">Keyboard shortcuts</string>
+    <string name="jpx_whole_preset">Preview full preset</string>
+    <string name="jpx_exported">JSON file saved.</string>
+    <string name="jpx_scene_general">General</string>
+    <string name="jpx_scene_tower">Tower</string>
+    <string name="jpx_mode_label">%1$s · %2$s</string>
 </resources>

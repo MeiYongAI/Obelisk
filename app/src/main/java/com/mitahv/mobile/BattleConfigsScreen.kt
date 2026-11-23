@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +31,7 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var entries by remember { mutableStateOf(emptyList<JpxEntry>()) }
     var draft by remember { mutableStateOf<JpxDraft?>(null) }
+    var showDefaults by rememberSaveable { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<JpxEntry?>(null) }
     var busy by remember { mutableStateOf(true) }
     var error by remember { mutableIntStateOf(0) }
@@ -70,6 +72,8 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
             item {
                 Text(stringResource(R.string.jpx_scope, library.world), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.jpx_hint), Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = { showDefaults = true }, enabled = !busy) { Text(stringResource(R.string.jpx_defaults)) }
+                Spacer(Modifier.height(8.dp))
                 Button(onClick = { picker.launch(arrayOf("*/*")) }, enabled = !busy) { Text(stringResource(R.string.jpx_import)) }
             }
             if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
@@ -90,6 +94,7 @@ internal fun BattleConfigsScreen(library: JpxLibrary, onBack: () -> Unit) {
             }
         }
     }
+    if (showDefaults) JpxDefaultsDialog(library.world, onPreview = { showDefaults = false; draft = it }, onDismiss = { showDefaults = false })
     draft?.let { candidate -> AlertDialog(onDismissRequest = { draft = null }, title = { Text(stringResource(R.string.jpx_preview)) },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(candidate.name, style = MaterialTheme.typography.titleMedium)

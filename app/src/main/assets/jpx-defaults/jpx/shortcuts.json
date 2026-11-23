@@ -1,0 +1,20 @@
+{
+  "openBattleRecords": {
+    "key": "z",
+    "ctrl": false,
+    "alt": false,
+    "shift": false
+  },
+  "toggleActive": {
+    "key": "m",
+    "ctrl": false,
+    "alt": false,
+    "shift": false
+  },
+  "openSettings": {
+    "key": ",",
+    "ctrl": false,
+    "alt": false,
+    "shift": false
+  }
+}

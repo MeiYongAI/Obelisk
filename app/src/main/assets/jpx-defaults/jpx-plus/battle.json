@@ -1,0 +1,2770 @@
+{
+  "battleVersion": 20251216,
+  "advanceToNextRound": false,
+  "autoFinishBattle": false,
+  "ajaxRound": false,
+  "hideRoundPopup": false,
+  "showCooldowns": false,
+  "quickbarExtend": [],
+  "showDurations": false,
+  "showRealTimeProficiency": false,
+  "showMonsterIndex": false,
+  "showMonsterInfo": false,
+  "showMonsterHP": false,
+  "recordBattleLog": false,
+  "dailyStaminaQuotaPlus": 0,
+  "ctrlWidgetStyleText": [],
+  "ctrlWidgetMouseEnter": false,
+  "ctrlWidgetMouseEnterPause": false,
+  "ctrlWidgetRows": [
+    {
+      "id": "isActiveBattle"
+    },
+    {
+      "id": "readyNext"
+    },
+    {
+      "id": "networkDelay"
+    },
+    {
+      "id": "battleStyle"
+    },
+    {
+      "id": "battleType"
+    },
+    {
+      "id": "round"
+    }
+  ],
+  "OneHanded_General": {
+    "rules": [
+      {
+        "type": "item",
+        "name": "Spirit Gem",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Potion",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Last Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Gem",
+        "conditions": []
+      },
+      {
+        "type": "spellSupport",
+        "name": "Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Potion",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Full-Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Gem",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.8
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Potion",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mystic Gem",
+        "conditions": [
+          {
+            "key": "pIgnoredEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Heartseeker",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              100,
+              "Heartseeker"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              50,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "name": "Spirit",
+        "toggled": true,
+        "conditions": [
+          {
+            "key": "pOC",
+            "value": [
+              6,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Heartseeker",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Heartseeker"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regeneration"
+            ]
+          },
+          {
+            "key": "monsters",
+            "value": [
+              4,
+              10
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Replenishment"
+            ]
+          },
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.85
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Refreshment"
+            ]
+          },
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "name": "Weaken",
+        "targetCount": 3,
+        "tailSkip": 0,
+        "bottomUp": false,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tTypes",
+            "value": [
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Weakened"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "world",
+            "value": [
+              "Persistent"
+            ]
+          },
+          {
+            "key": "tDaysSinceUpdate",
+            "value": [
+              46,
+              9999
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              0,
+              9999,
+              "Imperiled",
+              "Searing Skin",
+              "Freezing Limbs",
+              "Turbulent Air",
+              "Deep Burns",
+              "Breached Defense",
+              "Blunted Attack"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "skill",
+        "name": "Scan",
+        "conditions": [
+          {
+            "key": "pActionCounts",
+            "value": [
+              0,
+              0,
+              "Scan"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tName",
+            "value": "Yggdrasil",
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tTypes",
+            "value": [
+              "Rare",
+              "Legendary",
+              "Ultimate",
+              "Arena300",
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": []
+      },
+      {
+        "type": "skill",
+        "name": "Orbital Friendship Cannon",
+        "conditions": [
+          {
+            "key": "activeMonsters",
+            "value": [
+              6,
+              10
+            ]
+          },
+          {
+            "key": "pOC",
+            "value": [
+              9,
+              10
+            ]
+          },
+          {
+            "key": "pSpiritStatus",
+            "value": true
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "name": "Imperil",
+        "targetCount": 3,
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Imperiled"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Rare",
+              "Legendary",
+              "Ultimate",
+              "Arena300",
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "name": "Imperil",
+        "targetCount": 3,
+        "bottomUp": false,
+        "tailSkip": -1,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Imperiled"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "activeBosses",
+            "value": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "type": "skill",
+        "name": "Merciful Blow",
+        "conditions": [
+          {
+            "key": "tTypes",
+            "value": [
+              "Ultimate",
+              "Arena300",
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Bleeding Wound"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tHP",
+            "value": [
+              0.04,
+              0.22
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "pOC",
+            "value": [
+              4.5,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "skill",
+        "name": "Vital Strike",
+        "conditions": [
+          {
+            "key": "tTypes",
+            "value": [
+              "Ultimate",
+              "Arena300",
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Stunned"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tHP",
+            "value": [
+              0.05,
+              1
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "pOC",
+            "value": [
+              2.5,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "normalAttack",
+        "conditions": []
+      }
+    ]
+  },
+  "OneHanded_Tower": {
+    "rules": [
+      {
+        "type": "item",
+        "name": "Spirit Gem",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Potion",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.6
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Last Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.6
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.6
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.6
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Gem",
+        "conditions": []
+      },
+      {
+        "type": "spellSupport",
+        "name": "Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Potion",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Full-Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Gem",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.8
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Potion",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mystic Gem",
+        "conditions": [
+          {
+            "key": "pIgnoredEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Heartseeker",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              100,
+              "Heartseeker"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              50,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "name": "Spirit",
+        "toggled": true,
+        "conditions": [
+          {
+            "key": "pOC",
+            "value": [
+              6,
+              10
+            ]
+          },
+          {
+            "key": "defeatedMonsters",
+            "value": [
+              1,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Heartseeker",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Heartseeker"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regeneration"
+            ]
+          },
+          {
+            "key": "monsters",
+            "value": [
+              4,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Replenishment"
+            ]
+          },
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.85
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Refreshment"
+            ]
+          },
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "targetCount": 3,
+        "name": "Sleep",
+        "bottomUp": true,
+        "tailSkip": 1,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Asleep"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "roundCurrent",
+            "value": [
+              0,
+              9999
+            ]
+          },
+          {
+            "key": "floor",
+            "value": [
+              36,
+              9999
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "targetCount": 3,
+        "name": "Weaken",
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Weakened",
+              "Asleep"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "roundCurrent",
+            "value": [
+              10,
+              9999
+            ]
+          },
+          {
+            "key": "floor",
+            "value": [
+              40,
+              9999
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "targetCount": 3,
+        "name": "Silence",
+        "bottomUp": true,
+        "tailSkip": 0,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Asleep",
+              "Silenced"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "roundCurrent",
+            "value": [
+              15,
+              9999
+            ]
+          },
+          {
+            "key": "floor",
+            "value": [
+              40,
+              9999
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "targetCount": 3,
+        "name": "Imperil",
+        "bottomUp": false,
+        "tailSkip": -1,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Imperiled"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "roundCurrent",
+            "value": [
+              0,
+              9999
+            ]
+          },
+          {
+            "key": "floor",
+            "value": [
+              40,
+              9999
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": []
+      },
+      {
+        "type": "toggle",
+        "name": "Spirit",
+        "toggled": true,
+        "conditions": [
+          {
+            "key": "pOC",
+            "value": [
+              6,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "skill",
+        "name": "Merciful Blow",
+        "conditions": [
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Bleeding Wound"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tHP",
+            "value": [
+              0.04,
+              0.22
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "pOC",
+            "value": [
+              4.5,
+              10
+            ]
+          },
+          {
+            "key": "roundCurrent",
+            "value": [
+              0,
+              9999
+            ]
+          },
+          {
+            "key": "floor",
+            "value": [
+              95,
+              9999
+            ]
+          }
+        ]
+      },
+      {
+        "type": "skill",
+        "name": "Vital Strike",
+        "conditions": [
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Stunned"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tHP",
+            "value": [
+              0.05,
+              1
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "pOC",
+            "value": [
+              2.5,
+              10
+            ]
+          },
+          {
+            "key": "pSpiritStatus",
+            "value": true
+          },
+          {
+            "key": "roundCurrent",
+            "value": [
+              0,
+              9999
+            ]
+          },
+          {
+            "key": "floor",
+            "value": [
+              60,
+              9999
+            ]
+          }
+        ]
+      },
+      {
+        "type": "normalAttack",
+        "conditions": []
+      }
+    ]
+  },
+  "1H_Mage_General": {
+    "rules": []
+  },
+  "TwoHanded_General": {
+    "rules": [
+      {
+        "type": "item",
+        "name": "Spirit Gem",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Potion",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Last Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Gem",
+        "conditions": []
+      },
+      {
+        "type": "spellSupport",
+        "name": "Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Potion",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Full-Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Gem",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.8
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Potion",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mystic Gem",
+        "conditions": [
+          {
+            "key": "pIgnoredEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Heartseeker",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              100,
+              "Heartseeker"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              50,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Heartseeker",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Heartseeker"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regeneration"
+            ]
+          },
+          {
+            "key": "monsters",
+            "value": [
+              4,
+              10
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Replenishment"
+            ]
+          },
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.85
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Refreshment"
+            ]
+          },
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "name": "Weaken",
+        "targetCount": 3,
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Weakened"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "name": "Silence",
+        "targetCount": 3,
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Silenced"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "name": "Imperil",
+        "targetCount": 3,
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 4,
+        "minMonstersLeft": 5,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Imperiled"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Ultimate",
+              "Arena300",
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "kamisamaniNattaHi",
+        "code": "let{prefix:e,isekaiSuffix:n,battleType:t,towerFloor:r,roundInfo:i,vitals:o,spiritStatus:a,actionCounts:l,spellCooldowns:s,monsterData:g,monstersObj:{monsters:c,activeMonsters:f,bosses:u,activeBosses:d},actionHandlers:h,doSpellsDebuffGoNext:m,doSpellGoNext:P,doAttackGoNext:p,doToggleGoNext:B}=jpx,w=parseInt(localStorage.getItem(e+\"playerLevel\"+n)||1),x=(f[0].index,f.at(-1).index,l[\"Rending Blow\"]??0),v=\"-\"===s[\"Rending Blow\"]?9999:s[\"Rending Blow\"],R=(\"-\"===s[\"Shatter Strike\"]||s[\"Shatter Strike\"],d.reduce((e,n)=>!e||n.hpPercentage>e.hpPercentage?n:e,null)),S=f.reduce((e,n)=>!e||n.hpPercentage>e.hpPercentage?n:e,null),A=f.reduce((e,n)=>!e||T(n)>T(e)?n:e,null),G=w<300;function T(e){return g[e.index].maxHP*e.hpPercentage}function b({minTargets:e=1,minBossTargets:n=0,minNormalHP:t=.2,minBossHP:r=.1,minUnPA:i=0,minBossUnPA:o=0,bossPriority:a=!0}={}){let l=-1,s=0,g=0,f=0,u=0;for(let d=0;d<c.length;d++){if(!c[d]?.isAlive)continue;let h=0,m=0,P=0,p=0,B=Math.max(0,d-2),w=Math.min(c.length-1,d+2);for(let e=B;e<=w;e++){let n=c[e];if(!n?.isAlive)continue;let i=[\"Legendary\",\"Ultimate\",\"Arena300\",\"Arena400\",\"Arena500\"].includes(n.type);if(n.hpPercentage<(i?r:t))continue;h++,i&&m++;let o=n.effectObj[\"Penetrated Armor\"]?.turns;null!=o&&-1!==o||(P++,i&&p++)}m<n||(!a||0===m)&&h<e||p<o||(!a||0===p)&&P<i||(i>0||o>0?a?p>u||p===u&&(m>g||m===g&&h>s):P>f||P===f&&(h>s||h===s&&m>g):a?m>g||m===g&&h>s:h>s||h===s&&m>g)&&(l=d,s=h,g=m,f=P,u=p)}return l}let C=f.find(e=>\"Yggdrasil\"===e.name);if(C){if(o.oc>=2.5&&P(\"Great Cleave\",C))return!0;if(p(C))return!0}if(G)if(0===x){if((c.length>=3||f.length>=4)&&o.oc>=2.5&&P(\"Rending Blow\",c[b({minTargets:3,bossPriority:!1})]))return!0}else{if(f.length>=4&&o.oc>=3&&S.hpPercentage>.9&&P(\"Rending Blow\",c[b({minTargets:3})]))return!0;if(f.length>=6&&o.oc>=2.5&&S.hpPercentage>.7&&P(\"Rending Blow\",c[b({minTargets:3})]))return!0}if(!G&&f.length>=3){if(o.oc>=2.5&&P(\"Rending Blow\",c[b({minBossHP:.4,minBossUnPA:1})]))return!0;if(!a){if(o.oc>=2.5&&0===d.length&&P(\"Rending Blow\",c[b({minTargets:3,minNormalHP:.4})]))return!0;if(o.oc>=4.5&&R?.hpPercentage>.3&&P(\"Great Cleave\",A))return!0;if(o.oc>=6&&R?.hpPercentage<.3&&P(\"Rending Blow\",c[b({minTargets:3,minNormalHP:.4,minBossHP:.1})]))return!0;if(o.oc>=9&&S.hpPercentage>.7&&P(\"Great Cleave\",A))return!0}}if(i.current===i.total&&!a){if(o.oc>=2.5&&P(\"Great Cleave\",A))return!0;if(o.oc>=4&&P(\"Rending Blow\",c[b()]))return!0}if((!G||v<=1)&&f.length<=2&&o.oc>=(G?8:a?10:6)&&R?.hpPercentage>.4&&P(\"Great Cleave\",A))return!0;if(!G&&o.oc>=10&&S.hpPercentage>.7&&P(\"Rending Blow\",c[b({minTargets:2})]))return!0;if(!G&&o.oc>=10&&!a&&B(\"Spirit\"))return!0;if((!G||v<=1)&&o.oc>=10&&P(\"Great Cleave\",S))return!0;if(!G&&o.oc>=10&&P(\"Rending Blow\",c[b()]))return!0;if((!G||v<=1)&&o.oc>=10&&P(\"Shatter Strike\",c[b()]))return!0;if(!G&&R?.hpPercentage>.1&&p(A))return!0;let H=f.filter(e=>\"Normal\"===e.type),[N,y]=G&&H.length>0?H:f;return!(y&&1===Math.abs(N.index-y.index)||!p(N))||!!p(y.hpPercentage-N.hpPercentage>.2&&T(y)>T(N)?y:N)"
+      }
+    ]
+  },
+  "2H_Mage_General": {
+    "rules": []
+  },
+  "DualWielding_General": {
+    "rules": []
+  },
+  "DW_Mage_General": {
+    "rules": []
+  },
+  "NitenIchiryu_General": {
+    "rules": []
+  },
+  "NI_Mage_General": {
+    "rules": []
+  },
+  "Staff_General": {
+    "rules": [
+      {
+        "type": "item",
+        "name": "Spirit Gem",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Potion",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Last Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Spirit Elixir",
+        "conditions": [
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Gem",
+        "conditions": []
+      },
+      {
+        "type": "spellSupport",
+        "name": "Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Potion",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Full-Cure",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Health Elixir",
+        "conditions": [
+          {
+            "key": "pHP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Gem",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.8
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Potion",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stop",
+        "customMessage": "Can't use Mana Elixir",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mystic Gem",
+        "conditions": [
+          {
+            "key": "pIgnoredEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Arcane Focus",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              100,
+              "Arcane Focus"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              0,
+              9999,
+              "Channeling"
+            ]
+          },
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              50,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Arcane Focus",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Arcane Focus"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellSupport",
+        "name": "Regen",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regen"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Health Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Regeneration"
+            ]
+          },
+          {
+            "key": "monsters",
+            "value": [
+              4,
+              10
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Mana Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Replenishment"
+            ]
+          },
+          {
+            "key": "pMP",
+            "value": [
+              0,
+              0.85
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "item",
+        "name": "Spirit Draught",
+        "conditions": [
+          {
+            "key": "pEffects",
+            "value": [
+              -1,
+              0,
+              "Refreshment"
+            ]
+          },
+          {
+            "key": "pSP",
+            "value": [
+              0,
+              0.9
+            ]
+          },
+          {
+            "key": "battleTypes",
+            "value": [
+              "Arena",
+              "Colosseum",
+              "Battle1000",
+              "Tower",
+              "Item"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "targetCount": 3,
+        "name": "Weaken",
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Weakened"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "targetCount": 3,
+        "name": "Silence",
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 10,
+        "minMonstersLeft": 10,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Silenced"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "smartDebuff",
+        "targetCount": 3,
+        "name": "Imperil",
+        "bottomUp": false,
+        "tailSkip": 0,
+        "maxAtFirst": 3,
+        "minMonstersLeft": 5,
+        "conditions": [
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              1,
+              9999,
+              "Imperiled"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tDaysSinceUpdate",
+            "value": [
+              46,
+              9999
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tIgnoredEffects",
+            "value": [
+              0,
+              9999,
+              "Imperiled",
+              "Searing Skin",
+              "Freezing Limbs",
+              "Turbulent Air",
+              "Deep Burns",
+              "Breached Defense",
+              "Blunted Attack"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "skill",
+        "name": "Scan",
+        "conditions": [
+          {
+            "key": "pActionCounts",
+            "value": [
+              0,
+              0,
+              "Scan"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tName",
+            "value": "Yggdrasil",
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Imperiled",
+              "Coalesced Mana"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Rare",
+              "Legendary",
+              "Ultimate",
+              "Arena300",
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Coalesced Mana"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          },
+          {
+            "key": "tTypes",
+            "value": [
+              "Rare",
+              "Legendary",
+              "Ultimate",
+              "Arena300",
+              "Arena400",
+              "Arena500"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Imperiled",
+              "Coalesced Mana"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": [
+          {
+            "key": "tEffects",
+            "value": [
+              0,
+              9999,
+              "Imperiled"
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "matched": [
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "target",
+        "priorityRule": "Top Down",
+        "conditions": []
+      },
+      {
+        "type": "spellDamage",
+        "name": "T3",
+        "conditions": [
+          {
+            "key": "activeMonsters",
+            "value": [
+              2,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellDamage",
+        "name": "T2",
+        "conditions": [
+          {
+            "key": "activeMonsters",
+            "value": [
+              2,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellDamage",
+        "name": "T1",
+        "conditions": [
+          {
+            "key": "activeMonsters",
+            "value": [
+              2,
+              10
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellDamage",
+        "name": "T3",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0.2,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellDamage",
+        "name": "T2",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0.2,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "spellDamage",
+        "name": "T1",
+        "conditions": [
+          {
+            "key": "pMP",
+            "value": [
+              0.2,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "type": "normalAttack",
+        "conditions": []
+      }
+    ]
+  },
+  "Unarmed_General": {
+    "rules": []
+  }
+}

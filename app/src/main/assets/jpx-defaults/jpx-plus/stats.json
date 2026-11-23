@@ -1,0 +1,290 @@
+{
+  "statsVersion": 20260109,
+  "columnGroups": {},
+  "combatRows": [
+    {
+      "id": "fire"
+    },
+    {
+      "id": "cold"
+    },
+    {
+      "id": "wind"
+    },
+    {
+      "id": "elec"
+    },
+    {
+      "id": "holy"
+    },
+    {
+      "id": "dark"
+    },
+    {
+      "id": "crushing",
+      "s_pt": "background-color: #ff6a6a;"
+    },
+    {
+      "id": "slashing",
+      "s_pt": "background-color: #ff6a6a;"
+    },
+    {
+      "id": "piercing",
+      "s_pt": "background-color: #ff6a6a;"
+    },
+    {
+      "id": "void"
+    },
+    {
+      "id": "damagePlus"
+    },
+    {
+      "id": "damageTotal"
+    },
+    {
+      "id": "glance",
+      "s_pt": "background-color: #e58a8a;"
+    },
+    {
+      "id": "hit",
+      "s_pt": "background-color: #e58a8a;"
+    },
+    {
+      "id": "crit",
+      "s_pt": "background-color: #e58a8a;"
+    },
+    {
+      "id": "miss",
+      "s_pt": "background-color: #66cc33;"
+    },
+    {
+      "id": "evade",
+      "s_pt": "background-color: #66cc33;"
+    },
+    {
+      "id": "parry",
+      "s_pt": "background-color: #66cc33;"
+    },
+    {
+      "id": "resist",
+      "s_md": "background-color: #8f7ee6;"
+    },
+    {
+      "id": "block",
+      "s_pt": "background-color: #66cc33;"
+    },
+    {
+      "id": "resultTotal"
+    },
+    {
+      "id": "parryPartially",
+      "s_pt": "background-color: #9fd67a;"
+    },
+    {
+      "id": "resistPartially",
+      "s_md": "background-color: #b5a8f2;"
+    },
+    {
+      "id": "blockPartially",
+      "s_pt": "background-color: #9fd67a;"
+    }
+  ],
+  "revenueRows": [
+    {
+      "id": "exp"
+    },
+    {
+      "id": "proficiency"
+    },
+    {
+      "id": "credit",
+      "styleText": "color: #a89000;"
+    },
+    {
+      "id": "equipment",
+      "styleText": "color: #f00;"
+    },
+    {
+      "id": "material",
+      "styleText": "color: #f00;"
+    },
+    {
+      "id": "consumable",
+      "styleText": "color: #00b000;"
+    },
+    {
+      "id": "token",
+      "styleText": "color: #3a7540;"
+    },
+    {
+      "id": "food",
+      "styleText": "color: #489eff;"
+    },
+    {
+      "id": "figurine",
+      "styleText": "color: #25f;"
+    },
+    {
+      "id": "artifact",
+      "styleText": "color: #25f;"
+    },
+    {
+      "id": "trophy",
+      "styleText": "color: #7c4bff;"
+    },
+    {
+      "id": "crystal",
+      "styleText": "color: #ba05b4;"
+    },
+    {
+      "id": "crystalTotal",
+      "styleText": "color: #ba05b4;"
+    },
+    {
+      "id": "totalProfit"
+    },
+    {
+      "id": "stamina"
+    },
+    {
+      "id": "finalProfit"
+    }
+  ],
+  "statsColumns": [
+    {
+      "id": "date"
+    },
+    {
+      "id": "world"
+    },
+    {
+      "id": "level"
+    },
+    {
+      "id": "persona"
+    },
+    {
+      "id": "battleType"
+    },
+    {
+      "id": "round"
+    },
+    {
+      "id": "deltaTime"
+    },
+    {
+      "id": "turns"
+    },
+    {
+      "id": "tps"
+    },
+    {
+      "id": "exp"
+    },
+    {
+      "id": "finalProfit"
+    },
+    {
+      "id": "credit"
+    },
+    {
+      "id": "eqP"
+    },
+    {
+      "id": "eqL"
+    },
+    {
+      "id": "eqM"
+    },
+    {
+      "id": "cha"
+    },
+    {
+      "id": "blo"
+    },
+    {
+      "id": "food"
+    },
+    {
+      "id": "fig"
+    },
+    {
+      "id": "arti"
+    },
+    {
+      "id": "crys"
+    },
+    {
+      "id": "t2"
+    },
+    {
+      "id": "t36"
+    },
+    {
+      "id": "lCharm"
+    },
+    {
+      "id": "gCharm"
+    },
+    {
+      "id": "seed"
+    },
+    {
+      "id": "hd"
+    },
+    {
+      "id": "md"
+    },
+    {
+      "id": "sd"
+    },
+    {
+      "id": "hp"
+    },
+    {
+      "id": "mp"
+    },
+    {
+      "id": "sp"
+    },
+    {
+      "id": "he"
+    },
+    {
+      "id": "me"
+    },
+    {
+      "id": "se"
+    },
+    {
+      "id": "le"
+    },
+    {
+      "id": "swif"
+    },
+    {
+      "id": "prot"
+    },
+    {
+      "id": "avat"
+    },
+    {
+      "id": "abso"
+    },
+    {
+      "id": "shad"
+    },
+    {
+      "id": "life"
+    },
+    {
+      "id": "gods"
+    },
+    {
+      "id": "staminaCost"
+    },
+    {
+      "id": "totalProfit"
+    }
+  ]
+}

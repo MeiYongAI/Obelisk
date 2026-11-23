@@ -40,13 +40,28 @@ The APK is written to `app/build/outputs/apk/debug/`. To run the local unit test
 2. Sign in using the available account login, cookie import, or forum web-login option.
 3. Choose a world, tap a bottom navigation category, then select a page from its list. Dismiss the list to stay on the current page. Battle controls appear when the server returns an active encounter.
 
-During combat, tap **Strategy panel** in the top bar to see the detected weapon style, spell affinity, and the bonuses behind them. The gear icon opens **Obelisk settings**; use Back to return to the encounter. The panel uses a pre-battle equipment snapshot, not a request on every turn. If no snapshot is available, open Equipment before the next encounter or let the battle lobby load. You do not need to start a fight to import a strategy. Open **Obelisk settings → Battle configurations → Choose file**, preview a JPX battle export (`.txt` or `.json`, up to 2 MiB), then tap **Save and select**. You can keep several files and switch or remove them per account and world. The selected name appears in the combat strategy panel. Importing stores the rules locally; it does not execute embedded scripts or play turns automatically.
+During combat, tap **Strategy panel** in the top bar to see the detected weapon style, spell affinity, and the bonuses behind them. The gear icon opens **Obelisk settings**; use Back to return to the encounter. The panel uses a pre-battle equipment snapshot, not a request on every turn. If no snapshot is available, open Equipment before the next encounter or let the battle lobby load.
+
+### Choose a JPX battle configuration
+
+Open **Obelisk settings → Battle configurations** before or during a fight:
+
+- **JPX built-in defaults:** choose JPX `2026.11.11` or JPX-PLUS `2026.11.20.1`. Each includes 137 rules across four populated modes: one-handed general (36), one-handed tower (33), two-handed general (27), and staff general (41). The seven other modes are empty in the source scripts. Preview one mode, or preview the full preset to include global battle settings.
+- **Choose file:** import a JPX battle export (`.txt` or `.json`, up to 2 MiB).
+
+Tap **Save and select** in the preview. Saved configurations are separate for each account and world; the current selection appears in the combat strategy panel. Selecting a configuration does not execute scripts or play turns automatically. The built-in picker also exports the original battle, statistics, and keyboard shortcut settings as separate JSON files. Statistics and shortcuts are export-only.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 
 ## Development
 
 The Android app is under `app/`. Kotlin UI code is in `app/src/main/java/com/mitahv/mobile/`; parsers and networking code are in its `data/` package. Unit tests and sanitized HTML fixtures are under `app/src/test/`.
+
+The bundled defaults are extracted from the pinned userscripts, not from community strategy packs. To verify the assets against your local copies, run:
+
+```powershell
+node tools/extract_jpx_defaults.cjs ../jpx20261111.js ../JPX-PLUS/JPX-PLUS.user.js --check
+```
 
 Before opening a pull request, run the relevant unit tests and Android lint checks:
 
