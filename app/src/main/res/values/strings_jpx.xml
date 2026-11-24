@@ -88,6 +88,7 @@
     <string name="jpx_auto_run">Auto</string>
     <string name="battle_automation">Battle automation</string>
     <string name="battle_auto_next_round">Auto-advance rounds</string>
+    <string name="battle_still_between_rounds">The next round hasn’t loaded yet.</string>
     <string name="jpx_pause">Pause</string>
     <string name="jpx_no_action">No available rule</string>
     <string name="jpx_halt_rule">Rule %1$d: %2$s</string>

@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -41,13 +42,25 @@ class BattleCompletionParserTest {
         )
         val next = previous.copy(
             log = emptyList(), isComplete = false, continuation = null,
-            round = BattleRoundFacts(), scene = null, turnKey = Any(),
+            round = BattleRoundFacts(), scene = null, encounterKey = Any(), turnKey = Any(),
         )
 
-        assertTrue(next.followsRound(previous))
-        assertTrue(next.copy(round = next.round.copy(current = 1), scene = BattleScene.Arena).followsRound(previous))
-        assertFalse(previous.followsRound(previous))
-        assertFalse(next.copy(isComplete = true).followsRound(previous))
+        val continued = next.afterRoundContinuation(previous)
+        assertSame(previous.encounterKey, continued.encounterKey)
+        assertSame(next.turnKey, continued.turnKey)
+        assertEquals(BattleScene.Item, continued.scene)
+        assertEquals(BattleRoundFacts(current = 2, total = 5), continued.round)
+        val unknownStart = previous.copy(round = BattleRoundFacts(total = 5))
+        assertEquals(BattleRoundFacts(total = 5), next.afterRoundContinuation(unknownStart).round)
+        val knownRound = next.copy(round = BattleRoundFacts(current = 2, total = 5))
+        assertSame(previous.encounterKey, knownRound.afterRoundContinuation(previous).encounterKey)
+
+        for (different in listOf(next.copy(scene = BattleScene.Arena), next.copy(round = BattleRoundFacts(current = 1)),
+                next.copy(round = BattleRoundFacts(total = 20)), next.copy(isComplete = true))) {
+            assertSame(different, different.afterRoundContinuation(previous))
+        }
+        assertSame(next, next.afterRoundContinuation(previous.copy(continuation = null)))
+        assertSame(next, next.afterRoundContinuation(previous.copy(round = BattleRoundFacts(current = 5, total = 5))))
     }
 
     @Test fun suppliedItemWorldFinalOutcomesPreserveActualArmoryReturnTargets() {

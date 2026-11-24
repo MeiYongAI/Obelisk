@@ -85,7 +85,9 @@ class HvDataScriptRequestsTest {
             HvRoute.ItemInventory.url(HvWorld.Persistent),
         )
 
+        assertEquals(null, client.cachedSupplementalScripts(requests))
         assertEquals(listOf(dictionary), client.fetchSupplementalScripts(requests).scripts)
+        assertEquals(listOf(dictionary), client.cachedSupplementalScripts(requests))
         assertEquals(listOf(dictionary), client.fetchSupplementalScripts(requests).scripts)
         assertEquals(1, calls)
     }

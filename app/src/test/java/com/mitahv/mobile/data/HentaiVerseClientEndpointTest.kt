@@ -3,6 +3,11 @@ package com.mitahv.mobile.data
 import com.mitahv.mobile.RequestState
 import com.mitahv.mobile.parseLoadedPage
 import com.mitahv.mobile.model.*
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import okhttp3.CookieJar
 import okhttp3.OkHttpClient
@@ -58,6 +63,51 @@ class HentaiVerseClientEndpointTest {
         assertEquals("GET", refresh.method)
         assertNull(refresh.body)
         assertTrue(refresh.cacheControl.noCache)
+    }
+
+    @Test fun battleActionAndNextRoundGetProceedWhileSameHostImagesAreStillPending() = runBlocking {
+        val world = HvWorld.Persistent
+        val url = HvRoute.Battle.url(world)
+        val imageSlots = CountDownLatch(5)
+        val releaseImages = CountDownLatch(1)
+        val http = OkHttpClient.Builder().addInterceptor { chain ->
+            val request = chain.request()
+            val reply = Response.Builder().request(request).protocol(Protocol.HTTP_2).code(200).message("OK")
+            when {
+                request.url.encodedPath.endsWith(".png") -> {
+                    imageSlots.countDown()
+                    check(releaseImages.await(10, TimeUnit.SECONDS)) { "Battle requests waited behind image downloads" }
+                    reply.body("icon".toResponseBody())
+                }
+                request.method == "POST" -> {
+                    assertEquals("/json", request.url.encodedPath)
+                    assertTrue(request.body!!.isOneShot())
+                    assertTrue(request.cacheControl.noStore)
+                    reply.body("{}".toResponseBody())
+                }
+                else -> {
+                    assertEquals(url, request.url)
+                    assertTrue(request.cacheControl.noCache)
+                    assertEquals(setOf("br", "gzip"), request.header("Accept-Encoding")!!.split(",").toSet())
+                    val compressed = java.util.Base64.getDecoder().decode("iwmAPGh0bWw+Um91bmQgMjwvaHRtbD4D")
+                    reply.header("Content-Encoding", "br").body(compressed.toResponseBody())
+                }
+            }.build()
+        }.build()
+        val client = HentaiVerseClient(CookieJar.NO_COOKIES, httpClient = http)
+        val images = (1..5).map { index ->
+            async(Dispatchers.IO) { client.fetchImage(world, url, requireNotNull(url.resolve("/y/$index.png"))) }
+        }
+        try {
+            assertTrue(imageSlots.await(4, TimeUnit.SECONDS))
+            client.submitBattleAction(world, url, "fixture", BattleAction("attack", 1))
+            assertEquals("<html>Round 2</html>", client.fetchPage(world, url, forceNetwork = true).html)
+        } finally {
+            releaseImages.countDown()
+            images.awaitAll()
+            http.dispatcher.executorService.shutdown()
+            http.connectionPool.evictAll()
+        }
     }
 
     @Test fun everyClientOperationUsesSelectedSiteAndPreservesPayload() = runBlocking {

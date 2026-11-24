@@ -7,6 +7,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import okhttp3.Cache
 import okhttp3.CacheControl
+import okhttp3.Dispatcher
 import okhttp3.brotli.BrotliInterceptor
 import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaType
@@ -38,7 +39,9 @@ internal class HentaiVerseClient(
     pageCache: Cache? = null,
 ) {
     private val pageCacheStore = pageCache
-    private val client = httpClient.newBuilder()
+    private val client = httpClient.newBuilder().apply {
+        interceptors().add(0, BrotliInterceptor)
+    }
         // GET responses may be served or revalidated according to the server's
         // cache headers. Mutating requests are forced through mutationClient below.
         // This keeps revisiting an unchanged page cheap without making stale POST
@@ -56,9 +59,12 @@ internal class HentaiVerseClient(
         .cache(scriptCache)
         .addNetworkInterceptor(HvScriptCaches.cookieVaryInterceptor)
         .build()
-    private val mutationClient = client.newBuilder().apply {
-        interceptors().add(0, BrotliInterceptor)
-    }
+    // A burst of same-host icons or dictionaries can occupy every normal dispatcher slot.
+    // Keep actions and authoritative battle refreshes off that queue, reusing the same connections.
+    private val interactiveClient = client.newBuilder()
+        .dispatcher(Dispatcher(client.dispatcher.executorService))
+        .build()
+    private val mutationClient = interactiveClient.newBuilder()
         .cache(null)
         .retryOnConnectionFailure(false)
         .build()
@@ -96,6 +102,10 @@ internal class HentaiVerseClient(
         withContext(Dispatchers.IO) {
             fetchSupplementalScripts(HvDataScriptRequests.fromPage(html, world, site, currentUrl))
         }
+
+    /** A complete, memory-only dictionary set is ready to use in the initial page parse. */
+    fun cachedSupplementalScripts(requests: List<Request>): List<String>? =
+        requests.map { supplementalScriptMemoryCache[it.url] ?: return null }
 
     suspend fun fetchSupplementalScripts(requests: List<Request>): HvSupplementalScripts =
         withContext(Dispatchers.IO) {
@@ -222,8 +232,12 @@ internal class HentaiVerseClient(
             prepared
         }
         if (isMutation) pageCacheStore?.evictAll()
-        return (if (isMutation) mutationClient else client)
-            .newCall(routed).awaitBody { response ->
+        val transport = when {
+            isMutation -> mutationClient
+            routed.cacheControl.noCache -> interactiveClient
+            else -> client
+        }
+        return transport.newCall(routed).awaitBody { response ->
             if (!response.isSuccessful) throw HvHttpException(response.code)
             HvEndpointPolicy.check(response.request)
             HvPageResponse(response.body?.string() ?: throw IOException("Empty HentaiVerse response"), response.request.url)

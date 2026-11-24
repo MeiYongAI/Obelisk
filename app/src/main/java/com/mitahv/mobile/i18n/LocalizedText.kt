@@ -47,14 +47,23 @@ internal fun ProvideGameTextScope(pageUrl: String, battle: Boolean = false, cont
 }
 
 @Composable
-internal fun gameText(text: String): String = LocalGameTranslator.current.translate(text)
+internal fun gameText(text: String): String {
+    val translator = LocalGameTranslator.current
+    return remember(translator, text) { translator.translate(text) }
+}
 
 /** Battle action names are fixed game labels, so use dictionary entries from every page. */
 @Composable
-internal fun gameActionText(text: String): String = LocalGameTranslator.current.translateActionLabel(text)
+internal fun gameActionText(text: String): String {
+    val translator = LocalGameTranslator.current
+    return remember(translator, text) { translator.translateActionLabel(text) }
+}
 
 @Composable
-internal fun battleLogText(text: String): String = LocalGameTranslator.current.battleLog(text)
+internal fun battleLogText(text: String): String {
+    val translator = LocalGameTranslator.current
+    return remember(translator, text) { translator.battleLog(text) }
+}
 
 @Composable
 internal fun messageText(text: String): String = LocalMessageTranslator.current.translate(text)

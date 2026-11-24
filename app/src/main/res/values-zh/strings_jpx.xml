@@ -87,6 +87,7 @@
     <string name="jpx_auto_run">自动</string>
     <string name="battle_automation">战斗自动化</string>
     <string name="battle_auto_next_round">自动进入下一轮</string>
+    <string name="battle_still_between_rounds">下一轮尚未载入。</string>
     <string name="jpx_pause">暂停</string>
     <string name="jpx_no_action">没有可执行的规则</string>
     <string name="jpx_halt_rule">规则 %1$d：%2$s</string>

@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -94,11 +95,12 @@ private fun BattleEffectImage(effect: BattleEffect, modifier: Modifier = Modifie
 }
 
 @Composable
-internal fun BattleEffectBadge(effect: BattleEffect) {
+internal fun BattleEffectBadge(effect: BattleEffect, compact: Boolean = false) {
     val turns = effect.duration.toIntOrNull()
     val name = gameText(effect.name)
     val description = if (turns == null) name else name + " · " + stringResource(R.string.game_ui_effect_duration, turns)
-    Box(Modifier.size(width = 30.dp, height = 32.dp).clipToBounds()
+    val size = if (compact) Modifier.size(width = 21.dp, height = 22.dp) else Modifier.size(width = 30.dp, height = 32.dp)
+    Box(size.clipToBounds()
         .clearAndSetSemantics { contentDescription = description }) {
         BattleEffectImage(effect, Modifier.matchParentSize())
         if (turns != null) {
@@ -115,11 +117,11 @@ internal fun BattleEffectBadge(effect: BattleEffect) {
 }
 
 @Composable
-internal fun BattleEffectStrip(effects: List<BattleEffect>, limit: Int, modifier: Modifier = Modifier) {
+internal fun BattleEffectStrip(effects: List<BattleEffect>, limit: Int, modifier: Modifier = Modifier, compact: Boolean = false) {
     // A short-lived effect is more useful in the preview than a permanent enchantment.
     val preview = effects.sortedBy { it.duration.toIntOrNull() ?: Int.MAX_VALUE }.take(limit)
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        for (effect in preview) BattleEffectBadge(effect)
+        for (effect in preview) key(effect.name, effect.iconUrl) { BattleEffectBadge(effect, compact) }
         if (effects.size > preview.size) Text("+${effects.size - preview.size}", style = MaterialTheme.typography.labelSmall,
             maxLines = 1, softWrap = false)
     }

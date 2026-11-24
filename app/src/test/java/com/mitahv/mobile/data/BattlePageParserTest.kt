@@ -12,6 +12,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BattlePageParserTest {
+    @Test fun actionLogHandlesPlainTextMarkupEntitiesAndBitmapGlyphsLikeTheBattlePage() {
+        val page = BattlePageParser.parseBattle(activeFixture("ring-of-blood"))
+        val messages = listOf("  You\t hit   for\u00a0100.\n", "Lost &amp; found", "One<br>two",
+            "<span class='c3a'></span><span class='c3b'></span>", "Plain \u200Btext.")
+        val batch = org.json.JSONArray().apply { messages.forEach { put(JSONObject().put("t", it)) } }
+        val updated = applyTurn(page, JSONObject().put("textlog", batch))
+        assertEquals(listOf("Plain text.", "AB", "One two", "Lost & found", "You hit for 100."),
+            updated.log.take(messages.size))
+    }
+
     @Test fun actionResponseParsesFromOneBattleDocumentWithoutGenericPagePipeline() {
         val page = BattlePageParser.parseBattle(activeFixture("ring-of-blood"))
         val updatedVitals = Jsoup.parse(activeFixture("encounter")).selectFirst("#pane_vitals")!!.html()

@@ -19,6 +19,7 @@ import okhttp3.HttpUrl
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.TextNode
 import org.json.JSONObject
 
 internal object BattlePageParser {
@@ -140,7 +141,8 @@ internal object BattlePageParser {
     private fun enemies(root: Element, currentUrl: HttpUrl) = root.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
         val target = enemy.id().substringAfter("mkey_").toIntOrNull() ?: return@mapNotNull null
         val level = enemy.selectFirst(".btm2").hvText()
-        fun fraction(stat: String) = enemy.selectFirst(".chbd img[alt=$stat]")?.let { img ->
+        val bars = enemy.select(".chbd img[alt]")
+        fun fraction(stat: String) = bars.firstOrNull { it.attr("alt").trim { c -> c <= ' ' }.equals(stat, ignoreCase = true) }?.let { img ->
             WIDTH.find(img.attr("style"))?.groupValues?.get(1)?.toFloatOrNull()?.let { (it / 120f).coerceIn(0f, 1f) }
         }
         val health = fraction("health")
@@ -160,7 +162,7 @@ internal object BattlePageParser {
         val metadata = itemId?.let(itemText::get)
         actionOption(item)?.let { option -> option.copy(
             name = metadata?.name?.takeIf(String::isNotBlank) ?: option.name,
-            description = metadata?.descriptionHtml?.let { Jsoup.parseBodyFragment(it).text() }.orEmpty(),
+            description = metadata?.descriptionHtml?.let(::fragmentText).orEmpty(),
             group = item.closest(".bti1")?.selectFirst(".bti2").hvText().let {
             when { it.startsWith("S") -> "Scrolls"; it.startsWith("N") -> "Infusions"; else -> "Items" }
         }) }
@@ -168,7 +170,7 @@ internal object BattlePageParser {
 
     private fun controls(root: Element) = root.select("#pane_action [id^=ckey_]").mapNotNull { control ->
         val mode = control.id().substringAfter("ckey_")
-        if (mode !in setOf("attack", "skill", "items", "spirit", "defend", "focus")) return@mapNotNull null
+        if (mode !in CONTROL_MODES) return@mapNotNull null
         BattleControl(mode, enabled(control) && CONTROL_ACTION.find(control.attr("onclick"))?.groupValues?.get(1) == mode,
             control.attr("src").substringBefore('?').let { it.endsWith("_s.png") || (mode == "spirit" && it.endsWith("spirit_a.png")) })
     }
@@ -219,7 +221,7 @@ internal object BattlePageParser {
         val additions = if (logBatch == null) emptyList() else buildList {
             for (i in logBatch.length() - 1 downTo 0) {
                 val entry = logBatch.optJSONObject(i) ?: continue
-                val text = Element("td").html(entry.optString("t")).hvText()
+                val text = fragmentText(entry.optString("t"), logCell = true)
                 if (text.isNotBlank()) add(text)
             }
         }
@@ -302,7 +304,7 @@ internal object BattlePageParser {
             skill = skill ?: 0,
             targetsEnemy = skillCall?.groupValues?.get(1) == "hostile",
             enabled = enabled(element) && skill != null && mode in setOf("magic", "items"),
-            description = tooltip?.getOrNull(1)?.let { Jsoup.parseBodyFragment(it).text() }.orEmpty(),
+            description = tooltip?.getOrNull(1)?.let(::fragmentText).orEmpty(),
             manaCost = tooltip?.getOrNull(3)?.toIntOrNull(),
             chargeCost = tooltip?.getOrNull(4)?.toIntOrNull(),
             cooldown = tooltip?.getOrNull(5)?.toIntOrNull(),
@@ -333,9 +335,17 @@ internal object BattlePageParser {
         val url = currentUrl.resolve(src)?.takeIf { image -> image.host == currentUrl.host &&
             image.scheme == "https" && image.port == 443 && image.username.isEmpty() && image.password.isEmpty() &&
             image.encodedPath.startsWith("/y/") && image.encodedPath.endsWith(".png") }
-        BattleEffect(arguments[0], Jsoup.parseBodyFragment(arguments[1]).text(), arguments[2],
+        BattleEffect(arguments[0], fragmentText(arguments[1]), arguments[2],
             iconKey = file.takeIf { name -> name.endsWith(".png") }?.removeSuffix(".png"), iconUrl = url)
     }.orEmpty()
+
+    private fun fragmentText(html: String, logCell: Boolean = false): String {
+        if ('<' !in html && '&' !in html && '\u0000' !in html) {
+            // Plain combat messages and tooltips need only Jsoup's normal text whitespace handling.
+            return TextNode(html).text().trim { it <= ' ' }
+        }
+        return if (logCell) Element("td").html(html).hvText() else Jsoup.parseBodyFragment(html).text()
+    }
 
     private fun enabled(element: Element) = !element.hasAttr("disabled") &&
         !element.attr("aria-disabled").equals("true", true) &&
@@ -365,6 +375,7 @@ internal object BattlePageParser {
     private val SKILL_CALL = Regex("set_(friendly|hostile)_skill\\(\\s*['\"]?([^)'\"]+)")
     private val WIDTH = Regex("width\\s*:\\s*([0-9.]+)px")
     private val CONTROL_ACTION = Regex("""battle\.lock_action\(\s*this\s*,\s*0\s*,\s*['"]([^'"]+)['"]\s*\)""")
+    private val CONTROL_MODES = setOf("attack", "skill", "items", "spirit", "defend", "focus")
     private val COMMIT_TARGET = Regex("""battle\.commit_target\(\s*(\d+)\s*\)""")
     private val CONTINUE_BATTLE = Regex("""\s*battle\.battle_continue\(\s*\)\s*;?\s*""")
     private val GRINDFEST_RETURN = Regex("""\s*common\.goto_grindfest\(\s*\)\s*;?\s*""")

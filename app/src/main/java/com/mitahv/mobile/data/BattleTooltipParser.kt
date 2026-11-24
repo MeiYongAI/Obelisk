@@ -2,8 +2,13 @@ package com.mitahv.mobile.data
 
 /** Decodes only literal arguments of known HV tooltip calls; never evaluates JavaScript. */
 internal object BattleTooltipParser {
+    private fun callPattern(function: String) = Regex("(?:^|;)\\s*battle\\.${Regex.escape(function)}\\s*\\(")
+    private val tooltipCalls = listOf("set_infopane_spell", "set_infopane_effect", "set_infopane_item")
+        .associateWith(::callPattern)
+    private val numericLiteral = Regex("-?\\d+(?:\\.\\d+)?")
+
     fun arguments(source: String, function: String): List<String>? {
-        val start = Regex("(?:^|;)\\s*battle\\.${Regex.escape(function)}\\s*\\(").find(source)?.range?.last?.plus(1)
+        val start = (tooltipCalls[function] ?: callPattern(function)).find(source)?.range?.last?.plus(1)
             ?: return null
         val result = mutableListOf<String>()
         var index = start
@@ -33,7 +38,7 @@ internal object BattleTooltipParser {
                 val begin = index
                 while (index < source.length && source[index] != ',' && source[index] != ')') index++
                 val literal = source.substring(begin, index).trim()
-                if (!literal.matches(Regex("-?\\d+(?:\\.\\d+)?"))) return null
+                if (!numericLiteral.matches(literal)) return null
                 value.append(literal)
             }
             result += value.toString()

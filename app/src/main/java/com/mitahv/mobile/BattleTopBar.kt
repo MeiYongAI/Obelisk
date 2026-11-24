@@ -15,15 +15,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-internal fun BattleTopBar(onRefresh: () -> Unit, refreshEnabled: Boolean, onSettings: () -> Unit, settingsEnabled: Boolean) {
+internal fun BattleTopBar(onRefresh: () -> Unit, refreshEnabled: Boolean, onSettings: () -> Unit,
+    settingsEnabled: Boolean, keepIconColors: Boolean) {
+    val colors = IconButtonDefaults.iconButtonColors()
+    val iconColors = if (keepIconColors) colors.copy(disabledContentColor = colors.contentColor) else colors
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 16.dp, end = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.hv_settings_battle), Modifier.weight(1f).semantics { heading() },
             style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        IconButton(onClick = onRefresh, enabled = refreshEnabled, modifier = Modifier.size(48.dp)) {
+        IconButton(onClick = onRefresh, enabled = refreshEnabled, colors = iconColors, modifier = Modifier.size(48.dp)) {
             Icon(Icons.Filled.Refresh, stringResource(R.string.app_refresh_page))
         }
-        IconButton(onClick = onSettings, enabled = settingsEnabled, modifier = Modifier.size(48.dp)) {
+        IconButton(onClick = onSettings, enabled = settingsEnabled, colors = iconColors, modifier = Modifier.size(48.dp)) {
             Icon(Icons.Filled.Settings, stringResource(R.string.strategy_app_settings))
         }
     }

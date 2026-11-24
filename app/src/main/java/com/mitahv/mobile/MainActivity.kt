@@ -249,7 +249,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
     suspend fun acceptPage(requestRoute: HvRoute, requestWorld: HvWorld, html: String,
         url: HttpUrl = requestRoute.url(requestWorld, site),
-        initialScripts: List<String> = emptyList(), requestSerial: Int = loadSerial, nextRoundFrom: BattlePage? = null): RequestState {
+        requestSerial: Int = loadSerial, nextRoundFrom: BattlePage? = null): RequestState {
         val responseRoute = HvRoute.entries.firstOrNull {
             url.queryParameterValues("s") == listOf(it.section) &&
                 url.queryParameterValues("ss") == listOf(it.subsection) && it.isAvailableIn(requestWorld)
@@ -258,17 +258,18 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         val parsed = withContext(Dispatchers.Default) {
             val document = Jsoup.parse(html, url.toString())
             val parsedNavigation = HvNavigationParser.parse(document, requestWorld, responseRoute, url)
-            val parsedPage = parseLoadedPage(responseRoute, requestWorld, html, parsedNavigation != null, url, initialScripts, document)
-            val scripts = if (parsedPage is RequestState.RiddleReady || initialScripts.isNotEmpty()) emptyList()
+            val scripts = if (RiddlePageParser.isRiddlePage(document)) emptyList()
                 else HvDataScriptRequests.fromPage(document, requestWorld, site, url)
+            val cachedScripts = client.cachedSupplementalScripts(scripts)
+            val parsedPage = parseLoadedPage(responseRoute, requestWorld, html, parsedNavigation != null, url, cachedScripts.orEmpty(), document)
             val level = if (parsedPage is RequestState.BattleReady || parsedPage is RequestState.RiddleReady) null
                 else document.hvPlayerLevel()
-            ParsedPage(document, parsedNavigation, parsedPage, scripts, level)
+            ParsedPage(document, parsedNavigation, parsedPage, if (cachedScripts == null) scripts else emptyList(), level)
         }
         val parsedNavigation = parsed.navigation
         val received = parsed.state
-        val parsedPage = if (received is RequestState.BattleReady && nextRoundFrom != null && received.page.followsRound(nextRoundFrom))
-            RequestState.BattleReady(received.page.copy(encounterKey = nextRoundFrom.encounterKey)) else received
+        val parsedPage = if (received is RequestState.BattleReady && nextRoundFrom != null)
+            RequestState.BattleReady(received.page.afterRoundContinuation(nextRoundFrom)) else received
         if (requestSerial != loadSerial) throw CancellationException("Page superseded")
         parsed.playerLevel?.let { playerLevel = it }
         observeEquipment(parsedPage)
@@ -309,7 +310,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     // Dictionary enrichment is not another turn or a new encounter.
                     val before = (requestState as? RequestState.BattleReady)?.page
                     val ready = if (before != null && enriched is RequestState.BattleReady)
-                        RequestState.BattleReady(enriched.page.copy(encounterKey = before.encounterKey, turnKey = before.turnKey)) else enriched
+                        RequestState.BattleReady(before.copy(items = enriched.page.items, itemText = enriched.page.itemText)) else enriched
                     requestState = ready
                     pageSnapshots.put(PageSnapshot(source.route, source.url, navigation, ready))
                 }
@@ -575,6 +576,9 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     val response = client.fetchPage(requestWorld, url, forceNetwork = true)
                     val next = acceptPage(requestRoute, requestWorld, response.html, response.url, requestSerial = serial, nextRoundFrom = page)
                     requestState = next
+                    if (next is RequestState.BattleReady && next.page.isComplete && next.page.continuation?.isNextRound == true) {
+                        nativeError = resources.getString(R.string.battle_still_between_rounds)
+                    }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -611,7 +615,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     fun submitBattleAction(page: BattlePage, action: BattleAction) {
         if (pageLoading || nativeNeedsRefresh || nativeSubmissionUnconfirmed ||
             (requestState as? RequestState.BattleReady)?.page?.turnKey !== page.turnKey || page.isComplete) return
-        loadSerial++
+        val serial = ++loadSerial
         pageSource = null
         val requestWorld = world
         val requestRoute = route
@@ -627,14 +631,16 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     action = action,
                 )
                 val received = SystemClock.elapsedRealtime()
+                if (serial != loadSerial) return@launch
                 if (response.has("error") || response.has("reload") || response.has("login")) {
                     Log.d("HvLoading", "battle reply=${received - started}ms refresh=true (server)")
                     val refreshed = client.fetchPage(requestWorld, requestUrl, forceNetwork = true)
-                    requestState = acceptPage(requestRoute, requestWorld, refreshed.html, refreshed.url)
+                    requestState = acceptPage(requestRoute, requestWorld, refreshed.html, refreshed.url, requestSerial = serial)
                 } else {
                     val updated = withContext(Dispatchers.Default) {
                         BattlePageParser.parseActionResponse(page, response, requestWorld, requestUrl)
                     }
+                    if (serial != loadSerial) return@launch
                     Log.d("HvLoading", "battle reply=${received - started}ms apply=${SystemClock.elapsedRealtime() - received}ms refresh=${updated == null}")
                     if (updated != null) {
                         // Keep the battle session and its current URL intact. The JSON
@@ -650,7 +656,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                         // battle model. Refresh once so the next action uses authoritative
                         // server state.
                         val refreshed = client.fetchPage(requestWorld, requestUrl, forceNetwork = true)
-                        requestState = acceptPage(requestRoute, requestWorld, refreshed.html, refreshed.url)
+                        requestState = acceptPage(requestRoute, requestWorld, refreshed.html, refreshed.url, requestSerial = serial)
                     }
                 }
             } catch (cancelled: CancellationException) {
@@ -658,6 +664,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             } catch (error: Exception) {
                 // Keep the last battle visible when the action result is uncertain. The
                 // user can refresh from the inline error without losing the encounter.
+                if (serial != loadSerial) return@launch
                 requestState = RequestState.BattleReady(page)
                 nativeSubmissionUnconfirmed = true
                 nativeError = resources.getString(R.string.app_submission_unconfirmed, failureMessage(error, context))

@@ -241,7 +241,7 @@ class BattleStrategyScreenTest {
         }
     }
 
-    @Test fun autoRunnerStopsAtRoundBoundaryAndNeedsManualRestart() {
+    @Test fun consecutiveRoundsKeepTheFieldAndRequireAnExplicitStartForEachWave() {
         val draft = JpxImport.read(
             """{"version":1,"Staff_General":{"rules":[{"type":"target"},{"type":"normalAttack"}]}}""".byteInputStream(),
             "fixture", "Isekai",
@@ -253,29 +253,72 @@ class BattleStrategyScreenTest {
         val state = mutableStateOf<RequestState>(RequestState.BattleReady(initial))
         val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
         val continuations = java.util.concurrent.atomic.AtomicInteger()
-        val completed = initial.copy(isComplete = true, continuation = BattleContinuation("下一轮"), completion = "victory")
+        val autoNext = mutableStateOf(true)
+        val continuation = BattleContinuation("Next round")
+        fun completed(page: BattlePage) = page.copy(isComplete = true, continuation = continuation, turnKey = Any(),
+            enemies = emptyList(), controls = emptyList(), completionLines = listOf("Intermediate result"))
+        fun nextRound(number: Int) = initial.copy(enemies = listOf(enemy.copy(target = number, name = "Round $number foe")),
+            turnKey = Any(), round = BattleRoundFacts(current = number, total = 5))
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
                 BattleSessionScreen(
                     playerLevel = null, state = state.value, loadout = null, world = "Isekai", strategy = strategy,
-                    onSettings = {}, settingsEnabled = true, autoNextRound = true, loading = false, nativeBusy = false,
+                    onSettings = {}, settingsEnabled = true, autoNextRound = autoNext.value, loading = false, nativeBusy = false,
                     error = null, needsRefresh = false, responseRevision = 0, loadImage = { byteArrayOf() },
                     onRetry = {}, onRiddleAction = {},
                     onSubmitBattleAction = { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) },
-                    onContinue = { continuations.incrementAndGet(); state.value = RequestState.BattleBusy(completed) },
+                    onContinue = {
+                        val page = (state.value as RequestState.BattleReady).page
+                        assertEquals(continuation, it)
+                        continuations.incrementAndGet()
+                        state.value = RequestState.BattleBusy(page)
+                    },
                     onLeaveBattle = {},
                 )
             } } } }
             val auto = context.getString(R.string.jpx_auto_run)
             val pause = context.getString(R.string.jpx_pause)
-            find(auto); click(auto); await { calls.size == 1 }
-            scenario.onActivity { state.value = RequestState.BattleReady(completed) }
+            fun acknowledge(page: BattlePage) = scenario.onActivity { state.value = RequestState.BattleReady(page) }
+            fun bounds(label: String) = android.graphics.Rect().also { find(label).getBoundsInScreen(it) }
+            // Manual combat advances the round without starting an attack.
+            val initialBounds = bounds(enemy.name)
+            acknowledge(completed(initial))
             await { continuations.get() == 1 }
-            val nextRound = initial.copy(turnKey = Any(), round = BattleRoundFacts(current = 2), encounterKey = initial.encounterKey)
-            scenario.onActivity { state.value = RequestState.BattleReady(nextRound) }
-            find(context.getString(R.string.game_ui_battle_round, "2", "—")); find(auto)
-            assertEquals("Automation must stop when the next round is loaded", 1, calls.size)
-            click(auto); await { calls.size == 2 }; find(pause)
+            await { generateSequence(find(enemy.name)) { it.parent }.none { it.isClickable && it.isEnabled } }
+            assertEquals(initialBounds, bounds(enemy.name))
+            assertFalse(flattened(instrument.uiAutomation.rootInActiveWindow).any { it.isVisibleToUser && it.text == "Intermediate result" })
+            val second = nextRound(2)
+            acknowledge(second)
+            find("Round 2 foe"); find(auto); assertTrue(calls.isEmpty())
+
+            // Completing a round stops even an explicitly started strategy.
+            click(auto); await { calls.size == 1 }; find(pause)
+            acknowledge(completed(second)); await { continuations.get() == 2 }
+            find("Round 2 foe"); find(auto)
+            val third = nextRound(3)
+            acknowledge(third); find("Round 3 foe"); find(auto)
+            assertEquals(listOf(BattleAction("attack", 2)), calls.toList())
+            click(auto); await { calls.size == 2 }
+            assertEquals(listOf(BattleAction("attack", 2), BattleAction("attack", 3)), calls.toList())
+
+            // The strategy also stays idle after an in-flight action is paused.
+            click(pause); find(auto)
+            acknowledge(completed(third)); await { continuations.get() == 3 }
+            val fourth = nextRound(4)
+            acknowledge(fourth); find("Round 4 foe"); assertEquals(2, calls.size)
+
+            scenario.onActivity { autoNext.value = false }
+            click(auto); await { calls.size == 3 }
+            acknowledge(completed(fourth)); find("Intermediate result")
+            assertEquals(3, continuations.get())
+            click(continuation.label); await { continuations.get() == 4 }
+            val last = nextRound(5)
+            acknowledge(last); find("Round 5 foe"); find(auto); assertEquals(3, calls.size)
+            scenario.onActivity { autoNext.value = true }
+            click(auto); await { calls.size == 4 }
+            acknowledge(last.copy(isComplete = true, completionLines = listOf("Final result"), turnKey = Any()))
+            find("Final result"); find(context.getString(R.string.game_ui_return_to_challenge))
+            assertEquals(4, continuations.get()); assertEquals(4, calls.size)
         }
     }
 

@@ -42,10 +42,19 @@ data class BattlePage(
     val itemText: Map<String, BattleItemText> = emptyMap(),
     val remainingCooldowns: Map<String, Int> = emptyMap(),
 ) {
-    // The server's explicit "next round" control is the source of truth. Round log
-    // lines are optional and can be truncated or delayed on a full-page reload.
-    internal fun followsRound(previous: BattlePage): Boolean = !isComplete && previous.isComplete &&
-        previous.continuation?.isNextRound == true
+    internal fun afterRoundContinuation(previous: BattlePage): BattlePage {
+        if (isComplete || !previous.isComplete || previous.continuation?.isNextRound != true) return this
+        if (scene != null && previous.scene != null && scene != previous.scene) return this
+        if (round.total != null && previous.round.total != null && round.total != previous.round.total) return this
+        val lastRound = previous.round.current
+        val expectedRound = lastRound?.plus(1)
+        val total = round.total ?: previous.round.total
+        if (expectedRound != null && total != null && expectedRound > total) return this
+        if (round.current != null && expectedRound != null && round.current != expectedRound) return this
+        // The server's next-round control still identifies the encounter if its log was truncated.
+        return copy(encounterKey = previous.encounterKey, scene = scene ?: previous.scene,
+            round = round.copy(current = round.current ?: expectedRound, total = total))
+    }
 
     val canContinue: Boolean get() = continuation != null
 }
