@@ -32,8 +32,19 @@ class BattlePageParserTest {
         val log = org.json.JSONArray().apply { repeat(101) { put(JSONObject().put("t", "An ordinary turn")) } }
         val next = applyTurn(ring, JSONObject().put("textlog", log))
         assertFalse(next.log.any { it.startsWith("Initializing") }); assertEquals(ring.scene, next.scene)
+        assertEquals(1 to 1, next.round.current to next.round.total)
         val init = org.json.JSONArray().put(JSONObject().put("t", "Initializing Item World (Round 2 / 5) ..."))
-        assertEquals(BattleScene.Item, applyTurn(next.copy(scene = null), JSONObject().put("textlog", init)).scene)
+        val itemWorld = applyTurn(next.copy(scene = null), JSONObject().put("textlog", init))
+        assertEquals(BattleScene.Item, itemWorld.scene)
+        assertEquals(2 to 5, itemWorld.round.current to itemWorld.round.total)
+    }
+
+    @Test fun singleRoundEncounterRequiresAnIdentifiableStart() {
+        val page = BattlePageParser.parseBattle(activeFixture("encounter"))
+        assertEquals(null to null, page.round.current to page.round.total)
+        val init = org.json.JSONArray().put(JSONObject().put("t", "Initializing random encounter ..."))
+        val encounter = applyTurn(page, JSONObject().put("textlog", init))
+        assertEquals(1 to 1, encounter.round.current to encounter.round.total)
     }
 
     @Test fun consecutivePaneUpdatesMatchFullPageMergeAndReuseUnchangedLists() {
@@ -165,8 +176,41 @@ class BattlePageParserTest {
         assertFalse(page.items.single { it.name == "Health Potion" }.enabled)
         assertTrue(page.items.single { it.name == "Mana Potion" }.enabled)
         assertTrue(page.enemies.first().effects.any { it.name == "Freezing Limbs" && it.duration == "3" })
+        assertEquals("regen", page.playerEffects.first { it.name == "Regen" }.iconKey)
+        assertEquals("coldslow", page.enemies.first().effects.first { it.name == "Freezing Limbs" }.iconKey)
         assertTrue(page.spells.any { it.group == "Damage" })
         assertTrue(page.items.any { it.group == "Scrolls" })
+    }
+
+    @Test fun cooldownCountsOnlyObservedTurnsAndZeroTurnItemsKeepTheCount() {
+        val doc = Jsoup.parse(activeFixture("encounter"))
+        doc.selectFirst("#textlog tbody")!!.html("""
+            <tr><td>You use Health Potion.</td></tr><tr><td class="tls"><hr></td></tr>
+            <tr><td>You cast Cure.</td></tr>
+        """.trimIndent())
+        val page = BattlePageParser.parseBattle(doc)
+        assertFalse(page.spells.first { it.name == "Cure" }.enabled)
+        assertEquals(2, page.remainingCooldowns["Cure"])
+        fun log(text: String) = JSONObject().put("textlog", org.json.JSONArray().put(JSONObject().put("t", text)))
+        val next = applyTurn(page, log("You hit Target for 10 damage."))
+        assertEquals(1, next.remainingCooldowns["Cure"])
+        assertTrue(applyTurn(next, log("Cooldown expired for Cure")).remainingCooldowns.isEmpty())
+        assertTrue(applyTurn(next, log("Initializing Item World (Round 2 / 5) ...")).remainingCooldowns.isEmpty())
+        assertTrue(BattlePageParser.parseBattle(activeFixture("encounter")).remainingCooldowns.isEmpty())
+    }
+
+    @Test fun newMonsterEffectRetainsItsGameImageAndExpiresWhenThePaneClears() {
+        val page = BattlePageParser.parseBattle(activeFixture("encounter"))
+        val monsters = Jsoup.parse(activeFixture("encounter")).selectFirst("#pane_monster")!!
+        val icon = monsters.selectFirst(".btm6 img[onmouseover]")!!
+        icon.attr("src", "/y/e/another_status.png?v=2")
+        val updated = applyTurn(page, JSONObject().put("pane_monster", monsters.html()))
+        val effect = updated.enemies.first().effects.first()
+        assertEquals("another_status", effect.iconKey)
+        assertEquals("https://hentaiverse.org/y/e/another_status.png?v=2", effect.iconUrl.toString())
+        monsters.select(".btm6").empty()
+        assertTrue(applyTurn(updated, JSONObject().put("pane_monster", monsters.html())).enemies.all { it.effects.isEmpty() })
+        assertEquals(page.playerEffects, updated.playerEffects)
     }
 
     @Test fun battleItemMetadataSurvivesPaneRefreshWhenScriptsAreRetained() {

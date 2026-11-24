@@ -91,20 +91,24 @@ internal object BattlePageParser {
         val completion = document.selectFirst("#pane_completion")
 
         val log = document.select("#textlog tr").map { it.hvText() }.filter(String::isNotBlank)
+        val skills = groupedActions(document.selectFirst("#table_skills")).ifEmpty { document.select("#pane_skill .btsd").mapNotNull(::actionOption) }
+        val spells = groupedActions(document.selectFirst("#table_magic")).ifEmpty { document.select("#pane_magic .btsd").mapNotNull(::actionOption) }
+        val shortcuts = document.select("#quickbar > div").mapNotNull(::actionOption)
         return BattlePage(
             token = token,
             playerVitals = vitals(document.selectFirst("#pane_vitals")),
-            enemies = enemies(document),
-            quickActions = document.select("#quickbar > div").mapNotNull(::actionOption),
-            skills = groupedActions(document.selectFirst("#table_skills")).ifEmpty { document.select("#pane_skill .btsd").mapNotNull(::actionOption) },
-            spells = groupedActions(document.selectFirst("#table_magic")).ifEmpty { document.select("#pane_magic .btsd").mapNotNull(::actionOption) },
+            enemies = enemies(document, currentUrl),
+            quickActions = shortcuts,
+            skills = skills,
+            spells = spells,
+            remainingCooldowns = BattleCooldowns.fromDocument(document, skills + spells + shortcuts),
             items = items(document, itemText),
             log = log,
             round = BattleRoundFacts().observe(log),
             scene = BattleScene.fromLog(log),
             completion = completion.hvText(),
             experienceBarWidth = document.selectFirst("#expbar")?.let(::barWidth) ?: 0f,
-            playerEffects = effects(document.selectFirst("#pane_effects")),
+            playerEffects = effects(document.selectFirst("#pane_effects"), currentUrl),
             controls = controls(document),
             isComplete = completion?.let { it.attr("data-obelisk-complete") == "true" || it.html().isNotBlank() } == true,
             continuation = completion?.let { continuation(it, world, currentUrl) },
@@ -133,7 +137,7 @@ internal object BattlePageParser {
         )
     }
 
-    private fun enemies(root: Element) = root.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
+    private fun enemies(root: Element, currentUrl: HttpUrl) = root.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
         val target = enemy.id().substringAfter("mkey_").toIntOrNull() ?: return@mapNotNull null
         val level = enemy.selectFirst(".btm2").hvText()
         fun fraction(stat: String) = enemy.selectFirst(".chbd img[alt=$stat]")?.let { img ->
@@ -146,7 +150,7 @@ internal object BattlePageParser {
             level = level,
             healthFraction = health ?: 0f, healthMeasured = health != null,
             magicFraction = fraction("magic"), spiritFraction = fraction("spirit"),
-            effects = effects(enemy.selectFirst(".btm6")),
+            effects = effects(enemy.selectFirst(".btm6"), currentUrl),
             targetable = enabled(enemy) && COMMIT_TARGET.find(enemy.attr("onclick"))?.groupValues?.get(1)?.toIntOrNull() == target,
         )
     }
@@ -224,13 +228,15 @@ internal object BattlePageParser {
             encounterKey = if (additions.any { it.startsWith("Initializing ") }) Any() else current.encounterKey,
             turnKey = Any(),
             round = current.round.observe(additions),
+            remainingCooldowns = BattleCooldowns.observe(current.remainingCooldowns, additions.asReversed(),
+                current.skills + current.spells + current.quickActions),
             playerVitals = pane("pane_vitals")?.let(::vitals) ?: current.playerVitals,
-            enemies = pane("pane_monster")?.let(::enemies) ?: current.enemies,
+            enemies = pane("pane_monster")?.let { enemies(it, currentUrl) } ?: current.enemies,
             quickActions = pane("pane_quickbar")?.select("#quickbar > div")?.mapNotNull(::actionOption) ?: current.quickActions,
             skills = pane("table_skills", "table")?.let(::groupedActions) ?: current.skills,
             spells = pane("table_magic", "table")?.let(::groupedActions) ?: current.spells,
             items = pane("pane_item")?.let { items(it, current.itemText) } ?: current.items,
-            playerEffects = pane("pane_effects")?.let(::effects) ?: current.playerEffects,
+            playerEffects = pane("pane_effects")?.let { effects(it, currentUrl) } ?: current.playerEffects,
             controls = pane("pane_action")?.let(::controls) ?: current.controls,
             experienceBarWidth = response.optDouble("exp", Double.NaN).takeIf { it.isFinite() && it >= 0 }?.toFloat() ?: current.experienceBarWidth,
             log = log,
@@ -319,10 +325,16 @@ internal object BattlePageParser {
         }.ifEmpty { table.select(".btsd").mapNotNull(::actionOption) }
     }
 
-    private fun effects(container: Element?): List<BattleEffect> = container?.select("[onmouseover]")?.mapNotNull {
+    private fun effects(container: Element?, currentUrl: HttpUrl): List<BattleEffect> = container?.select("[onmouseover]")?.mapNotNull {
         val arguments = BattleTooltipParser.arguments(it.attr("onmouseover"), "set_infopane_effect") ?: return@mapNotNull null
         if (arguments.size != 3) return@mapNotNull null
-        BattleEffect(arguments[0], Jsoup.parseBodyFragment(arguments[1]).text(), arguments[2])
+        val src = (if (it.tagName() == "img") it else it.selectFirst("img[src]"))?.attr("src").orEmpty()
+        val file = src.substringBefore('?').substringBefore('#').substringAfterLast('/')
+        val url = currentUrl.resolve(src)?.takeIf { image -> image.host == currentUrl.host &&
+            image.scheme == "https" && image.port == 443 && image.username.isEmpty() && image.password.isEmpty() &&
+            image.encodedPath.startsWith("/y/") && image.encodedPath.endsWith(".png") }
+        BattleEffect(arguments[0], Jsoup.parseBodyFragment(arguments[1]).text(), arguments[2],
+            iconKey = file.takeIf { name -> name.endsWith(".png") }?.removeSuffix(".png"), iconUrl = url)
     }.orEmpty()
 
     private fun enabled(element: Element) = !element.hasAttr("disabled") &&

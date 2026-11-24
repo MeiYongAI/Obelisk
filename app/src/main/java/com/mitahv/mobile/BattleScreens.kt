@@ -9,10 +9,14 @@ import com.mitahv.mobile.i18n.battleLogText
 import com.mitahv.mobile.i18n.messageText
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -41,7 +46,6 @@ import androidx.compose.material.icons.filled.SportsMartialArts
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
@@ -57,12 +61,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Pause
@@ -84,6 +91,7 @@ import com.mitahv.mobile.model.BattleLoadout
 import com.mitahv.mobile.model.BattlePage
 import com.mitahv.mobile.model.BattleContinuation
 import com.mitahv.mobile.model.BattleEnemy
+import com.mitahv.mobile.model.BattleEffect
 import com.mitahv.mobile.model.NativeAction
 import okhttp3.HttpUrl
 
@@ -116,6 +124,8 @@ internal fun BattleSessionScreen(
         else -> null
     }
     val runner = remember(page?.encounterKey, strategy.match?.entry?.id, strategy.published, world) { RuleRunner() }
+    val refreshEnabled = !loading && !nativeBusy && state !is RequestState.BattleBusy
+    val refresh = { runner.pause(); onRetry() }
     val ready = state is RequestState.BattleReady && !loading && !nativeBusy && error == null && !needsRefresh
     val playable = ready && page?.isComplete == false
     val betweenRounds = page?.isComplete == true && page.continuation?.isNextRound == true
@@ -141,19 +151,20 @@ internal fun BattleSessionScreen(
             val continuation = page.continuation
             if (continuation == null) onLeaveBattle()
             else if (continuation.destination != null) onContinue(continuation)
-        } else if (!loading && state is RequestState.Failed) {
-            onRetry()
+        } else if (refreshEnabled && state is RequestState.Failed) {
+            refresh()
         }
     }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            BattleTopBar(onSettings = { runner.pause(); onSettings() }, settingsEnabled = settingsEnabled)
+            BattleTopBar(onRefresh = refresh, refreshEnabled = refreshEnabled,
+                onSettings = { runner.pause(); onSettings() }, settingsEnabled = settingsEnabled)
             if (error != null) Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(messageText(error), Modifier.weight(1f), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = onRetry, enabled = !loading && !nativeBusy) {
+                TextButton(onClick = refresh, enabled = refreshEnabled) {
                     Text(stringResource(R.string.app_retry))
                 }
             }
@@ -165,19 +176,21 @@ internal fun BattleSessionScreen(
                             is RequestState.BattleBusy -> state.page
                             else -> error("Expected battle state")
                         }
-                        BattleScreen(
-                            page = page,
-                            busy = loading || state is RequestState.BattleBusy || (!page.isComplete && runner.running),
-                            onSubmitAction = { if (!runner.running) onSubmitBattleAction(page, it) },
-                            advancing = advancing,
-                            autoAvailable = rules != null,
-                            running = runner.running,
-                            canStart = playable,
-                            onToggleAuto = { if (runner.running) runner.pause() else if (playable) runner.start() },
-                            notice = runner.notice,
-                            onContinue = onContinue,
-                            onLeaveBattle = onLeaveBattle,
-                        )
+                        CompositionLocalProvider(LocalBattleIconLoader provides loadImage) {
+                            BattleScreen(
+                                page = page,
+                                busy = loading || nativeBusy || needsRefresh || state is RequestState.BattleBusy || (!page.isComplete && runner.running),
+                                onSubmitAction = { if (!runner.running) onSubmitBattleAction(page, it) },
+                                advancing = advancing,
+                                autoAvailable = rules != null,
+                                running = runner.running,
+                                canStart = playable,
+                                onToggleAuto = { if (runner.running) runner.pause() else if (playable) runner.start() },
+                                notice = runner.notice,
+                                onContinue = onContinue,
+                                onLeaveBattle = onLeaveBattle,
+                            )
+                        }
                     }
                     is RequestState.RiddleReady -> RiddleScreen(
                         page = state.page,
@@ -193,7 +206,7 @@ internal fun BattleSessionScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Text(messageText(state.message))
-                        Button(onClick = onRetry, enabled = !loading) {
+                        Button(onClick = refresh, enabled = refreshEnabled) {
                             Text(stringResource(R.string.app_retry))
                         }
                     }
@@ -296,160 +309,141 @@ internal fun BattleScreen(
     onContinue: (BattleContinuation) -> Unit,
     onLeaveBattle: () -> Unit,
 ) {
-    var panel by remember(page.turnKey) { mutableStateOf(BattlePanel.Attack) }
-    var pendingOptionId by remember(page.turnKey) { mutableStateOf<String?>(null) }
-    val pendingOption = (page.quickActions + page.skills + page.spells + page.items)
-        .firstOrNull { it.id == pendingOptionId }
+    var selection by remember(page.turnKey) { mutableStateOf<BattleSelection>(BattlePanel.Attack) }
+    val panel = selection as? BattlePanel
+    val pendingOption = (selection as? TargetingOption)?.option
     var detail by remember(page.turnKey) { mutableStateOf<BattleDetail?>(null) }
     var enemyDetail by remember(page.turnKey) { mutableStateOf<BattleEnemy?>(null) }
     var showLog by remember(page.turnKey) { mutableStateOf(false) }
+    var showEffects by remember(page.turnKey) { mutableStateOf(false) }
     val isComplete = page.isComplete
     val attackEnabled = page.controls.any { it.mode == "attack" && it.enabled }
     val actionEnabled = !busy && !isComplete
 
-    fun chooseOption(option: BattleActionOption) {
-        selectOption(option, pendingOption, { pendingOptionId = it?.id }, onSubmitAction)
-        panel = BattlePanel.Attack
+    val chooseOption: (BattleActionOption) -> Unit = { option ->
+        if (option.enabled && actionEnabled) {
+            if (option.targetsEnemy) {
+                selection = TargetingOption(option)
+            } else {
+                selection = BattlePanel.Attack
+                onSubmitAction(BattleAction(option.mode, skill = option.skill))
+            }
+        }
+    }
+    val onTarget: (BattleEnemy) -> Unit = { enemy ->
+        if (actionEnabled && enemy.targetable) {
+            when (val choice = selection) {
+                is TargetingOption -> onSubmitAction(BattleAction(choice.option.mode, enemy.target, choice.option.skill))
+                BattlePanel.Attack -> if (attackEnabled) onSubmitAction(BattleAction("attack", enemy.target))
+                else -> Unit
+            }
+        }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        BattleHud(page, busy, onOpenLog = { showLog = true })
-        HorizontalDivider()
-        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val enemyColumns = if (maxWidth >= 600.dp) 4 else 2
-            if (advancing) {
-                LinearProgressIndicator(Modifier.align(Alignment.Center).fillMaxWidth(0.32f))
-            } else if (!isComplete && panel != BattlePanel.Attack) {
-                val choices = when (panel) {
-                    BattlePanel.Skill -> page.skills
-                    BattlePanel.Magic -> page.spells
-                    BattlePanel.Items -> page.items
-                    BattlePanel.Attack -> emptyList()
-                }
-                BattleOptionPanel(
-                    title = stringResource(panel.labelRes),
-                    options = choices,
-                    selectedId = pendingOption?.id,
-                    busy = busy,
-                    modifier = Modifier.fillMaxSize(),
-                    onSelect = ::chooseOption,
-                    onDismiss = { panel = BattlePanel.Attack },
-                    onDetail = { option, cost -> detail = BattleDetail(option.name, option.description, cost) },
-                )
-            } else LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-            if (isComplete) {
-                item(key = "completion") {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (page.completionLines.isEmpty()) {
-                                Text(stringResource(R.string.game_ui_battle_complete), style = MaterialTheme.typography.titleMedium)
-                            } else {
-                                page.completionLines.forEachIndexed { index, line ->
-                                    Text(messageText(line), style = if (index == 0) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium)
-                                }
-                            }
-                        }
+    BattleLayout(
+        battlefield = { modifier ->
+            Column(modifier) {
+                BattleHud(page, busy, onOpenEffects = { showEffects = true }, onOpenLog = { showLog = true })
+                HorizontalDivider()
+                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                    val enemyColumns = when {
+                        maxWidth >= 840.dp -> 3
+                        maxWidth >= 600.dp || (maxWidth >= 352.dp && page.enemies.size >= 5) -> 2
+                        else -> 1
                     }
-                }
-            } else {
-                if (page.playerEffects.isNotEmpty()) item(key = "player-effects") {
-                    BattleEffectChips(page.playerEffects) { info -> detail = info }
-                }
-                if (page.enemies.isNotEmpty()) {
-                    items(
-                        page.enemies.chunked(enemyColumns),
-                        key = { row -> "enemy-row-${row.first().target}" },
-                    ) { row ->
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            row.forEach { enemy ->
-                                val canTarget = actionEnabled && enemy.targetable &&
-                                    (pendingOption?.targetsEnemy == true || panel == BattlePanel.Attack && attackEnabled)
-                                ElevatedCard(
-                                    onClick = {
-                                        if (canTarget) {
-                                            val chosen = pendingOption
-                                            onSubmitAction(BattleAction(chosen?.mode ?: "attack", enemy.target, chosen?.skill ?: 0))
-                                            pendingOptionId = null
-                                        }
-                                    },
-                                    enabled = canTarget,
-                                    modifier = Modifier.weight(1f).height(84.dp),
+                    if (advancing) {
+                        LinearProgressIndicator(Modifier.align(Alignment.Center).fillMaxWidth(0.32f))
+                    } else if (!isComplete && panel != null && panel != BattlePanel.Attack) {
+                        val choices = when (panel) {
+                            BattlePanel.Skill -> page.skills
+                            BattlePanel.Magic -> page.spells
+                            BattlePanel.Items -> page.items
+                            BattlePanel.Attack -> emptyList()
+                        }
+                        BattleOptionPanel(
+                            title = stringResource(panel.labelRes),
+                            options = choices,
+                            remainingCooldowns = page.remainingCooldowns,
+                            busy = busy,
+                            modifier = Modifier.fillMaxSize(),
+                            onSelect = chooseOption,
+                            onDismiss = { selection = BattlePanel.Attack },
+                            onDetail = { option, cost -> detail = BattleDetail(option.name, option.description, cost) },
+                        )
+                    } else LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        if (isComplete) {
+                            item(key = "completion") {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                                 ) {
-                                    Column(
-                                        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        Row(
-                                            Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Text("#${enemy.target}", style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary)
-                                            Text(enemy.name, modifier = Modifier.weight(1f).padding(start = 6.dp),
-                                                style = MaterialTheme.typography.labelLarge, maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis)
-                                            androidx.compose.material3.IconButton(
-                                                onClick = { enemyDetail = enemy },
-                                                modifier = Modifier.size(44.dp),
-                                            ) {
-                                                Icon(
-                                                    Icons.Filled.Info,
-                                                    contentDescription = stringResource(R.string.game_ui_named_details, enemy.name),
-                                                    modifier = Modifier.size(16.dp),
-                                                )
-                                            }
-                                        }
-                                        BattleEnemyMiniBar(enemy.healthFraction, MaterialTheme.colorScheme.error)
-                                        if (enemy.magicFraction != null || enemy.spiritFraction != null) {
-                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                                enemy.magicFraction?.let { BattleEnemyMiniBar(it, MaterialTheme.colorScheme.primary, Modifier.weight(1f)) }
-                                                enemy.spiritFraction?.let { BattleEnemyMiniBar(it, MaterialTheme.colorScheme.tertiary, Modifier.weight(1f)) }
+                                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        if (page.completionLines.isEmpty()) {
+                                            Text(stringResource(R.string.game_ui_battle_complete), style = MaterialTheme.typography.titleMedium)
+                                        } else {
+                                            page.completionLines.forEachIndexed { index, line ->
+                                                Text(messageText(line), style = if (index == 0) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium)
                                             }
                                         }
                                     }
                                 }
                             }
-                            repeat(enemyColumns - row.size) { androidx.compose.foundation.layout.Spacer(Modifier.weight(1f)) }
+                        } else {
+                            items(
+                                page.enemies.chunked(enemyColumns),
+                                key = { row -> "enemy-row-${row.first().target}" },
+                            ) { row ->
+                                Row(
+                                    Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    row.forEach { enemy ->
+                                        BattleEnemyCard(
+                                            enemy = enemy,
+                                            onClick = { onTarget(enemy) },
+                                            enabled = actionEnabled && enemy.targetable && (pendingOption != null || attackEnabled),
+                                            onDetail = { enemyDetail = enemy },
+                                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-            }
-        }
-        if (isComplete) {
-            if (!advancing) {
-                val continuation = page.continuation
-                Button(
-                    onClick = { if (continuation != null) onContinue(continuation) else onLeaveBattle() },
-                    enabled = !busy,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 52.dp),
-                ) {
-                    val label = continuation?.let { messageText(it.label) }
-                        ?: stringResource(R.string.game_ui_return_to_challenge)
-                    Text(label)
+        },
+        controls = {
+            if (isComplete) {
+                if (!advancing) {
+                    val continuation = page.continuation
+                    Button(
+                        onClick = { if (continuation != null) onContinue(continuation) else onLeaveBattle() },
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 52.dp),
+                    ) {
+                        val label = continuation?.let { messageText(it.label) }
+                            ?: stringResource(R.string.game_ui_return_to_challenge)
+                        Text(label)
+                    }
                 }
+            } else {
+                notice?.let { RuleRunNotice(it) }
+                BattleControls(page, panel, pendingOption, busy || isComplete,
+                    autoAvailable = autoAvailable, running = running, canStart = canStart, onToggleAuto = onToggleAuto,
+                    onCancelPending = { selection = BattlePanel.Attack },
+                    onPanelSelected = { selection = it },
+                    onChooseOption = chooseOption, onSubmitAction = onSubmitAction)
             }
-        } else {
-            notice?.let { RuleRunNotice(it) }
-            BattleControls(page, panel, pendingOption, busy || isComplete,
-                autoAvailable = autoAvailable, running = running, canStart = canStart, onToggleAuto = onToggleAuto,
-                onCancelPending = { pendingOptionId = null },
-                onPanelSelected = { pendingOptionId = null; panel = it },
-                onChooseOption = ::chooseOption, onSubmitAction = onSubmitAction)
-        }
-    }
+        },
+    )
     if (showLog) BattleLogSheet(page.log, onDismiss = { showLog = false })
+    if (showEffects) BattleEffectsDialog(page.playerEffects, onDismiss = { showEffects = false })
     enemyDetail?.let { enemy ->
         AlertDialog(
             onDismissRequest = { enemyDetail = null },
@@ -464,8 +458,8 @@ internal fun BattleScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BattleEnemyBar(stringResource(R.string.game_ui_hp), enemy.healthFraction, MaterialTheme.colorScheme.error)
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (enemy.healthMeasured) BattleEnemyBar(stringResource(R.string.game_ui_hp), enemy.healthFraction, MaterialTheme.colorScheme.error)
                     enemy.magicFraction?.let {
                         BattleEnemyBar(stringResource(R.string.game_ui_mp), it, MaterialTheme.colorScheme.primary)
                     }
@@ -497,11 +491,48 @@ internal fun BattleScreen(
 }
 
 @Composable
-private fun BattleHud(page: BattlePage, busy: Boolean, onOpenLog: () -> Unit) {
+private fun BattleLayout(battlefield: @Composable (Modifier) -> Unit, controls: @Composable () -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if (maxWidth >= 540.dp && maxWidth > maxHeight) {
+            Row(Modifier.fillMaxSize()) {
+                battlefield(Modifier.weight(1.25f).fillMaxHeight())
+                Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) { controls() }
+            }
+        } else {
+            val controlsMaxHeight = maxHeight * .48f
+            Column(Modifier.fillMaxSize()) {
+                battlefield(Modifier.weight(1f).fillMaxWidth())
+                Column(Modifier.heightIn(max = controlsMaxHeight).verticalScroll(rememberScrollState())) { controls() }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun BattleHud(page: BattlePage, busy: Boolean, onOpenEffects: () -> Unit, onOpenLog: () -> Unit) {
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
+        FlowRow(
+            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            val round = page.round
+            Text(
+                if (round.floor != null && round.current == null && round.total == null)
+                    stringResource(R.string.game_ui_battle_floor, round.floor)
+                else stringResource(R.string.game_ui_battle_round, round.current?.toString() ?: "—", round.total?.toString() ?: "—"),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                if (page.isComplete) stringResource(R.string.game_ui_enemy_count, page.enemies.size)
+                else stringResource(R.string.game_ui_enemy_targets, page.enemies.size, page.enemies.count { it.targetable }),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
         if (page.playerVitals.isNotEmpty()) Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -509,20 +540,50 @@ private fun BattleHud(page: BattlePage, busy: Boolean, onOpenLog: () -> Unit) {
             page.playerVitals.forEach { vital -> BattleVitalCell(vital, Modifier.weight(1f)) }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.game_ui_exp), style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                LinearProgressIndicator(
-                    progress = { (page.experienceBarWidth / 1234f).coerceIn(0f, 1f) },
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.fillMaxWidth().height(4.dp),
-                )
+            if (page.playerEffects.isNotEmpty()) {
+                val label = stringResource(R.string.game_ui_player_effect_count, page.playerEffects.size)
+                BoxWithConstraints(Modifier.weight(1f).clickable(role = Role.Button, onClick = onOpenEffects)
+                    .semantics { contentDescription = label }.heightIn(min = 48.dp).padding(start = 4.dp),
+                    contentAlignment = Alignment.CenterStart) {
+                    BattleEffectStrip(page.playerEffects, limit = ((maxWidth.value - 28) / 34).toInt().coerceIn(1, 8))
+                }
+            } else {
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
             }
             androidx.compose.material3.IconButton(onClick = onOpenLog, enabled = !busy) {
                 Icon(Icons.Filled.History, contentDescription = stringResource(R.string.game_ui_battle_log))
             }
         }
+        val expLabel = stringResource(R.string.game_ui_exp)
+        LinearProgressIndicator(progress = { (page.experienceBarWidth / 1234f).coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth().height(3.dp).semantics { contentDescription = expLabel },
+            color = MaterialTheme.colorScheme.secondary)
     }
+}
+
+@Composable
+private fun BattleEffectsDialog(effects: List<BattleEffect>, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.game_ui_player_effect_count, effects.size)) },
+        text = {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(effects) { effect ->
+                    val info = effect.detail()
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            BattleEffectBadge(effect)
+                            Text(gameText(info.title), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                            if (info.meta.isNotBlank()) Text(messageText(info.meta), style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                        }
+                        if (info.description.isNotBlank()) Text(gameText(info.description), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.game_ui_close)) } },
+    )
 }
 
 @Composable
@@ -568,17 +629,41 @@ private fun BattleVitalCell(vital: com.mitahv.mobile.model.BattleVital, modifier
 }
 
 @Composable
-private fun BattleEnemyMiniBar(
-    value: Float,
-    color: androidx.compose.ui.graphics.Color,
-    modifier: Modifier = Modifier,
+private fun BattleEnemyCard(
+    enemy: BattleEnemy, enabled: Boolean, onClick: () -> Unit, onDetail: () -> Unit, modifier: Modifier = Modifier,
 ) {
-    LinearProgressIndicator(
-        progress = { value.coerceIn(0f, 1f) },
-        color = color,
-        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        modifier = modifier.fillMaxWidth().height(3.dp),
-    )
+    Surface(modifier, shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                Modifier.weight(1f).fillMaxHeight().clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+                    .heightIn(min = 56.dp).padding(start = 10.dp, top = 4.dp, bottom = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("#${enemy.target}", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false,
+                        color = MaterialTheme.colorScheme.primary)
+                    Text(enemy.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                        color = if (enemy.targetable) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (enemy.healthMeasured) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        LinearProgressIndicator(progress = { enemy.healthFraction }, color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.weight(1f).height(4.dp))
+                        Text(stringResource(R.string.game_ui_percent, (enemy.healthFraction * 100).toInt()),
+                            style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
+                    }
+                }
+                if (enemy.effects.isNotEmpty()) {
+                    BattleEffectStrip(enemy.effects, limit = 2)
+                }
+            }
+            androidx.compose.material3.IconButton(onClick = onDetail) {
+                Icon(Icons.Filled.Info, stringResource(R.string.game_ui_named_details, enemy.name),
+                    modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -621,7 +706,7 @@ private fun BattleLogSheet(log: List<String>, onDismiss: () -> Unit) {
 @Composable
 private fun BattleControls(
     page: BattlePage,
-    panel: BattlePanel,
+    panel: BattlePanel?,
     pendingOption: BattleActionOption?,
     busy: Boolean,
     autoAvailable: Boolean,
@@ -636,10 +721,16 @@ private fun BattleControls(
     Surface(tonalElevation = 3.dp, color = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             pendingOption?.let { option ->
-                androidx.compose.material3.InputChip(selected = true, onClick = onCancelPending,
-                    enabled = !busy, label = { Text(stringResource(R.string.game_ui_choose_target, gameText(option.name)), maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                    trailingIcon = { Icon(Icons.Filled.Close, stringResource(R.string.game_ui_cancel_selection)) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.game_ui_choose_target, gameActionText(option.name)),
+                        Modifier.weight(1f).padding(start = 8.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    androidx.compose.material3.IconButton(onClick = onCancelPending, enabled = !busy) {
+                        Icon(Icons.Filled.Close, stringResource(R.string.game_ui_cancel_selection))
+                    }
+                }
             }
             val commands = page.controls.filter { it.mode in setOf("spirit", "defend", "focus") }
             // Stances belong to the action pane. Quickbar skills are a separate
@@ -658,6 +749,7 @@ private fun BattleControls(
                         FilledTonalButton(
                             onClick = { onSubmitAction(BattleAction(control.mode)) },
                             enabled = !busy && control.enabled,
+                            contentPadding = PaddingValues(horizontal = 6.dp),
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         ) {
                             Icon(if (control.selected) Icons.Filled.Check else icon, null)
@@ -678,13 +770,15 @@ private fun BattleControls(
                     contentPadding = PaddingValues(end = 10.dp),
                 ) {
                     items(page.quickActions, key = { "quick-${it.id}" }) { option ->
+                        val remaining = page.remainingCooldowns[option.name]?.takeUnless { option.enabled }
                         androidx.compose.material3.FilterChip(
                             selected = pendingOption?.id == option.id,
                             onClick = { onChooseOption(option) },
                             enabled = !busy && option.enabled,
                             label = {
                                 Text(
-                                    gameText(option.name),
+                                    if (remaining != null) gameActionText(option.name) + " · " + stringResource(R.string.game_ui_cd_left, remaining)
+                                    else gameActionText(option.name),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -698,12 +792,12 @@ private fun BattleControls(
                 BattlePanel.entries.forEach { item ->
                     val control = page.controls.firstOrNull { it.mode == item.control }
                     if (control != null) Surface(
-                        selected = panel == item && pendingOption == null,
+                        selected = panel == item,
                         onClick = { onPanelSelected(item) },
                         enabled = !busy && control.enabled,
                         modifier = Modifier.weight(1f).heightIn(min = 56.dp),
                         shape = MaterialTheme.shapes.medium,
-                        color = if (panel == item && pendingOption == null) MaterialTheme.colorScheme.secondaryContainer
+                        color = if (panel == item) MaterialTheme.colorScheme.secondaryContainer
                             else MaterialTheme.colorScheme.surfaceContainerHigh,
                     ) {
                         Column(Modifier.padding(horizontal = 2.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally,
@@ -743,7 +837,7 @@ private fun BattleAutoButton(
 private fun BattleOptionPanel(
     title: String,
     options: List<BattleActionOption>,
-    selectedId: String?,
+    remainingCooldowns: Map<String, Int>,
     busy: Boolean,
     modifier: Modifier = Modifier,
     onSelect: (BattleActionOption) -> Unit,
@@ -771,7 +865,7 @@ private fun BattleOptionPanel(
                 }
                 items(entries, key = { "option-${it.id}" }) { option ->
                     val detailCost = option.costText(includeCooldown = true)
-                    BattleOptionRow(option, selectedId == option.id, busy,
+                    BattleOptionRow(option, busy, remainingCooldowns[option.name]?.takeUnless { option.enabled },
                         onSelect = { onSelect(option) }, onDetail = { onDetail(option, detailCost) })
                 }
             }
@@ -806,23 +900,27 @@ private fun BattleEffectChips(effects: List<com.mitahv.mobile.model.BattleEffect
     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         effects.forEach { effect ->
             val detail = effect.detail()
-            androidx.compose.material3.AssistChip(onClick = { onDetail(detail) }, label = {
-                Text(gameText(effect.name) + (effect.duration.toIntOrNull()?.let { " · $it" } ?: ""))
+            androidx.compose.material3.AssistChip(onClick = { onDetail(detail) },
+                leadingIcon = { BattleEffectBadge(effect) }, label = {
+                Text(gameText(effect.name))
             }, modifier = Modifier.heightIn(min = 48.dp))
         }
     }
 }
 
 @Composable
-private fun BattleOptionRow(option: BattleActionOption, selected: Boolean, busy: Boolean, onSelect: () -> Unit, onDetail: () -> Unit) {
+private fun BattleOptionRow(option: BattleActionOption, busy: Boolean, remaining: Int?, onSelect: () -> Unit, onDetail: () -> Unit) {
     val displayName = if (option.mode == "items") gameText(option.name) else gameActionText(option.name)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(onClick = onSelect, enabled = !busy && option.enabled, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(displayName, style = MaterialTheme.typography.labelLarge)
-                option.costText().takeIf(String::isNotBlank)?.let { Text(messageText(it), style = MaterialTheme.typography.labelSmall) }
+                val cost = option.costText()
+                val cooldown = remaining?.let { stringResource(R.string.game_ui_cd_left, it) }
+                listOfNotNull(cost.takeIf(String::isNotBlank), cooldown).joinToString(" · ").takeIf(String::isNotBlank)?.let {
+                    Text(it, style = MaterialTheme.typography.labelSmall)
+                }
             }
-            if (selected) Icon(Icons.Filled.Check, stringResource(R.string.game_ui_selected))
         }
         if (option.description.isNotBlank() || option.costText(true).isNotBlank()) {
             androidx.compose.material3.IconButton(onClick = onDetail) { Icon(Icons.Filled.Info, stringResource(R.string.game_ui_named_details, displayName)) }
@@ -847,18 +945,11 @@ private fun com.mitahv.mobile.model.BattleEffect.detail() = BattleDetail(name, d
     else -> duration.toIntOrNull()?.let { stringResource(R.string.game_ui_effect_duration, it) } ?: duration
 })
 
-private fun selectOption(
-    option: BattleActionOption,
-    current: BattleActionOption?,
-    onPending: (BattleActionOption?) -> Unit,
-    onSubmit: (BattleAction) -> Unit,
-) {
-    if (!option.enabled) return
-    if (option.targetsEnemy) onPending(if (current?.id == option.id) null else option)
-    else { onPending(null); onSubmit(BattleAction(option.mode, skill = option.skill)) }
-}
+private sealed interface BattleSelection
 
-private enum class BattlePanel(val labelRes: Int, val icon: ImageVector, val control: String) {
+private data class TargetingOption(val option: BattleActionOption) : BattleSelection
+
+private enum class BattlePanel(val labelRes: Int, val icon: ImageVector, val control: String) : BattleSelection {
     Attack(R.string.game_ui_attack, Icons.Filled.SportsMartialArts, "attack"),
     Skill(R.string.game_ui_skills, Icons.Filled.Bolt, "skill"),
     Magic(R.string.game_ui_magic, Icons.Filled.AutoFixHigh, "skill"),

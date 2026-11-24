@@ -40,6 +40,7 @@ data class BattlePage(
     val continuation: BattleContinuation? = null,
     val completionLines: List<String> = emptyList(),
     val itemText: Map<String, BattleItemText> = emptyMap(),
+    val remainingCooldowns: Map<String, Int> = emptyMap(),
 ) {
     // The server's explicit "next round" control is the source of truth. Round log
     // lines are optional and can be truncated or delayed on a full-page reload.
@@ -74,7 +75,8 @@ data class BattleEnemy(
     val healthMeasured: Boolean = true,
 )
 
-data class BattleEffect(val name: String, val description: String, val duration: String)
+data class BattleEffect(val name: String, val description: String, val duration: String,
+    val iconKey: String? = null, val iconUrl: okhttp3.HttpUrl? = null)
 
 data class BattleControl(val mode: String, val enabled: Boolean, val selected: Boolean = false)
 

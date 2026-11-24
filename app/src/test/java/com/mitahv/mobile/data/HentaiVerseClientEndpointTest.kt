@@ -1,5 +1,7 @@
 package com.mitahv.mobile.data
 
+import com.mitahv.mobile.RequestState
+import com.mitahv.mobile.parseLoadedPage
 import com.mitahv.mobile.model.*
 import kotlinx.coroutines.runBlocking
 import okhttp3.CookieJar
@@ -14,6 +16,50 @@ import org.junit.Test
 
 /** Exercises client request preparation through an in-memory transport; never contacts HV. */
 class HentaiVerseClientEndpointTest {
+    @Test fun compressedBattleRepliesUseTheSameTurnParser() = runBlocking {
+        val world = HvWorld.Persistent
+        val url = HvRoute.Battle.url(world)
+        val json = """{"textlog":[{"t":"You hit the monster."}]}"""
+        val gzip = java.io.ByteArrayOutputStream().also { bytes ->
+            java.util.zip.GZIPOutputStream(bytes).use { it.write(json.toByteArray()) }
+        }.toByteArray()
+        val brotli = java.util.Base64.getDecoder().decode("ixSAeyJ0ZXh0bG9nIjpbeyJ0IjoiWW91IGhpdCB0aGUgbW9uc3Rlci4ifV19Aw==")
+        for ((encoding, bytes) in listOf("br" to brotli, "gzip" to gzip, "identity" to json.toByteArray())) {
+            val http = OkHttpClient.Builder().addInterceptor { chain ->
+                val request = chain.request()
+                assertEquals(setOf("br", "gzip"), request.header("Accept-Encoding")!!.split(",").toSet())
+                Response.Builder().request(request).protocol(Protocol.HTTP_2).code(200).message("OK")
+                    .header("Content-Encoding", encoding).body(bytes.toResponseBody()).build()
+            }.build()
+            val response = HentaiVerseClient(CookieJar.NO_COOKIES, httpClient = http)
+                .submitBattleAction(world, url, "fixture", BattleAction("attack", 1))
+            assertEquals("You hit the monster.", response.getJSONArray("textlog").getJSONObject(0).getString("t"))
+        }
+    }
+
+    @Test fun battleRefreshReadsTheCurrentUrlAndDisplaysTheReturnedLobby() = runBlocking {
+        val world = HvWorld.Isekai
+        val url = HvRoute.Battle.url(world)
+        val responses = listOf("/battle-active/ring-of-blood.html", "/battle-modes/ar-low-level.html")
+        val requests = mutableListOf<Request>()
+        val transport = OkHttpClient.Builder().addInterceptor { chain ->
+            val html = requireNotNull(javaClass.getResource(responses[requests.size])).readText()
+            requests += chain.request()
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(html.toResponseBody()).build()
+        }.build()
+        val client = HentaiVerseClient(CookieJar.NO_COOKIES, httpClient = transport)
+        val initial = client.fetchPage(world, url)
+        assertTrue(parseLoadedPage(HvRoute.Battle, world, initial.html, false, initial.url, emptyList()) is RequestState.BattleReady)
+        val refreshed = client.fetchPage(world, url, forceNetwork = true)
+        assertTrue(parseLoadedPage(HvRoute.Battle, world, refreshed.html, false, refreshed.url, emptyList()) is RequestState.ArenaReady)
+        val refresh = requests.last()
+        assertEquals(url, refresh.url)
+        assertEquals("GET", refresh.method)
+        assertNull(refresh.body)
+        assertTrue(refresh.cacheControl.noCache)
+    }
+
     @Test fun everyClientOperationUsesSelectedSiteAndPreservesPayload() = runBlocking {
         for (world in HvWorld.entries) for (site in HvSite.entries) {
             val requests = mutableListOf<Request>()

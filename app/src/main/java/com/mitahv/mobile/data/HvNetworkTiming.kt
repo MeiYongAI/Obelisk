@@ -23,6 +23,8 @@ internal class HvNetworkTiming(request: Request) : EventListener() {
     private var dnsMs = 0L
     private var tlsMs = 0L
     private var headersMs = 0L
+    private var encoding = "identity"
+    private var wireBytes = 0L
 
     private fun elapsed(start: Long) = (System.nanoTime() - start) / 1_000_000
 
@@ -32,9 +34,13 @@ internal class HvNetworkTiming(request: Request) : EventListener() {
     }
     override fun secureConnectStart(call: Call) { tlsStarted = System.nanoTime() }
     override fun secureConnectEnd(call: Call, handshake: Handshake?) { tlsMs += elapsed(tlsStarted) }
-    override fun responseHeadersEnd(call: Call, response: Response) { headersMs = elapsed(started) }
+    override fun responseHeadersEnd(call: Call, response: Response) {
+        headersMs = elapsed(started)
+        encoding = response.header("Content-Encoding") ?: "identity"
+    }
+    override fun responseBodyEnd(call: Call, byteCount: Long) { wireBytes = byteCount }
     override fun callEnd(call: Call) {
-        Log.d("HvNetwork", "$label total=${elapsed(started)}ms dns=${dnsMs}ms tls=${tlsMs}ms headers=${headersMs}ms")
+        Log.d("HvNetwork", "$label total=${elapsed(started)}ms dns=${dnsMs}ms tls=${tlsMs}ms headers=${headersMs}ms bytes=$wireBytes encoding=$encoding")
     }
     override fun callFailed(call: Call, ioe: IOException) {
         val causes = generateSequence<Throwable>(ioe) { it.cause }.take(4)

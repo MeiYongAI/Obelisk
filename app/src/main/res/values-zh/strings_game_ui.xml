@@ -118,6 +118,11 @@
     <string name="game_ui_action_group_curative">治疗法术</string>
     <string name="game_ui_action_group_supportive">辅助法术</string>
     <string name="game_ui_battle_log">战斗日志</string>
+    <string name="game_ui_battle_round">轮次 %1$s / %2$s</string>
+    <string name="game_ui_battle_floor">第 %1$d 层</string>
+    <string name="game_ui_enemy_targets">敌人 %1$d · 可选 %2$d</string>
+    <string name="game_ui_enemy_count">敌人 %1$d</string>
+    <string name="game_ui_player_effect_count">状态效果（%1$d）</string>
     <string name="game_ui_all">全部</string>
     <string name="game_ui_exp">经验</string>
     <string name="game_ui_hp">生命</string>
@@ -185,7 +190,8 @@
     <string name="game_ui_percent">%1$d%%</string>
     <string name="game_ui_mp_cost">%1$d 魔力</string>
     <string name="game_ui_charge_cost">%1$d 斗气</string>
-    <string name="game_ui_cooldown_turns">冷却 %1$d 回合</string>
+    <string name="game_ui_cooldown_turns">基础冷却 %1$d 回合</string>
+    <string name="game_ui_cd_left">剩 %1$d 回合</string>
     <string name="game_ui_effect_duration">%1$d 回合后失效</string>
     <string name="game_ui_material_count">%1$d（持有 %2$d）</string>
     <string name="game_ui_seconds">%1$d 秒</string>

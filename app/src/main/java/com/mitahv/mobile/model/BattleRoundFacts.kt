@@ -11,7 +11,10 @@ data class BattleRoundFacts(
         for (line in newestFirst.asReversed()) {
             if (line.startsWith("Initializing ")) {
                 val round = roundPattern.find(line)
-                facts = BattleRoundFacts(round?.groupValues?.get(1)?.toIntOrNull(), round?.groupValues?.get(2)?.toIntOrNull(),
+                // Random encounters have a single round and their start line can omit the counter.
+                val singleRound = if (line.startsWith("Initializing random encounter", ignoreCase = true)) 1 else null
+                facts = BattleRoundFacts(round?.groupValues?.get(1)?.toIntOrNull() ?: singleRound,
+                    round?.groupValues?.get(2)?.toIntOrNull() ?: singleRound,
                     floorPattern.find(line)?.groupValues?.get(1)?.toIntOrNull(), sawStart = true)
             }
             val spawn = spawnPattern.matchEntire(line)

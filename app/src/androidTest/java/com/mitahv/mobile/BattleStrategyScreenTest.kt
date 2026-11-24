@@ -2,6 +2,7 @@ package com.mitahv.mobile
 
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -94,6 +95,32 @@ class BattleStrategyScreenTest {
     @Test fun importedScriptUsesTheSameAcknowledgedTurnLoop() = verifyTurnLoop(
         """{"type":"kamisamaniNattaHi","code":"return jpx.doAttackGoNext(jpx.monstersObj.activeMonsters[0])"}""")
 
+    @Test fun battleRefreshIsAvailableWithoutAnErrorAndWaitsForInFlightRequests() {
+        val page = BattlePage("fixture", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0f)
+        val state = mutableStateOf<RequestState>(RequestState.BattleReady(page))
+        val loading = mutableStateOf(false)
+        val refreshes = java.util.concurrent.atomic.AtomicInteger()
+        val label = context.getString(R.string.app_refresh_page)
+        fun enabled() = generateSequence(find(label)) { it.parent }.any { it.isClickable && it.isEnabled }
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                BattleSessionScreen(null, state.value, null, "Isekai", BattleStrategy(null, null, null, true),
+                    {}, true, false, loading.value, false, null, false, 0, { byteArrayOf() },
+                    onRetry = { refreshes.incrementAndGet(); loading.value = true }, onRiddleAction = {},
+                    onSubmitBattleAction = { _, _ -> error("Refresh must not submit a battle action") },
+                    onContinue = {}, onLeaveBattle = {})
+            } } } }
+            click(label)
+            await { refreshes.get() == 1 && !enabled() }
+            scenario.onActivity { loading.value = false; state.value = RequestState.BattleBusy(page) }
+            await { !enabled() }
+            scenario.onActivity { state.value = RequestState.BattleReady(page) }
+            await { enabled() }
+            click(label)
+            await { refreshes.get() == 2 }
+        }
+    }
+
     private fun verifyTurnLoop(rows: String) {
         val draft = JpxImport.read("""{"version":1,"Staff_General":{"rules":[$rows]}}""".byteInputStream(), "fixture", "Isekai")
         val enemy = BattleEnemy(7,"Fixture", "1", 1f, targetable = true)
@@ -108,18 +135,26 @@ class BattleStrategyScreenTest {
                     { byteArrayOf() }, {}, {}, { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) }, {}, {})
             } } } }
             val start = context.getString(R.string.jpx_auto_run); val pause = context.getString(R.string.jpx_pause)
+            val refresh = context.getString(R.string.app_refresh_page)
+            fun refreshEnabled() = generateSequence(find(refresh)) { it.parent }.any { it.isClickable && it.isEnabled }
             find(start); assertTrue(calls.isEmpty()); click(start); await { calls.size == 1 }
             val second = initial.copy(turnKey = Any())
             scenario.onActivity { state.value = RequestState.BattleReady(second) }; await { calls.size == 2 }
-            find(pause); SystemClock.sleep(180) // Let the busy composition commit before replaying the same page.
+            await { !refreshEnabled() } // Confirm Busy was rendered before replaying the last acknowledgement.
             scenario.onActivity { state.value = RequestState.BattleReady(second) } // Replay must not submit twice.
-            SystemClock.sleep(650); find(start); assertEquals(2, calls.size)
+            find(start); assertEquals(2, calls.size)
             scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(turnKey = Any())) }
             click(start); await { calls.size == 3 }; click(pause)
+            find(start)
             scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(turnKey = Any())) }
-            find(start); SystemClock.sleep(500); assertEquals(List(3) { BattleAction("attack", 7) }, calls.toList())
+            await { refreshEnabled() }; assertEquals(List(3) { BattleAction("attack", 7) }, calls.toList())
+            click(start); await { calls.size == 4 }
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(turnKey = Any())) }
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            find(start); await { refreshEnabled() }; assertEquals(4, calls.size)
             scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(isComplete = true, turnKey = Any())) }
-            SystemClock.sleep(500); assertEquals(3, calls.size)
+            find(context.getString(R.string.game_ui_return_to_challenge)); assertEquals(4, calls.size)
         }
     }
 
@@ -141,6 +176,68 @@ class BattleStrategyScreenTest {
             find(context.getString(R.string.jpx_auto_run))
             click(context.getString(R.string.game_ui_skills)); find("Fixture skill")
             click(context.getString(R.string.game_ui_items)); find("Fixture item")
+        }
+    }
+
+    @Test fun manualSpellTargetsTheChosenEnemyAndResetsOnANewTurn() {
+        val spell = BattleActionOption("111", "Fixture bolt", "magic", 111, true)
+        val shortcut = spell.copy(id = "qb11", name = "Quick bolt")
+        val heal = BattleActionOption("311", "Fixture heal", "magic", 311, false)
+        val enemy = BattleEnemy(1, "First foe", "1", 1f, targetable = true)
+        val page = BattlePage(
+            token = "fixture", playerVitals = emptyList(), enemies = listOf(enemy, enemy.copy(target = 7, name = "Second foe")),
+            quickActions = listOf(shortcut), skills = emptyList(), spells = listOf(spell, heal), items = emptyList(),
+            log = emptyList(), completion = "", experienceBarWidth = 0f,
+            controls = listOf(BattleControl("attack", true), BattleControl("skill", true)),
+        )
+        val current = mutableStateOf(page)
+        val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                BattleScreen(current.value, false, { calls.add(it) }, false, false, false, false, {}, null, {}, {})
+            } } } }
+            val magic = context.getString(R.string.game_ui_magic)
+            fun nextTurn() {
+                val round = (current.value.round.current ?: 1) + 1
+                scenario.onActivity {
+                    current.value = current.value.copy(turnKey = Any(), round = BattleRoundFacts(current = round, total = 5))
+                }
+                find(context.getString(R.string.game_ui_battle_round, round.toString(), "5"))
+            }
+
+            click(magic)
+            click(spell.name)
+            val prompt = find(context.getString(R.string.game_ui_choose_target, spell.name))
+            assertFalse("The target prompt must not cancel the spell when tapped",
+                generateSequence(prompt) { it.parent }.any { it.isClickable })
+            assertTrue(calls.isEmpty())
+            click("Second foe")
+            await { calls.size == 1 }
+            assertEquals(BattleAction("magic", 7, 111), calls.last())
+
+            nextTurn()
+            click(shortcut.name)
+            find(context.getString(R.string.game_ui_choose_target, shortcut.name))
+            click(shortcut.name)
+            click("First foe")
+            await { calls.size == 2 }
+            assertEquals(BattleAction("magic", 1, 111), calls.last())
+
+            nextTurn()
+            click("Second foe")
+            await { calls.size == 3 }
+            assertEquals(BattleAction("attack", 7), calls.last())
+            nextTurn()
+            click(magic)
+            click(heal.name)
+            await { calls.size == 4 }
+            assertEquals(BattleAction("magic", skill = 311), calls.last())
+            nextTurn()
+            click(shortcut.name)
+            click(context.getString(R.string.game_ui_cancel_selection))
+            click("First foe")
+            await { calls.size == 5 }
+            assertEquals(BattleAction("attack", 1), calls.last())
         }
     }
 
@@ -176,9 +273,49 @@ class BattleStrategyScreenTest {
             await { continuations.get() == 1 }
             val nextRound = initial.copy(turnKey = Any(), round = BattleRoundFacts(current = 2), encounterKey = initial.encounterKey)
             scenario.onActivity { state.value = RequestState.BattleReady(nextRound) }
-            find(auto); SystemClock.sleep(600)
+            find(context.getString(R.string.game_ui_battle_round, "2", "—")); find(auto)
             assertEquals("Automation must stop when the next round is loaded", 1, calls.size)
             click(auto); await { calls.size == 2 }; find(pause)
+        }
+    }
+
+    @Test fun crowdedBattleShowsRoundAndTargetsBeforeExpandingPlayerEffects() {
+        val slow = BattleEffect("Freezing Limbs", "Reduces attack speed", "3", "coldslow")
+        val longName = "Enemy with a very long name that exceeds the available width"
+        val enemies = (1..10).map { BattleEnemy(it, if (it == 3) longName else "Enemy $it", "20", .75f, targetable = it <= 7,
+            effects = if (it == 1) listOf(slow) else emptyList()) }
+        val effects = (1..18).map { BattleEffect("Effect $it", "Effect details $it", "5", "regen") }
+        val page = BattlePage(
+            token = "fixture", playerVitals = listOf(BattleVital("Health", "2400", .8f), BattleVital("Mana", "560", 1f)), enemies = enemies,
+            quickActions = listOf(BattleActionOption("qb1", "Fixture heal", "magic", 311, false, enabled = false)),
+            skills = emptyList(), spells = emptyList(), items = emptyList(), remainingCooldowns = mapOf("Fixture heal" to 2),
+            log = emptyList(), completion = "", experienceBarWidth = 0f,
+            round = BattleRoundFacts(current = 3, total = 12), playerEffects = effects,
+            controls = listOf("attack", "skill", "items", "spirit", "defend", "focus").map { BattleControl(it, true) },
+        )
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                BattleScreen(page, false, {}, false, false, false, false, {}, null, {}, {})
+            } } } }
+            find(context.getString(R.string.game_ui_battle_round, "3", "12"))
+            find(context.getString(R.string.game_ui_enemy_targets, 10, 7))
+            find("Enemy 1")
+            find("Enemy 4")
+            fun nameHeight(label: String): Int = android.graphics.Rect().let { bounds ->
+                find(label).getBoundsInScreen(bounds)
+                bounds.height()
+            }
+            assertEquals(nameHeight("Enemy 4"), nameHeight(longName))
+            find("Fixture heal · " + context.getString(R.string.game_ui_cd_left, 2))
+            assertFalse(flattened(instrument.uiAutomation.rootInActiveWindow).any { it.text == "Effect 1" && it.isVisibleToUser })
+            click(context.getString(R.string.game_ui_player_effect_count, 18))
+            find("Effect 1")
+            find("Effect details 1")
+            click(context.getString(R.string.game_ui_close))
+            click(context.getString(R.string.game_ui_named_details, "Enemy 1"))
+            find("Freezing Limbs")
+            click(context.getString(R.string.game_ui_close))
+            find("Enemy 1")
         }
     }
 

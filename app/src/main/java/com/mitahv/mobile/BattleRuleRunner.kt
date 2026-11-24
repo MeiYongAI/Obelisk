@@ -16,7 +16,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mitahv.mobile.data.*
 import com.mitahv.mobile.model.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 internal class RuleRunner {
@@ -49,7 +48,7 @@ internal fun RunBattleTurns(runner: RuleRunner, rules: BattleRules?, page: Battl
     LaunchedEffect(runner, runner.running, page?.turnKey, playable, interrupted, rules, scene, loadout, playerLevel, world) {
         if (interrupted) { runner.pause(); return@LaunchedEffect }
         if (!runner.running || !playable || page == null || rules == null) return@LaunchedEffect
-        delay(300) // Leave a pause affordance between acknowledged turns, never poll the server.
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) { runner.pause(); return@LaunchedEffect }
         val decision = withContext(Dispatchers.Default) {
             rules.next(page, world, scene, loadout?.school, playerLevel) { code, ctx -> scripts.evaluate(code, ctx, loadout) }
         }

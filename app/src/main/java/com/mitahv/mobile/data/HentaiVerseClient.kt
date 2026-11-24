@@ -7,6 +7,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import okhttp3.Cache
 import okhttp3.CacheControl
+import okhttp3.brotli.BrotliInterceptor
 import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -55,7 +56,9 @@ internal class HentaiVerseClient(
         .cache(scriptCache)
         .addNetworkInterceptor(HvScriptCaches.cookieVaryInterceptor)
         .build()
-    private val mutationClient = client.newBuilder()
+    private val mutationClient = client.newBuilder().apply {
+        interceptors().add(0, BrotliInterceptor)
+    }
         .cache(null)
         .retryOnConnectionFailure(false)
         .build()
@@ -71,8 +74,9 @@ internal class HentaiVerseClient(
             .build(), world)
     }
 
-    suspend fun fetchPage(world: HvWorld, url: HttpUrl): HvPageResponse = withContext(Dispatchers.IO) {
-        executePage(NativeRequests.build(world, NativeAction(url, "GET", label = "刷新"), site), world)
+    suspend fun fetchPage(world: HvWorld, url: HttpUrl, forceNetwork: Boolean = false): HvPageResponse = withContext(Dispatchers.IO) {
+        val request = NativeRequests.build(world, NativeAction(url, "GET", label = "刷新"), site)
+        executePage(if (forceNetwork) request.newBuilder().cacheControl(CacheControl.FORCE_NETWORK).build() else request, world)
     }
 
     suspend fun fetchAbilityTree(world: HvWorld, url: HttpUrl) = withContext(Dispatchers.Default) {
