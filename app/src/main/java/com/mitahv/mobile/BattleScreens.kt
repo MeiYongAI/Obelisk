@@ -178,8 +178,13 @@ internal fun BattleSessionScreen(
                         }
                         BattleScreen(
                             page = page,
-                            busy = loading || nativeBusy || needsRefresh || state is RequestState.BattleBusy || (!page.isComplete && runner.running),
-                            onSubmitAction = { if (!runner.running) onSubmitBattleAction(page, it) },
+                            busy = loading || nativeBusy || needsRefresh || state is RequestState.BattleBusy ||
+                                (!page.isComplete && runner.running && !runner.waitingOn(page)),
+                            onSubmitAction = { action ->
+                                val current = session()
+                                if (current.ready && current.page?.turnKey === page.turnKey &&
+                                    (!runner.running || runner.waitingOn(page))) onSubmitBattleAction(page, action)
+                            },
                             advancing = advancing,
                             autoAvailable = rules != null,
                             running = runner.running,

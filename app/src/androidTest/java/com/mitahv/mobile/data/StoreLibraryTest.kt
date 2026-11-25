@@ -81,6 +81,27 @@ class StoreLibraryTest {
         }
     }
 
+    @Test fun clearingTheLastRemoteRuleAndRestoringItUpdatesTheSameDraft() {
+        val saved = store.save(envelope(), source)
+        val key = saved["id"].asString
+        val profile = library.catalog().entries.single().id
+        library.apply(profile)
+        val blank = JsonParser.parseString(envelope()).asJsonObject.apply { rules(this).remove(0) }
+        val blankSource = source.deepCopy().apply { addProperty("sha256", "b".repeat(64)) }
+
+        val cleared = store.save(blank.toString(), blankSource, "update", key, saved["revision"].asString)
+        assertEquals(0, library.load(profile).rules)
+        assertEquals(1, library.load(profile, published = true).rules)
+        assertEquals(blank, cleared["envelope"])
+        library.apply(profile)
+        assertEquals(0, library.load(profile, published = true).rules)
+
+        store.save(envelope("normalAttack"), source, "update", key, cleared["revision"].asString)
+        assertEquals(profile, library.catalog().entries.single().id)
+        assertEquals(0, library.load(profile, published = true).rules)
+        assertEquals("normalAttack", JpxDocument(library.load(profile)).rules(mode, "rules")[0].asJsonObject["type"].asString)
+    }
+
     @Test fun multiModeEnvelopeKeepsGlobalOptionsAndEachApplicableModeBecomesAnIndependentDraft() {
         val multi = JsonParser.parseString(envelope()).asJsonObject.apply {
             addProperty("kind", "battle"); remove("mode"); addProperty("world", "Any")

@@ -68,6 +68,19 @@ class BattleRulesTest {
         assertEquals(RuleTurn.Unsupported(1,"pActionCounts"), rules.run(p.copy(round = BattleRoundFacts())))
     }
 
+    @Test fun smartDebuffNegativeTailWindowIncludesDefeatedSlotsWhenCenteringACast() {
+        fun rule(bottomUp: Boolean) = """{"type":"smartDebuff","name":"Imperil","targetCount":3,"tailSkip":-3,"bottomUp":$bottomUp,"conditions":[{"key":"tIgnoredEffects","value":[1,9999,"Imperiled"]}]}"""
+        val spell = page.spells.first().copy(name = "Imperil", mode = "magic", skill = 501, enabled = true)
+        val plain = page.enemies.first().copy(target = 2, effects = emptyList())
+        val affected = plain.copy(target = 3, effects = listOf(BattleEffect("Imperiled", "", "8")))
+        val dead = plain.copy(target = 1, targetable = false)
+        val turn = page.copy(spells = listOf(spell), enemies = listOf(dead, plain, affected))
+        val expected = RuleTurn.Submit(BattleAction("magic", 2, 501))
+        assertEquals(expected, program(rule(true)).run(turn))
+        val reversed = turn.copy(enemies = listOf(affected.copy(target = 1), plain, dead.copy(target = 3)))
+        assertEquals(expected, program(rule(false)).run(reversed))
+    }
+
     @Test fun unknownScriptsMissingAffinityOrUnknownConditionsNeverFallThroughToAttack() {
         assertEquals(RuleTurn.ScriptError(2,"script failed"), program(target, """{"type":"kamisamaniNattaHi","code":"throw 1"}""", attack).run())
         assertEquals(RuleTurn.Unsupported(2,"pMaxSpellType"), program(target, """{"type":"spellDamage","name":"T1"}""", attack).run(school = null))

@@ -71,6 +71,8 @@ Tap **Auto** at the start of each round to run the selected rules. Obelisk submi
 
 Rules can select targets, attack, cast skills or spells, use items, switch stances, apply smart debuffs, or stop. Put a **Target** rule before an offensive spell or normal attack. `T1`–`T3` and spell-school conditions use the element selected in the JPX-PLUS profile, falling back to the detected school when the profile uses automatic selection. Conditions can use vitals, effects, cooldowns, difficulty, rounds, recent actions and observed cast counts. If a built-in rule requires a value the app has yet to observe, such as the player’s level or the start of a round, Auto can pause and identify the rule. Monster class, power level and last-update conditions use the same public Sukka database as JPX-PLUS. Obelisk caches a daily snapshot per world and saves confirmed Scan results. It looks up spawned IDs first and uses an exact name only when the spawn ID is missing. An offline first run can have no matching records. Keyboard shortcut groups are available for editing and export. Auto evaluates the battle rules.
 
+A **Stop** rule displays its message and waits for a new turn. You can take a manual action while it is waiting. After the server responds, Auto checks the rules again for the same round. Tap **Pause** to take over for the rest of that round.
+
 ### Custom scripts
 
 Enable the script rule, apply the configuration and tap **Auto** in battle. This rule attacks the first living monster. Returning `false` lets the next rule run.

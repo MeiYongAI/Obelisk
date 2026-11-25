@@ -41,6 +41,7 @@ internal class RuleRunner {
     var running by mutableStateOf(false); private set
     var notice by mutableStateOf<RuleTurn?>(null); private set
     private var submitted: Any? = null
+    private var stoppedTurn by mutableStateOf<Any?>(null)
     private var encounterKey: Any? = null
     private var round: Int? = null
     private var floor: Int? = null
@@ -52,18 +53,35 @@ internal class RuleRunner {
         floor = page.round.floor
         generation++
         notice = null
+        stoppedTurn = null
         running = true
     }
 
     fun ownsRound(page: BattlePage) =
         page.encounterKey === encounterKey && page.round.current == round && page.round.floor == floor
 
-    fun pause() { running = false }
+    fun waitingOn(page: BattlePage) = running && stoppedTurn === page.turnKey
+
+    fun pause() {
+        running = false
+        stoppedTurn = null
+    }
     fun accept(key: Any, result: RuleTurn, submit: (BattleAction) -> Unit) {
         if (!running) return
         if (submitted === key) { pause(); return }
-        if (result is RuleTurn.Submit) { submitted = key; submit(result.action) }
-        else { notice = result; pause() }
+        when (result) {
+            is RuleTurn.Submit -> {
+                stoppedTurn = null
+                notice = null
+                submitted = key
+                submit(result.action)
+            }
+            is RuleTurn.Stop -> {
+                stoppedTurn = key
+                notice = result
+            }
+            else -> { notice = result; pause() }
+        }
     }
 }
 
@@ -105,7 +123,7 @@ internal fun RunBattleTurns(runner: RuleRunner, rules: BattleRules?,
                     runner.pause()
                     return@collectLatest
                 }
-                if (!state.ready) return@collectLatest
+                if (!state.ready || runner.waitingOn(page)) return@collectLatest
                 val decision = withContext(Dispatchers.Default) {
                     val info = monsters?.start(page)?.filterNotNull()?.first().orEmpty()
                     rules.next(page, world, scene, loadout?.school, playerLevel, scripts::matchesName, info) { code, ctx ->

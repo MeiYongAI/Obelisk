@@ -3,7 +3,6 @@ package com.mitahv.mobile.data
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.mitahv.mobile.model.*
-import kotlin.math.round
 
 internal sealed interface RuleTurn {
     data class Submit(val action: BattleAction) : RuleTurn
@@ -178,7 +177,7 @@ internal class RuleContext(val page: BattlePage, val world: String, val scene: B
     }
 }
 
-internal fun ratio(fraction: Float, scale: Int = 1) = round(fraction.toDouble() * scale * 1000) / 1000
+internal fun ratio(fraction: Float, scale: Int = 1) = Math.round(fraction.toDouble() * scale * 1000) / 1000.0
 // JPX reads whole pixels from a 120px monster bar, then rounds to two decimal places.
 internal fun monsterRatio(fraction: Float?) = Math.round(Math.round((fraction ?: 0f) * 120) * 100.0 / 120) / 100.0
 

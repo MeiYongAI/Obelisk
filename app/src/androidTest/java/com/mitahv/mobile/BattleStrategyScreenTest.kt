@@ -285,6 +285,44 @@ class BattleStrategyScreenTest {
         }
     }
 
+    @Test fun stopRuleAllowsManualHealingAndReevaluatesOnlyInTheSameArmedRound() {
+        val rows = """{"type":"stop","customMessage":"Low HP","conditions":[{"key":"pHP","value":[0,0.5]}]},{"type":"target"},{"type":"normalAttack"}"""
+        val draft = JpxImport.read("""{"version":1,"Staff_General":{"rules":[$rows]}}""".byteInputStream(), "fixture", "Isekai")
+        val strategy = BattleStrategy(null, BattleStyle.Staff, BattleScene.Item, true, published = draft)
+        val heal = BattleActionOption("311", "Fixture heal", "magic", 311, false)
+        val initial = BattlePage("fixture", listOf(BattleVital("Health", "10", 0.1f)),
+            listOf(BattleEnemy(1, "Fixture foe", "1", 1f, targetable = true)), listOf(heal),
+            emptyList(), emptyList(), emptyList(), emptyList(), "", 0f,
+            controls = listOf(BattleControl("attack", true)), round = BattleRoundFacts(current = 1))
+        val state = mutableStateOf<RequestState>(RequestState.BattleReady(initial))
+        val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
+        val start = context.getString(R.string.jpx_auto_run)
+        val pause = context.getString(R.string.jpx_pause)
+        val stopped = context.getString(R.string.jpx_halt_rule, 1, "Low HP")
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                BattleSessionScreen(null, { BattleSessionState(state.value) }, null, "Isekai", strategy, {}, true, false, 0,
+                    { byteArrayOf() }, {}, {}, { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) }, {}, {})
+            } } } }
+            fun acknowledge(page: BattlePage) = scenario.onActivity { state.value = RequestState.BattleReady(page) }
+            click(start); find(stopped); find(pause)
+            assertTrue(calls.isEmpty())
+            click(heal.name); await { calls.size == 1 }
+            assertEquals(BattleAction("magic", skill = 311), calls.single())
+            acknowledge(initial) // A replay of the stopped turn cannot submit.
+            find(pause); find(stopped)
+            val healthy = initial.copy(turnKey = Any(), playerVitals = listOf(BattleVital("Health", "80", 0.8f)))
+            acknowledge(healthy); await { calls.size == 2 }
+            assertEquals(BattleAction("attack", 1), calls.last())
+
+            acknowledge(initial.copy(turnKey = Any())); find(stopped); click(pause); find(start)
+            acknowledge(healthy.copy(turnKey = Any())); find(start); assertEquals(2, calls.size)
+            acknowledge(initial.copy(turnKey = Any())); click(start); find(stopped); find(pause)
+            acknowledge(healthy.copy(round = BattleRoundFacts(current = 2), turnKey = Any()))
+            find(start); assertEquals(2, calls.size)
+        }
+    }
+
     @Test fun battleActionsRemainAccessibleBesideAutoControl() {
         val page = BattlePage(
             token = "fixture", playerVitals = emptyList(), enemies = emptyList(), quickActions = emptyList(),

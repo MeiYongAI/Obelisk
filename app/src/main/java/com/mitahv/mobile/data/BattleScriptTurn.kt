@@ -47,10 +47,15 @@ internal class BattleScriptTurn(ctx: RuleContext, loadout: BattleLoadout?) {
         "vitals" to buildMap<String, Number> {
             for ((name, key) in listOf("Health" to "hp", "Mana" to "mp", "Spirit" to "sp", "Overcharge" to "oc")) {
                 val v = page.playerVitals.find { it.name == name && it.measured } ?: continue
-                if (key == "oc") put(key, ratio(v.fraction, 10)) else {
-                    put(key + "Percentage", ratio(v.fraction)); v.value.replace(",", "").substringBefore('/').trim().toIntOrNull()?.let {
-                        put(key + "Current", it); if (v.fraction > 0) put(key + "Max", kotlin.math.round(it * 10.0 / v.fraction) / 10.0)
-                    }
+                if (key == "oc") {
+                    put(key, ratio(v.fraction, 10))
+                    continue
+                }
+                val percentage = ratio(v.fraction)
+                put(key + "Percentage", percentage)
+                v.value.replace(",", "").substringBefore('/').trim().toIntOrNull()?.let { current ->
+                    put(key + "Current", current)
+                    if (percentage > 0) put(key + "Max", Math.round(current / percentage * 10) / 10.0)
                 }
             }
         }, "spiritStatus" to ctx.control("spirit")?.selected, "actionCounts" to page.round.casts + ("history" to page.round.history),

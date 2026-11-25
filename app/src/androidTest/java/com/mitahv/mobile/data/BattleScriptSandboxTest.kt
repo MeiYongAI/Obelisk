@@ -70,6 +70,18 @@ class BattleScriptSandboxTest {
             assertTrue(engine.matchesName("/^next$/", "next"))
         }
     }
+    @Test fun customScriptReadsTheSameRoundedHealthAndEstimatedMaximumAsJpx() = runBlocking {
+        val turn = page.copy(playerVitals = listOf(BattleVital("Health", "100", 31 / 496f)))
+        val action = script("""
+            const {hpCurrent, hpPercentage, hpMax} = jpx.vitals;
+            return hpCurrent === 100 && hpPercentage === 0.063 && hpMax === 1587.3
+                && jpx.doAttackGoNext(jpx.monstersObj.activeMonsters[0]);
+        """.trimIndent())
+        BattleScriptSandbox(context).use { engine ->
+            assertEquals(RuleTurn.Submit(BattleAction("attack", 7)), run(engine, action, turn = turn))
+        }
+    }
+
     @Test fun selectsOnlyAvailableActionsOnLivingTargets() = runBlocking {
         BattleScriptSandbox(context).use { engine ->
             val target = "jpx.monstersObj.activeMonsters[1]"

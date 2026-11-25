@@ -85,6 +85,14 @@ class JpxNativeParityTest {
         assertEquals(1, runBlocking { ctx.selectTarget(rule, emptyList()) })
     }
 
+    @Test fun playerHealthThresholdUsesJpxRoundingAtHalfAThousandth() {
+        // A 31 px health bar in HV's standard layout is exactly 31/496 = 0.0625.
+        val fraction = 31 / 496f
+        val p = BattlePageParser.parseBattle(battle()).copy(playerVitals = listOf(BattleVital("Health", "100", fraction)))
+        assertTrue(context(p).match("pHP", "[0.063,0.063]"))
+        assertFalse(context(p).match("pHP", "[0,0.062]"))
+    }
+
     @Test fun difficultyReadsHvHeaderAndUsesTowerBandsAndHighArenaOverride() {
         val doc = battle()
         doc.select("#level_readout").remove()

@@ -122,7 +122,8 @@ internal class StoreLibrary(private val library: JpxLibrary, private val account
     private fun syncDrafts(sql: SQLiteDatabase, copy: Long, draft: JpxDraft?) {
         val before = linked(sql, copy)
         val doc = draft?.let(::JpxDocument)
-        val modes = draft?.modes.orEmpty().filter { requireNotNull(doc).count(it) > 0 }
+        // Retain an existing profile when its author clears its last rule, so the empty draft can be applied.
+        val modes = draft?.modes.orEmpty().filter { it in before || requireNotNull(doc).count(it) > 0 }
         // A removed mode may already be applied. Detach only its store link; its local profile remains usable.
         for ((mode, id) in before) if (mode !in modes)
             sql.delete("store_modes", "copy=? AND profile=?", arrayOf(copy.toString(), id.toString()))

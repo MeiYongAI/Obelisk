@@ -10,9 +10,12 @@ internal suspend fun RuleContext.smartTarget(rule: JsonObject, conditions: List<
     val width = int("targetCount", 3).also { if (it !in 1..3) unknown("targetCount") }
     val reverse = rule["bottomUp"]?.let { it.bool ?: unknown("bottomUp") } ?: false
     val step = if (reverse) -1 else 1
-    val order = if (reverse) (alive.last() downTo alive.first()).toList() else (alive.first()..alive.last()).toList()
     val skip = int("tailSkip", 0)
-    val slots = order.take(if (skip >= 0) (order.size - skip).coerceAtLeast(0) else (-skip.toLong()).coerceAtMost(order.size.toLong()).toInt())
+    val order = if (reverse) alive.last() downTo 0 else alive.first()..enemies.lastIndex
+    // JPX counts physical slots, including defeated foes, when a negative tailSkip selects a window.
+    val count = if (skip < 0) (-skip.toLong()).coerceAtMost(enemies.size.toLong()).toInt()
+        else (alive.last() - alive.first() + 1 - skip).coerceAtLeast(0)
+    val slots = order.take(count)
     val cache = mutableMapOf<Int, Boolean>()
     suspend fun hit(i: Int) = cache.getOrPut(i) { enemies.getOrNull(i)?.targetable == true && matches(conditions, i) }
     fun center(i: Int): Int = when {
