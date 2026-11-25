@@ -48,7 +48,8 @@ class EquipmentScreenTest {
                     activity.setContent {
                         CompositionLocalProvider(LocalContext provides localized, LocalConfiguration provides config) {
                             ProvideLocalizedText { ProvideGameTextScope(url.toString()) { MaterialTheme {
-                                EquipmentScreen(page, false, {}, {}, 0)
+                                EquipmentScreen(page, PageInteraction(canNavigate = true, canSubmit = true), onBack = {},
+                                    onAction = {}, onDraftChanged = {}, responseRevision = 0)
                             } } }
                         }
                     }

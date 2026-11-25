@@ -44,10 +44,10 @@ internal fun MonsterStatusContent(name: String, facts: List<Pair<String, String>
 }
 
 @Composable
-internal fun BazaarPageNavigation(page: BazaarSectionsPage, busy: Boolean, onAction: (NativeAction) -> Unit) {
+internal fun BazaarPageNavigation(page: BazaarSectionsPage, access: PageInteraction, onAction: (NativeAction) -> Unit) {
     var menuOpen by remember(page.links) { mutableStateOf(false) }
     if (page.links.size > 6) {
-        OutlinedButton(onClick = { menuOpen = true }, enabled = !busy,
+        OutlinedButton(onClick = { menuOpen = true }, enabled = page.links.any { access.allows(it.action) },
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
             Text(messageText(page.links.firstOrNull { it.selected }?.label ?: page.links.first().label),
                 Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -56,7 +56,7 @@ internal fun BazaarPageNavigation(page: BazaarSectionsPage, busy: Boolean, onAct
     } else {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             page.links.forEach { link ->
-                FilterChip(selected = link.selected, enabled = !busy,
+                FilterChip(selected = link.selected, enabled = access.allows(link.action),
                     onClick = { if (!link.selected) onAction(link.action) }, label = { Text(messageText(link.label)) })
             }
         }
@@ -65,7 +65,7 @@ internal fun BazaarPageNavigation(page: BazaarSectionsPage, busy: Boolean, onAct
         val links = page.links
         MobileChoiceSheet(
             title = page.route.label,
-            choices = links.mapIndexed { i, link -> MobileChoice(i.toString(), link.label, !busy) },
+            choices = links.mapIndexed { i, link -> MobileChoice(i.toString(), link.label, access.allows(link.action)) },
             selectedValue = links.indexOfFirst { it.selected }.takeIf { it >= 0 }?.toString(),
             onSelect = { value -> links[value.toInt()].takeUnless { it.selected }?.let { onAction(it.action) } },
             onDismiss = { menuOpen = false },

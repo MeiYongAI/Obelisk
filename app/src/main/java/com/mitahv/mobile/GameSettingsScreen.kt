@@ -45,8 +45,9 @@ private val SettingsDraftSaver = mapSaver<SettingsDraft>(
 )
 
 @Composable
-internal fun GameSettingsScreen(page: CharacterSectionsPage, busy: Boolean, onAction: (NativeAction) -> Unit,
+internal fun GameSettingsScreen(page: CharacterSectionsPage, access: PageInteraction, onAction: (NativeAction) -> Unit,
     onDraftChanged: (Boolean) -> Unit, responseRevision: Int) {
+    val busy = !access.canSubmit
     val form = page.combinedSettingsForm() ?: return
     val initialValues = form.fields.associate { it.name to it.value }
     val initialToggles = form.fields.associate { it.name to it.checked }
@@ -96,7 +97,7 @@ internal fun GameSettingsScreen(page: CharacterSectionsPage, busy: Boolean, onAc
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     items(section.fields, key = { it.name }) { field ->
-                        SettingsSlot(field, values[field.name] ?: field.value, busy) { choiceName = field.name }
+                        SettingsSlot(field, values[field.name] ?: field.value, !access.canNavigate) { choiceName = field.name }
                     }
                 }
             } else LazyColumn(Modifier.weight(1f).fillMaxWidth(),
@@ -110,7 +111,7 @@ internal fun GameSettingsScreen(page: CharacterSectionsPage, busy: Boolean, onAc
                             val field = group.fields.singleOrNull()?.takeIf { it.kind == CharacterFieldKind.Choice }
                             val summary = field?.options?.firstOrNull { it.value == (values[field.name] ?: field.value) }
                                 ?.let { settingsOptionTitle(field, it) }.orEmpty()
-                            SettingsNavigationRow(group, summary, enabled = !busy) {
+                            SettingsNavigationRow(group, summary, enabled = access.canNavigate) {
                                 if (field != null) choiceName = field.name else sectionTitle = group.title
                             }
                         }
@@ -127,7 +128,7 @@ internal fun GameSettingsScreen(page: CharacterSectionsPage, busy: Boolean, onAc
                         val pairs = section.fields.groupBy { it.name.removePrefix("as_c_").removePrefix("as_s_") }
                             .filter { (id, _) -> lootCategory(id) == lootFamily }.values.toList()
                         items(pairs, key = { it.first().name }) { fields ->
-                            SettingsLootRow(fields, values, busy) { choiceName = it.name }
+                            SettingsLootRow(fields, values, !access.canNavigate) { choiceName = it.name }
                         }
                     }
                     else -> items(section.fields, key = { it.name }) { field ->
@@ -139,7 +140,7 @@ internal fun GameSettingsScreen(page: CharacterSectionsPage, busy: Boolean, onAc
                                 supportingText = if (field.hint.isBlank()) null else ({ Text(messageText(field.hint)) }),
                                 keyboardOptions = KeyboardOptions(keyboardType = if (field.name in listOf("fontsize", "fontoff")) KeyboardType.Decimal else KeyboardType.Text),
                                 singleLine = true, enabled = !busy && field.enabled, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
-                            CharacterFieldKind.Choice -> SettingsSlot(field, values[field.name] ?: field.value, busy) { choiceName = field.name }
+                            CharacterFieldKind.Choice -> SettingsSlot(field, values[field.name] ?: field.value, !access.canNavigate) { choiceName = field.name }
                         }
                     }
                 }

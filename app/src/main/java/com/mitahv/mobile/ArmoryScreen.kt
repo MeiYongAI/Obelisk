@@ -24,35 +24,36 @@ import com.mitahv.mobile.i18n.messageText
 import com.mitahv.mobile.model.*
 
 @Composable
-internal fun ArmoryScreen(page: BazaarSectionsPage, busy: Boolean, responseRevision: Int,
+internal fun ArmoryScreen(page: BazaarSectionsPage, access: PageInteraction, responseRevision: Int,
     onAction: (NativeAction) -> Unit, onBack: (NativeAction) -> Unit) {
     val armory = page.armory ?: return
     val subpage = armory.mode != ArmoryViewMode.List
     val listStates = rememberSaveableStateHolder()
     BackHandler(enabled = subpage && armory.backAction != null) {
-        if (!busy) onBack(armory.backAction!!)
+        if (access.canNavigate) onBack(armory.backAction!!)
     }
     Column(Modifier.fillMaxSize()) {
         if (subpage) Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { armory.backAction?.let(onBack) }, enabled = !busy && armory.backAction != null) {
+            IconButton(onClick = { armory.backAction?.let(onBack) }, enabled = access.allows(armory.backAction)) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back))
             }
             Text(messageText(if (armory.mode == ArmoryViewMode.Fusion) "Stat Fusion" else "Modify"),
                 style = MaterialTheme.typography.titleLarge)
         }
         Box(Modifier.weight(1f)) {
-            if (armory.mode == ArmoryViewMode.Detail) ArmoryDetailContent(page, busy, responseRevision, onAction)
-            else ArmoryEquipmentList(page, busy, responseRevision, listStates, onAction)
+            if (armory.mode == ArmoryViewMode.Detail) ArmoryDetailContent(page, access, responseRevision, onAction)
+            else ArmoryEquipmentList(page, access, responseRevision, listStates, onAction)
         }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ArmoryEquipmentList(page: BazaarSectionsPage, busy: Boolean, responseRevision: Int, listStates: SaveableStateHolder,
+private fun ArmoryEquipmentList(page: BazaarSectionsPage, access: PageInteraction, responseRevision: Int, listStates: SaveableStateHolder,
     onAction: (NativeAction) -> Unit) {
     val armory = page.armory ?: return
+    val busy = !access.canSubmit
     val form = page.forms.firstOrNull { f -> f.fields.any { it.name == "eqids[]" } }
     val initial = remember(form) { form?.fields?.associate { it.key to if (it.kind == "checkbox" && !it.checked) "" else it.value }.orEmpty() }
     val snapshot = remember(page, initial) { bazaarDraftSnapshot(page, initial) }
@@ -63,13 +64,14 @@ private fun ArmoryEquipmentList(page: BazaarSectionsPage, busy: Boolean, respons
     val values = draft.values.toMap()
     val selectedCount = fields.count { !values[it.key].isNullOrBlank() }
     val directOpen = form?.singleEquipment == true && form.actions.singleOrNull()?.method == "GET"
+    val canChoose = if (directOpen) access.canNavigate else access.canSubmit
     var operationsOpen by remember { mutableStateOf(false) }
     var filtersOpen by remember { mutableStateOf(false) }
     var reviewOpen by remember(snapshot, responseRevision) { mutableStateOf(false) }
     var protectedKey by remember(snapshot) { mutableStateOf<String?>(null) }
     var detailsKey by remember(snapshot) { mutableStateOf<String?>(null) }
     fun choose(field: BazaarSectionsField) {
-        if (busy || form == null) return
+        if (!canChoose || form == null) return
         if (directOpen) {
             val entered = values + fields.associate { it.key to if (it.key == field.key) it.value else "" }
             onAction(form.submit(form.actions.single(), entered))
@@ -85,13 +87,13 @@ private fun ArmoryEquipmentList(page: BazaarSectionsPage, busy: Boolean, respons
         if (armory.mode == ArmoryViewMode.List) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FilledTonalButton(onClick = { operationsOpen = true }, enabled = !busy && armory.operations.isNotEmpty(),
+                FilledTonalButton(onClick = { operationsOpen = true }, enabled = armory.operations.any { access.allows(it.action) },
                     contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.heightIn(min = 48.dp)) {
                     Text(messageText(operation?.label ?: armory.screen))
                     Spacer(Modifier.width(8.dp))
                     Icon(Icons.Default.ExpandMore, null, Modifier.size(20.dp))
                 }
-                if (filter != null) TextButton(onClick = { filtersOpen = true }, enabled = !busy,
+                if (filter != null) TextButton(onClick = { filtersOpen = true }, enabled = access.canNavigate,
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp)) {
                     Text(messageText(filter.label), Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Icon(Icons.Default.ExpandMore, null, Modifier.size(20.dp))
@@ -148,7 +150,7 @@ private fun ArmoryEquipmentList(page: BazaarSectionsPage, busy: Boolean, respons
                 }
                 items(fields, key = { it.key }) { field ->
                     val selected = !values[field.key].isNullOrBlank()
-                    ArmoryEquipmentRow(field, selected, directOpen, form?.singleEquipment == true, busy,
+                    ArmoryEquipmentRow(field, selected, directOpen, form?.singleEquipment == true, !canChoose,
                         preview = if (armory.screen in setOf("purchase", "sell")) form?.equipmentCosts?.get(field.value)?.credits?.let { "$it C" } else null,
                         onDetails = { detailsKey = field.key }, onClick = {
                             if (!selected && field.selectionConfirmation != null) protectedKey = field.key else choose(field)
@@ -168,12 +170,12 @@ private fun ArmoryEquipmentList(page: BazaarSectionsPage, busy: Boolean, respons
         }
     }
     if (operationsOpen) MobileChoiceSheet(stringResource(R.string.armory_operation),
-        armory.operations.mapIndexed { index, link -> MobileChoice(index.toString(), link.label, !busy) },
+        armory.operations.mapIndexed { index, link -> MobileChoice(index.toString(), link.label, access.allows(link.action)) },
         selectedValue = armory.operations.indexOf(operation).toString(), searchable = false,
         onSelect = { value -> armory.operations[value.toInt()].takeUnless { it == operation }?.let { onAction(it.action) } },
         onDismiss = { operationsOpen = false })
     if (filtersOpen) MobileChoiceSheet(stringResource(R.string.game_ui_filter),
-        armory.filters.mapIndexed { index, link -> MobileChoice(index.toString(), link.label, !busy) },
+        armory.filters.mapIndexed { index, link -> MobileChoice(index.toString(), link.label, access.allows(link.action)) },
         selectedValue = armory.filters.indexOf(filter).toString(), searchable = false,
         onSelect = { value -> armory.filters[value.toInt()].takeUnless { it == filter }?.let { onAction(it.action) } },
         onDismiss = { filtersOpen = false })
@@ -186,7 +188,7 @@ private fun ArmoryEquipmentList(page: BazaarSectionsPage, busy: Boolean, respons
     fields.firstOrNull { it.key == protectedKey }?.let { field ->
         AlertDialog(onDismissRequest = { protectedKey = null }, title = { Text(stringResource(R.string.game_ui_select_protected)) },
             text = { Text(messageText(field.selectionConfirmation.orEmpty())) },
-            confirmButton = { TextButton(onClick = { protectedKey = null; choose(field) }, enabled = !busy) { Text(stringResource(R.string.game_ui_select)) } },
+            confirmButton = { TextButton(onClick = { protectedKey = null; choose(field) }, enabled = canChoose) { Text(stringResource(R.string.game_ui_select)) } },
             dismissButton = { TextButton(onClick = { protectedKey = null }) { Text(stringResource(R.string.game_ui_cancel)) } })
     }
 }

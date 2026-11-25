@@ -38,8 +38,9 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-internal fun MailScreen(page: BazaarSectionsPage, busy: Boolean, responseRevision: Int,
+internal fun MailScreen(page: BazaarSectionsPage, access: PageInteraction, responseRevision: Int,
     onAction: (NativeAction) -> Unit, onBack: (NativeAction) -> Unit, onDraftChanged: (Boolean) -> Unit) {
+    val busy = !access.canSubmit
     val mail = page.mail ?: return
     val folders = mail.folders.filter { it.action.url.queryParameter("filter") in setOf("inbox", "read", "sent") }
     val form = page.forms.firstOrNull { it.validation == "mail" }
@@ -70,7 +71,7 @@ internal fun MailScreen(page: BazaarSectionsPage, busy: Boolean, responseRevisio
     val listStates = rememberSaveableStateHolder()
     fun submit(action: NativeAction) { if (!busy) onAction(if (form != null) form.submit(action, values) else action) }
     BackHandler(enabled = mail.mode != MailViewMode.List && mail.listAction != null) {
-        if (!busy) onBack(mail.listAction!!)
+        if (access.canNavigate) onBack(mail.listAction!!)
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -80,7 +81,7 @@ internal fun MailScreen(page: BazaarSectionsPage, busy: Boolean, responseRevisio
             }.coerceAtLeast(0)) {
                 folders.forEach { folder ->
                     val selected = folder.action.url.queryParameter("filter") == mail.folder
-                    Tab(selected = selected, enabled = !busy, onClick = { if (!selected) onAction(folder.action) },
+                    Tab(selected = selected, enabled = access.allows(folder.action), onClick = { if (!selected) onAction(folder.action) },
                         text = { Text(mailFolderLabel(folder.action.url.queryParameter("filter").orEmpty())) })
                 }
             }
@@ -94,15 +95,15 @@ internal fun MailScreen(page: BazaarSectionsPage, busy: Boolean, responseRevisio
                             }
                         }
                         items(mail.rows, key = { it.id }) { row ->
-                            MailListItem(row, mail.folder == "sent", busy) { onAction(row.action) }
+                            MailListItem(row, mail.folder == "sent", !access.allows(row.action)) { onAction(row.action) }
                         }
                         if (mail.previousPage != null || mail.nextPage != null) item {
                             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                TextButton(onClick = { mail.previousPage?.let(onAction) }, enabled = !busy && mail.previousPage != null) {
+                                TextButton(onClick = { mail.previousPage?.let(onAction) }, enabled = access.allows(mail.previousPage)) {
                                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null)
                                     Text(stringResource(R.string.mail_previous))
                                 }
-                                TextButton(onClick = { mail.nextPage?.let(onAction) }, enabled = !busy && mail.nextPage != null) {
+                                TextButton(onClick = { mail.nextPage?.let(onAction) }, enabled = access.allows(mail.nextPage)) {
                                     Text(stringResource(R.string.mail_next))
                                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
                                 }
@@ -111,14 +112,14 @@ internal fun MailScreen(page: BazaarSectionsPage, busy: Boolean, responseRevisio
                     }
                 }
                 mail.composeAction?.let { action ->
-                    ExtendedFloatingActionButton(onClick = { if (!busy) onAction(action) },
+                    ExtendedFloatingActionButton(onClick = { if (access.allows(action)) onAction(action) },
                         modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
                         icon = { Icon(Icons.Default.Edit, null) }, text = { Text(stringResource(R.string.mail_compose)) })
                 }
             }
         } else {
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { mail.listAction?.let(onBack) }, enabled = !busy && mail.listAction != null) {
+                IconButton(onClick = { mail.listAction?.let(onBack) }, enabled = access.allows(mail.listAction)) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back))
                 }
                 if (mail.mode == MailViewMode.Compose) Text(stringResource(R.string.mail_compose), Modifier.weight(1f),
@@ -206,7 +207,7 @@ internal fun MailScreen(page: BazaarSectionsPage, busy: Boolean, responseRevisio
             } else if (claimAll != null || mail.replyAction != null) Surface(tonalElevation = 3.dp) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     mail.replyAction?.let { action ->
-                        OutlinedButton(onClick = { onAction(action) }, enabled = !busy,
+                        OutlinedButton(onClick = { onAction(action) }, enabled = access.allows(action),
                             modifier = if (claimAll == null) Modifier.weight(1f).heightIn(min = 48.dp) else Modifier.heightIn(min = 48.dp)) {
                             Icon(Icons.AutoMirrored.Filled.Reply, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))

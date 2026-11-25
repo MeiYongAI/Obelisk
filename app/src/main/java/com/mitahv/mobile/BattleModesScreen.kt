@@ -47,13 +47,14 @@ import com.mitahv.mobile.model.NativeAction
 @Composable
 internal fun BattleModesScreen(
     page: BattleModesPage,
-    busy: Boolean,
+    access: PageInteraction,
     onAction: (NativeAction) -> Unit,
     onStartBattle: (NativeAction) -> Unit,
     responseRevision: Int = 0,
 ) {
+    val busy = !access.canSubmit
     val equipmentList = (page as? BattleModesPage.ItemWorld)?.let { it.filters to it.equipment.map { item -> item.id } }
-    var selectedEquipmentId by remember(equipmentList, responseRevision) { mutableStateOf<String?>(null) }
+    var selectedEquipmentId by remember(equipmentList) { mutableStateOf<String?>(null) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -105,14 +106,14 @@ internal fun BattleModesScreen(
                 if (page.filters.isNotEmpty()) item {
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         page.filters.forEach { filter ->
-                            FilterChip(selected = filter.selected, enabled = !busy,
+                            FilterChip(selected = filter.selected, enabled = access.allows(filter.action),
                                 onClick = { if (!filter.selected) onAction(filter.action) }, label = { Text(messageText(filter.name)) })
                         }
                     }
                 }
                 if (page.equipment.isEmpty()) item { Text(stringResource(R.string.game_ui_no_equipment), style = MaterialTheme.typography.bodyLarge) }
                 items(page.equipment, key = { it.id }) { equipment ->
-                    ItemWorldEquipmentCard(equipment, equipment.id == selectedEquipmentId, busy, responseRevision,
+                    ItemWorldEquipmentCard(equipment, equipment.id == selectedEquipmentId, access,
                         onSelect = { selectedEquipmentId = if (selectedEquipmentId == equipment.id) null else equipment.id },
                         onStartBattle = onStartBattle)
                 }
@@ -143,14 +144,14 @@ private fun ChallengeCard(challenge: BattleModesChallenge, busy: Boolean, onStar
 
 @Composable
 private fun ItemWorldEquipmentCard(
-    equipment: BattleModesEquipment, selected: Boolean, busy: Boolean, responseRevision: Int,
+    equipment: BattleModesEquipment, selected: Boolean, access: PageInteraction,
     onSelect: () -> Unit, onStartBattle: (NativeAction) -> Unit,
 ) {
-    var showEquipmentDetails by remember(equipment.id, responseRevision) { mutableStateOf(false) }
-    OutlinedCard(onClick = onSelect, enabled = !busy && equipment.selectable, modifier = Modifier.fillMaxWidth()) {
+    var showEquipmentDetails by remember(equipment.id) { mutableStateOf(false) }
+    OutlinedCard(onClick = onSelect, enabled = access.canNavigate && equipment.selectable, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = selected, onClick = null, enabled = !busy && equipment.selectable)
+                RadioButton(selected = selected, onClick = null, enabled = access.canNavigate && equipment.selectable)
                 Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     EquipmentNameText(equipment.name, originalName = equipment.originalEquipmentName,
                         style = MaterialTheme.typography.titleMedium)
@@ -177,7 +178,7 @@ private fun ItemWorldEquipmentCard(
                     }
                 }
                 equipment.unavailableReason?.let { Text(messageText(it), color = MaterialTheme.colorScheme.error) }
-                StartBattleButton(equipment.start, busy, stringResource(R.string.game_ui_enter_itemworld), onStartBattle)
+                StartBattleButton(equipment.start, !access.canSubmit, stringResource(R.string.game_ui_enter_itemworld), onStartBattle)
             }
         }
     }

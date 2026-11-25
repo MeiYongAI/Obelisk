@@ -40,7 +40,8 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun MarketScreen(
     page: BazaarSectionsPage,
-    busy: Boolean,
+    access: PageInteraction,
+    onBack: (NativeAction) -> Unit,
     onAction: (NativeAction) -> Unit,
     onDraftChanged: (Boolean) -> Unit = {},
     responseRevision: Int = 0,
@@ -49,7 +50,7 @@ internal fun MarketScreen(
     val pageKey = page.forms.firstOrNull()?.actions?.firstOrNull()?.url?.toString()
         ?: page.marketLinks?.views?.firstOrNull { it.selected }?.action?.url?.toString().orEmpty()
     savedPages.SaveableStateProvider(pageKey) {
-        MarketPage(page, busy, onAction, onDraftChanged, responseRevision)
+        MarketPage(page, access, onBack, onAction, onDraftChanged, responseRevision)
     }
 }
 
@@ -57,11 +58,13 @@ internal fun MarketScreen(
 @Composable
 private fun MarketPage(
     page: BazaarSectionsPage,
-    busy: Boolean,
+    access: PageInteraction,
+    onBack: (NativeAction) -> Unit,
     onAction: (NativeAction) -> Unit,
     onDraftChanged: (Boolean) -> Unit,
     responseRevision: Int,
 ) {
+    val busy = !access.canSubmit
     val translator = LocalMessageTranslator.current
     val links = page.marketLinks
     val itemName = links?.currentItem.orEmpty()
@@ -83,8 +86,8 @@ private fun MarketPage(
     SideEffect { if (savedDraft !== draft) savedDraft = draft }
     val values = draft.values
     var query by draft.query
-    var dialog by rememberSaveable(snapshot, responseRevision) { mutableStateOf<String?>(null) }
-    var recordKey by remember(snapshot, responseRevision) { mutableStateOf<String?>(null) }
+    var dialog by rememberSaveable(snapshot) { mutableStateOf<String?>(null) }
+    var recordKey by remember(snapshot) { mutableStateOf<String?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
     val changed = values.toMap() != initialValues
     LaunchedEffect(snapshot, changed, responseRevision) { onDraftChanged(changed) }
@@ -126,7 +129,7 @@ private fun MarketPage(
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (detail) {
                 links?.backToList?.let { back ->
-                    IconButton(onClick = { onAction(back.action) }, enabled = !busy) {
+                    IconButton(onClick = { onBack(back.action) }, enabled = access.allows(back.action)) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.game_ui_market_return_to_list))
                     }
                 }
@@ -149,7 +152,7 @@ private fun MarketPage(
                         links?.items?.forEach { link ->
                             DropdownMenuItem(
                                 text = { Text(stringResource(if (link.label == "Previous item") R.string.game_ui_market_previous_item else R.string.game_ui_market_next_item)) },
-                                onClick = { menuOpen = false; onAction(link.action) }, enabled = !busy,
+                                onClick = { menuOpen = false; onAction(link.action) }, enabled = access.allows(link.action),
                             )
                         }
                         if (rules.isNotEmpty()) DropdownMenuItem(text = { Text(stringResource(R.string.game_ui_market_rules)) },
@@ -158,7 +161,7 @@ private fun MarketPage(
                 }
             } else {
                 Box(Modifier.weight(1f)) {
-                    TextButton(onClick = { menuOpen = true }, enabled = !busy && !links?.views.isNullOrEmpty(),
+                    TextButton(onClick = { menuOpen = true }, enabled = access.canNavigate && !links?.views.isNullOrEmpty(),
                         contentPadding = PaddingValues(horizontal = 8.dp), modifier = Modifier.heightIn(min = 48.dp)) {
                         Text(marketViewLabel(currentView?.label.orEmpty()), Modifier.weight(1f, fill = false),
                             style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -168,12 +171,12 @@ private fun MarketPage(
                         links?.views?.forEach { link ->
                             DropdownMenuItem(text = { Text(marketViewLabel(link.label)) },
                                 trailingIcon = { if (link.selected) Icon(Icons.Default.Check, null) },
-                                onClick = { menuOpen = false; if (!link.selected) onAction(link.action) }, enabled = !busy)
+                                onClick = { menuOpen = false; if (!link.selected) onAction(link.action) }, enabled = access.allows(link.action))
                         }
                     }
                 }
                 if (!links?.filters.isNullOrEmpty() || stockFilter != null) FilterChip(
-                    selected = stockFiltered, onClick = { dialog = "filters" }, enabled = !busy,
+                    selected = stockFiltered, onClick = { dialog = "filters" }, enabled = access.canNavigate,
                     modifier = Modifier.widthIn(max = if (query.isBlank()) 152.dp else 116.dp),
                     label = { Text(messageText(currentCategory?.label ?: stringResource(R.string.game_ui_filter)), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     leadingIcon = { Icon(Icons.Default.FilterList, null, Modifier.size(18.dp)) },
@@ -227,7 +230,7 @@ private fun MarketPage(
                 }
                 items(entries, key = { "$index/${it.key}" }) { entry ->
                     when {
-                        group.title == "Items" -> MarketItemRow(entry, busy) { entry.action?.let(onAction) }
+                        group.title == "Items" -> MarketItemRow(entry, !access.allows(entry.action)) { entry.action?.let(onAction) }
                         orderBook -> MarketOfferRow(entry, busy) { useOffer(entry) }
                         else -> MarketRecordRow(entry, group.title) { recordKey = entry.key }
                     }
@@ -236,13 +239,13 @@ private fun MarketPage(
             if (!links?.pages.isNullOrEmpty()) item(key = "page-links") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     links?.pages?.forEach { link ->
-                        TextButton(onClick = { onAction(link.action) }, enabled = !busy) { Text(messageText(link.label)) }
+                        TextButton(onClick = { onAction(link.action) }, enabled = access.allows(link.action)) { Text(messageText(link.label)) }
                     }
                 }
             }
             if (page.actions.isNotEmpty()) item(key = "page-actions") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    page.actions.forEach { action -> TextButton(onClick = { onAction(action) }, enabled = !busy) { Text(messageText(action.label)) } }
+                    page.actions.forEach { action -> TextButton(onClick = { onAction(action) }, enabled = access.allows(action)) { Text(messageText(action.label)) } }
                 }
             }
         }
@@ -262,7 +265,7 @@ private fun MarketPage(
         "search" -> BazaarSearchDialog(query, onDismiss = { dialog = null }, onSearch = { term ->
             scope.launch { listState.scrollToItem(0); query = term; dialog = null }
         })
-        "filters" -> MarketFilterDialog(links?.filters.orEmpty(), stockFilter, busy,
+        "filters" -> MarketFilterDialog(links?.filters.orEmpty(), stockFilter, access,
             onDismiss = { dialog = null }, onApply = { dialog = null; onAction(it) })
         "rules" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text(stringResource(R.string.game_ui_market_rules)) },
             text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -282,7 +285,7 @@ private fun MarketPage(
             text = { Column(Modifier.verticalScroll(rememberScrollState())) { MarketRecordFacts(record.details) } },
             confirmButton = { TextButton(onClick = { recordKey = null }) { Text(stringResource(R.string.game_ui_close)) } },
             dismissButton = { record.action?.let { action ->
-                TextButton(onClick = { recordKey = null; onAction(action) }, enabled = !busy) { Text(stringResource(R.string.game_ui_market_open_record)) }
+                TextButton(onClick = { recordKey = null; onAction(action) }, enabled = access.allows(action)) { Text(stringResource(R.string.game_ui_market_open_record)) }
             } })
     }
 }
@@ -425,10 +428,11 @@ private fun marketRecordLabel(label: String): String = when (label) {
 private fun MarketFilterDialog(
     categories: List<BazaarSectionsLink>,
     form: BazaarSectionsForm?,
-    busy: Boolean,
+    access: PageInteraction,
     onDismiss: () -> Unit,
     onApply: (NativeAction) -> Unit,
 ) {
+    val filterEnabled = access.allows(form?.actions?.firstOrNull())
     var selectedCategory by remember { mutableIntStateOf(categories.indexOfFirst { it.selected }.coerceAtLeast(0)) }
     val fields = remember(form) { mutableStateMapOf<String, String>().apply {
         form?.fields?.forEach { put(it.key, if (it.kind == "checkbox" && !it.checked) "" else it.value) }
@@ -438,10 +442,10 @@ private fun MarketFilterDialog(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 categories.forEachIndexed { index, link ->
                     FilterChip(selected = index == selectedCategory, onClick = { selectedCategory = index },
-                        label = { Text(messageText(link.label)) }, enabled = !busy)
+                        label = { Text(messageText(link.label)) }, enabled = access.allows(link.action))
                 }
             }
-            form?.fields?.forEach { field -> BazaarField(field, fields[field.key].orEmpty(), !busy) { fields[field.key] = it } }
+            form?.fields?.forEach { field -> BazaarField(field, fields[field.key].orEmpty(), filterEnabled) { fields[field.key] = it } }
         }
     }, confirmButton = {
         TextButton(onClick = {
@@ -456,7 +460,7 @@ private fun MarketFilterDialog(
                 category.action.copy(url = url.build())
             } else filtered ?: category?.action
             if (action != null) onApply(action) else onDismiss()
-        }, enabled = !busy) { Text(stringResource(R.string.game_ui_apply)) }
+        }, enabled = if (form != null) filterEnabled else access.canNavigate) { Text(stringResource(R.string.game_ui_apply)) }
     }, dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.game_ui_cancel)) } })
 }
 

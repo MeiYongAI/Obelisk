@@ -39,15 +39,16 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-internal fun ItemShopScreen(page: BazaarSectionsPage, busy: Boolean, responseRevision: Int,
+internal fun ItemShopScreen(page: BazaarSectionsPage, access: PageInteraction,
     onAction: (NativeAction) -> Unit) {
+    val busy = !access.canSubmit
     val filter = page.links.firstOrNull { it.selected } ?: page.links.firstOrNull()
     val filterKey = filter?.action?.url?.toString().orEmpty()
     var buying by rememberSaveable { mutableStateOf(true) }
     var filtersOpen by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
     var query by rememberSaveable(filterKey) { mutableStateOf("") }
-    var selectedKey by rememberSaveable(responseRevision, filterKey) { mutableStateOf<String?>(null) }
+    var selectedKey by rememberSaveable(buying, filterKey) { mutableStateOf<String?>(null) }
     val listStates = rememberSaveableStateHolder()
     val group = page.sections.firstOrNull { it.title == if (buying) "Item Shop" else "Your Inventory" }
     val entries = group?.entries.orEmpty()
@@ -62,7 +63,7 @@ internal fun ItemShopScreen(page: BazaarSectionsPage, busy: Boolean, responseRev
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (filter != null) TextButton(onClick = { filtersOpen = true }, enabled = !busy,
+            if (filter != null) TextButton(onClick = { filtersOpen = true }, enabled = access.canNavigate,
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp)) {
                 Text(messageText(filter.label), Modifier.weight(1f), textAlign = TextAlign.Start,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -102,14 +103,14 @@ internal fun ItemShopScreen(page: BazaarSectionsPage, busy: Boolean, responseRev
                     }
                 }
                 items(visible, key = { it.key }) { entry ->
-                    ItemShopRow(entry, buying, busy) { selectedKey = entry.key }
+                    ItemShopRow(entry, buying, !access.canNavigate) { selectedKey = entry.key }
                 }
             }
         }
     }
     if (filtersOpen) MobileChoiceSheet(
         title = stringResource(R.string.shop_category),
-        choices = page.links.mapIndexed { index, link -> MobileChoice(index.toString(), link.label, enabled = !busy) },
+        choices = page.links.mapIndexed { index, link -> MobileChoice(index.toString(), link.label, enabled = access.allows(link.action)) },
         selectedValue = page.links.indexOf(filter).toString(), searchable = false,
         onSelect = { index -> page.links[index.toInt()].takeUnless { it.selected }?.let { query = ""; onAction(it.action) } },
         onDismiss = { filtersOpen = false },

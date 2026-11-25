@@ -122,7 +122,7 @@ internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onActio
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (page.notices.isNotEmpty()) item(key = "notices", span = { GridItemSpan(maxLineSpan) }) { AbilityNotices(page) }
                     items(familySlots, key = { it.abilitySlot!!.id }) { slot ->
-                        AbilitySlotTile(slot, enabled = !busy, onClick = { openSlot(slot) })
+                        AbilitySlotTile(slot, enabled = treeEnabled, onClick = { openSlot(slot) })
                     }
                 }
             } else {
@@ -147,7 +147,7 @@ internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onActio
     }
 
     if (treePicker) AbilityTreeSheet(if (selectedSlot == null) page.navigation else slotTrees, selectedTree,
-        if (selectedSlot == null) treeEnabled else !busy, onDismiss = { treePicker = false }, onSelect = {
+        treeEnabled, onDismiss = { treePicker = false }, onSelect = {
             directorySelection++; onTree(it)
         })
     if (upgradesOpen) EquippedUpgradeDialog(page, busy, loadTree, loadError, onRetry, onAction) { upgradesOpen = false }
@@ -183,7 +183,7 @@ internal fun AbilitiesScreen(page: CharacterSectionsPage, busy: Boolean, onActio
     }
     if (!treePicker && selectedSlot != null) AbilitySlotDialog(selectedSlot,
         tree = selectedSlot.abilitySlot?.let(page::preferredAbilityTreeFor)?.label.orEmpty(),
-        canChooseTree = slotTrees.size > 1, busy = busy, loading = loading,
+        canChooseTree = slotTrees.size > 1, treeEnabled = treeEnabled, busy = busy, loading = loading,
         onDismiss = { slotId = null }, onChooseTree = { treePicker = true },
         onAction = { slotId = null; onAction(it) })
 }
@@ -413,7 +413,7 @@ private fun AbilityTierDetails(title: String, tier: CharacterAbilityTier, showRe
 }
 
 @Composable
-private fun AbilitySlotDialog(row: CharacterSectionRow, tree: String, canChooseTree: Boolean, busy: Boolean, loading: Boolean,
+private fun AbilitySlotDialog(row: CharacterSectionRow, tree: String, canChooseTree: Boolean, treeEnabled: Boolean, busy: Boolean, loading: Boolean,
     onDismiss: () -> Unit, onChooseTree: () -> Unit, onAction: (NativeAction) -> Unit) {
     val slot = requireNotNull(row.abilitySlot)
     val form = row.form
@@ -435,7 +435,7 @@ private fun AbilitySlotDialog(row: CharacterSectionRow, tree: String, canChooseT
                         }
                     }
                     if (details) Text(messageText(row.expandedDetail), Modifier.heightIn(max = 180.dp).verticalScroll(rememberScrollState()))
-                    if (canChooseTree) OutlinedButton(onClick = onChooseTree, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                    if (canChooseTree) OutlinedButton(onClick = onChooseTree, enabled = treeEnabled, modifier = Modifier.fillMaxWidth()) {
                         Text(messageText(tree), Modifier.weight(1f))
                         Icon(Icons.Default.ExpandMore, null)
                     }

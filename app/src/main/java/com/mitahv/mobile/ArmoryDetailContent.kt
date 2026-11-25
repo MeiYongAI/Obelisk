@@ -24,10 +24,11 @@ import com.mitahv.mobile.model.*
 @Composable
 internal fun ArmoryDetailContent(
     page: BazaarSectionsPage,
-    busy: Boolean,
+    access: PageInteraction,
     responseRevision: Int,
     onAction: (NativeAction) -> Unit,
 ) {
+    val busy = !access.canSubmit
     val equipment = page.sections.firstOrNull() ?: return
     val equipmentKey = (page.forms.flatMap { it.actions } + page.actions)
         .firstNotNullOfOrNull { it.url.queryParameter("eqids[]") } ?: equipment.title
@@ -69,7 +70,7 @@ internal fun ArmoryDetailContent(
                 Icon(Icons.Default.Info, stringResource(R.string.game_ui_equipment_stats))
             }
             if (remainingForms.isNotEmpty() || menuActions.isNotEmpty()) Box {
-                IconButton(onClick = { menuOpen = true }, enabled = !busy) {
+                IconButton(onClick = { menuOpen = true }, enabled = !busy || menuActions.any(access::allows)) {
                     Icon(Icons.Default.MoreVert, stringResource(R.string.game_ui_more_actions))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
@@ -78,7 +79,7 @@ internal fun ArmoryDetailContent(
                             onClick = { menuOpen = false; operationKey = form.key })
                     }
                     menuActions.forEach { action ->
-                        DropdownMenuItem(text = { Text(messageText(action.label)) }, enabled = !busy,
+                        DropdownMenuItem(text = { Text(messageText(action.label)) }, enabled = access.allows(action),
                             onClick = { menuOpen = false; onAction(action) })
                     }
                 }
@@ -114,7 +115,7 @@ internal fun ArmoryDetailContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                     }
                     items(group.entries, key = { "other:${group.title}:${it.key}" }) { entry ->
-                        ArmoryDetailEntry(entry, busy, onAction)
+                        ArmoryDetailEntry(entry, !access.allows(entry.action), onAction)
                     }
                 }
                 when (activeTab) {
@@ -122,10 +123,10 @@ internal fun ArmoryDetailContent(
                         upgradeGroups.forEach { group ->
                             if (group.facts.isNotEmpty()) item { BazaarFacts(group.facts) }
                             if (group.emptyText.isNotBlank()) item { Text(messageText(group.emptyText)) }
-                            items(group.entries, key = { "upgrade:${it.key}" }) { entry -> ArmoryDetailEntry(entry, busy, onAction) }
+                            items(group.entries, key = { "upgrade:${it.key}" }) { entry -> ArmoryDetailEntry(entry, !access.allows(entry.action), onAction) }
                         }
                         items(itemWorldActions) { action ->
-                            OutlinedButton(onClick = { onAction(action) }, enabled = !busy,
+                            OutlinedButton(onClick = { onAction(action) }, enabled = access.allows(action),
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(messageText(action.label)) }
                         }
                     }
@@ -134,7 +135,7 @@ internal fun ArmoryDetailContent(
                             if (group.facts.isNotEmpty()) item { BazaarFacts(group.facts) }
                             if (group.emptyText.isNotBlank()) item { Text(messageText(group.emptyText)) }
                             items(group.entries, key = { "charm:${it.key}" }) { entry ->
-                                ArmoryCharmSlot(entry, busy) { action ->
+                                ArmoryCharmSlot(entry, !access.allows(entry.action)) { action ->
                                     if (charmForm != null && action.url.queryParameter("charmslot") == charmForm.armoryCharm?.slot.toString())
                                         operationKey = charmForm.key
                                     else onAction(action)
@@ -160,10 +161,10 @@ internal fun ArmoryDetailContent(
                                         }
                                     }
                                 }
-                            } else items(group.entries, key = { "roll:${it.key}" }) { entry -> ArmoryDetailEntry(entry, busy, onAction) }
+                            } else items(group.entries, key = { "roll:${it.key}" }) { entry -> ArmoryDetailEntry(entry, !access.allows(entry.action), onAction) }
                         }
                         items(fusionActions) { action ->
-                            FilledTonalButton(onClick = { onAction(action) }, enabled = !busy,
+                            FilledTonalButton(onClick = { onAction(action) }, enabled = access.allows(action),
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(messageText(action.label)) }
                         }
                     }

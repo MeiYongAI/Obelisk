@@ -35,16 +35,15 @@ internal fun characterLabel(text: String): String {
 @Composable
 internal fun CharacterSectionsScreen(
     page: CharacterSectionsPage,
-    busy: Boolean,
+    access: PageInteraction,
     onAction: (NativeAction) -> Unit,
     onDraftChanged: (Boolean) -> Unit = {},
     responseRevision: Int = 0,
 ) {
     when (page.route) {
-        HvRoute.Equipment -> EquipmentScreen(page, busy, onAction, onDraftChanged, responseRevision)
-        HvRoute.Training -> TrainingScreen(page, busy, responseRevision, onAction)
-        HvRoute.ItemInventory -> InventoryScreen(page, busy, responseRevision, onAction)
-        HvRoute.Settings -> GameSettingsScreen(page, busy, onAction, onDraftChanged, responseRevision)
+        HvRoute.Training -> TrainingScreen(page, !access.canSubmit, responseRevision, onAction)
+        HvRoute.ItemInventory -> InventoryScreen(page, access, onAction)
+        HvRoute.Settings -> GameSettingsScreen(page, access, onAction, onDraftChanged, responseRevision)
         else -> Unit
     }
 }

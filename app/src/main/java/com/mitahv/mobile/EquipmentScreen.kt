@@ -27,19 +27,21 @@ import com.mitahv.mobile.model.*
 private data class EquipmentDetail(val name: String, val text: String, val originalName: String? = null)
 
 @Composable
-internal fun EquipmentScreen(page: CharacterSectionsPage, busy: Boolean, onAction: (NativeAction) -> Unit,
+internal fun EquipmentScreen(page: CharacterSectionsPage, access: PageInteraction,
+    onBack: (NativeAction) -> Unit, onAction: (NativeAction) -> Unit,
     onDraftChanged: (Boolean) -> Unit, responseRevision: Int) {
     val slots = page.groups.firstOrNull { it.title == "Equipment Slots" }?.rows.orEmpty()
     if (page.equipmentSelection) {
-        EquipmentSelection(page, slots.firstOrNull(), busy, onAction, onDraftChanged, responseRevision)
+        EquipmentSelection(page, slots.firstOrNull(), access, onBack, onAction, onDraftChanged, responseRevision)
     } else {
-        EquipmentOverview(page, slots, busy, onAction)
+        EquipmentOverview(page, slots, access, onAction)
     }
 }
 
 @Composable
-private fun EquipmentOverview(page: CharacterSectionsPage, slots: List<CharacterSectionRow>, busy: Boolean,
+private fun EquipmentOverview(page: CharacterSectionsPage, slots: List<CharacterSectionRow>, access: PageInteraction,
     onAction: (NativeAction) -> Unit) {
+    val busy = !access.canSubmit
     var stats by rememberSaveable { mutableStateOf(false) }
     var setsOpen by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<EquipmentDetail?>(null) }
@@ -66,7 +68,8 @@ private fun EquipmentOverview(page: CharacterSectionsPage, slots: List<Character
                 items(page.notices) { EquipmentNotice(it) }
                 if (stats) items(statGroups, key = { it.title }) { EquipmentStats(it) }
                 else items(slots, key = { it.title }) { slot ->
-                    EquipmentSlot(slot, busy, onClick = slot.actions.firstOrNull()?.let { action -> { onAction(action) } },
+                    val link = slot.actions.firstOrNull { it.isPageNavigation }
+                    EquipmentSlot(slot, !access.canNavigate, onClick = link?.let { action -> { onAction(action) } },
                         onDetail = { detail = EquipmentDetail(slot.detail, slot.expandedDetail, slot.originalEquipmentName) })
                 }
             }
@@ -131,8 +134,9 @@ private fun EquipmentStats(group: CharacterSectionGroup) {
 }
 
 @Composable
-private fun EquipmentSelection(page: CharacterSectionsPage, slot: CharacterSectionRow?, busy: Boolean,
-    onAction: (NativeAction) -> Unit, onDraftChanged: (Boolean) -> Unit, responseRevision: Int) {
+private fun EquipmentSelection(page: CharacterSectionsPage, slot: CharacterSectionRow?, access: PageInteraction,
+    onBack: (NativeAction) -> Unit, onAction: (NativeAction) -> Unit, onDraftChanged: (Boolean) -> Unit, responseRevision: Int) {
+    val busy = !access.canSubmit
     val form = page.forms.firstOrNull { it.fields.any { field -> field.name == "eqids[]" } }
     val field = form?.fields?.firstOrNull { it.name == "eqids[]" }
     val initial = field?.value.orEmpty()
@@ -145,10 +149,10 @@ private fun EquipmentSelection(page: CharacterSectionsPage, slot: CharacterSecti
     val unequip = page.groups.flatMap { it.rows }.flatMap { it.actions }
         .firstOrNull { action -> action.fields.any { it == "action" to "unequip" } }
     val options = field?.options.orEmpty().filter { it.value.isNotBlank() }
-    val back = slot?.actions?.firstOrNull()
+    val back = slot?.actions?.firstOrNull { it.isPageNavigation }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (back != null) IconButton(onClick = { onAction(back) }, enabled = !busy) {
+            if (back != null) IconButton(onClick = { onBack(back) }, enabled = access.canNavigate) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.equipment_ui_back))
             }
             Text(slot?.title?.let { messageText(it) }.orEmpty(), style = MaterialTheme.typography.titleMedium)

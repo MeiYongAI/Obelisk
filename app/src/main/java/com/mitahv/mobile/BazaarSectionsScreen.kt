@@ -88,8 +88,9 @@ internal fun bazaarDraftSnapshot(page: BazaarSectionsPage, initialValues: Map<St
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAction: (NativeAction) -> Unit,
+internal fun BazaarSectionsScreen(page: BazaarSectionsPage, access: PageInteraction, onAction: (NativeAction) -> Unit,
     onDraftChanged: (Boolean) -> Unit = {}, responseRevision: Int = 0) {
+    val busy = !access.canSubmit
     val translator = LocalMessageTranslator.current
     val listState = rememberLazyListState()
     val initialValues = remember(page) { buildMap {
@@ -126,10 +127,15 @@ internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAct
     LaunchedEffect(snapshot, changed, responseRevision) { onDraftChanged(changed) }
     fun formValues(form: BazaarSectionsForm) = form.fields.associate { it.key to values["${form.key}/${it.key}"].orEmpty() }
     fun submit(action: NativeAction, form: BazaarSectionsForm?) {
-        if (!busy) onAction(if (form == null) action else form.submit(action, formValues(form)))
+        if (access.allows(action)) onAction(if (form == null) action else form.submit(action, formValues(form)))
+    }
+    fun canOpen(entry: BazaarSectionsEntry) = entry.enabled && when {
+        entry.quantity != null -> access.allows(entry.quantity.action)
+        entry.choices.isNotEmpty() -> entry.choices.any(access::allows)
+        else -> access.allows(entry.action)
     }
     fun choose(entry: BazaarSectionsEntry, groupIndex: Int) {
-        if (!entry.enabled || busy) return
+        if (!canOpen(entry)) return
         if (entry.quantity != null || entry.choices.isNotEmpty()) selected = BazaarSelection(entry.key, groupIndex)
         else entry.action?.let { submit(it, null) }
     }
@@ -143,7 +149,7 @@ internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAct
                     Text(messageText(message), Modifier.fillMaxWidth().padding(16.dp), color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
-            if (page.links.isNotEmpty()) item { BazaarPageNavigation(page, busy, onAction) }
+            if (page.links.isNotEmpty()) item { BazaarPageNavigation(page, access, onAction) }
             summaryIndex?.let { index -> item(key = "summary-$index") {
                 val group = page.sections[index]
                 MonsterStatusContent(group.title, group.facts)
@@ -155,10 +161,10 @@ internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAct
                         OutlinedButton(onClick = { operationFormKey = form.key }, enabled = !busy) { Text(messageText(form.title)) }
                     }
                     if (page.actions.isNotEmpty()) Box {
-                        IconButton(onClick = { moreOpen = true }, enabled = !busy) { Icon(Icons.Default.MoreVert, stringResource(R.string.game_ui_more_actions)) }
+                        IconButton(onClick = { moreOpen = true }, enabled = page.actions.any(access::allows)) { Icon(Icons.Default.MoreVert, stringResource(R.string.game_ui_more_actions)) }
                         DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
                             page.actions.forEach { action ->
-                                DropdownMenuItem(text = { Text(messageText(action.label)) }, enabled = !busy,
+                                DropdownMenuItem(text = { Text(messageText(action.label)) }, enabled = access.allows(action),
                                     onClick = { moreOpen = false; onAction(action) })
                             }
                         }
@@ -167,7 +173,7 @@ internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAct
             }
             if (topPageActions && page.actions.isNotEmpty()) item {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    page.actions.forEach { action -> FilledTonalButton(onClick = { onAction(action) }, enabled = !busy) { Text(messageText(action.label)) } }
+                    page.actions.forEach { action -> FilledTonalButton(onClick = { onAction(action) }, enabled = access.allows(action)) { Text(messageText(action.label)) } }
                 }
             }
             if (showSearch) item {
@@ -197,7 +203,7 @@ internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAct
                         }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             form.actions.forEach { action ->
-                                Button(onClick = { submit(action, form) }, enabled = !busy && form.validationError(action, entered) == null) { Text(messageText(action.label)) }
+                                Button(onClick = { submit(action, form) }, enabled = access.allows(action) && form.validationError(action, entered) == null) { Text(messageText(action.label)) }
                             }
                         }
                         HorizontalDivider(Modifier.padding(top = 8.dp))
@@ -227,24 +233,24 @@ internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAct
                 }
                 items(entries, key = { "$groupIndex/${it.key}" }) { entry ->
                     if (page.route == HvRoute.MonsterLab && entry.key.startsWith("monster-")) {
-                        Surface(onClick = { choose(entry, groupIndex = groupIndex) }, enabled = !busy && entry.enabled,
+                        Surface(onClick = { choose(entry, groupIndex = groupIndex) }, enabled = canOpen(entry),
                             shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow) {
                             Box(Modifier.padding(16.dp)) { MonsterStatusContent(entry.title, entry.details) }
                         }
                     }
-                    else BazaarEntry(entry, busy, preserveTitle = entry.hasUserTitle(page.route), onClick = { choose(entry, groupIndex = groupIndex) })
+                    else BazaarEntry(entry, !canOpen(entry), preserveTitle = entry.hasUserTitle(page.route), onClick = { choose(entry, groupIndex = groupIndex) })
                 }
             }
             if (page.actions.isNotEmpty() && !topPageActions && !menuPageActions) item {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    page.actions.forEach { action -> FilledTonalButton(onClick = { onAction(action) }, enabled = !busy) { Text(messageText(action.label)) } }
+                    page.actions.forEach { action -> FilledTonalButton(onClick = { onAction(action) }, enabled = access.allows(action)) { Text(messageText(action.label)) } }
                 }
             }
         }
         ticketEntry?.let { entry ->
             Surface(tonalElevation = 3.dp) {
                 Button(onClick = { choose(entry, groupIndex = page.sections.indexOfFirst { entry in it.entries }) },
-                    enabled = !busy && entry.enabled,
+                    enabled = canOpen(entry),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 48.dp)) {
                     Text(if (entry.enabled) messageText(entry.title) else stringResource(R.string.game_ui_lottery_insufficient_gp))
                 }
@@ -269,7 +275,7 @@ internal fun BazaarSectionsScreen(page: BazaarSectionsPage, busy: Boolean, onAct
             }, text = {
                 LazyColumn(Modifier.heightIn(max = 420.dp)) {
                     items(entry.choices) { action ->
-                        TextButton(onClick = { selected = null; submit(action, null) }, enabled = !busy && entry.enabled, modifier = Modifier.fillMaxWidth()) { Text(messageText(action.label)) }
+                        TextButton(onClick = { selected = null; submit(action, null) }, enabled = access.allows(action) && entry.enabled, modifier = Modifier.fillMaxWidth()) { Text(messageText(action.label)) }
                     }
                 }
             }, confirmButton = { TextButton(onClick = { selected = null }) { Text(stringResource(R.string.game_ui_cancel)) } })

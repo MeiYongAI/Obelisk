@@ -33,16 +33,17 @@ import com.mitahv.mobile.i18n.messageText
 import com.mitahv.mobile.model.*
 
 @Composable
-internal fun InventoryScreen(page: CharacterSectionsPage, busy: Boolean, responseRevision: Int,
+internal fun InventoryScreen(page: CharacterSectionsPage, access: PageInteraction,
     onAction: (NativeAction) -> Unit) {
+    val busy = !access.canSubmit
     val rows = page.groups.flatMap { it.rows }
     val slots = page.forms.filter { it.inventorySlot != null }
     val families = slots.map { it.inventorySlot!!.kind }.distinct()
     var showingSlots by rememberSaveable { mutableStateOf(false) }
     var family by rememberSaveable { mutableStateOf(CharacterInventoryKind.General) }
     val currentFamily = family.takeIf { it in families } ?: families.firstOrNull()
-    var detailId by rememberSaveable(responseRevision) { mutableStateOf<String?>(null) }
-    var slotId by rememberSaveable(responseRevision) { mutableStateOf<String?>(null) }
+    var detailId by rememberSaveable { mutableStateOf<String?>(null) }
+    var slotId by rememberSaveable { mutableStateOf<String?>(null) }
     val listStates = rememberSaveableStateHolder()
 
     Column(Modifier.fillMaxSize()) {
@@ -71,7 +72,7 @@ internal fun InventoryScreen(page: CharacterSectionsPage, busy: Boolean, respons
                         InventoryEmpty(R.string.game_ui_no_slots)
                     }
                     items(visibleSlots, key = { it.inventorySlot!!.id }) { slot ->
-                        InventorySlotTile(slot, busy) { slotId = slot.inventorySlot!!.id }
+                        InventorySlotTile(slot, !access.canNavigate) { slotId = slot.inventorySlot!!.id }
                     }
                 }
             } else LazyColumn(Modifier.weight(1f).fillMaxWidth(),

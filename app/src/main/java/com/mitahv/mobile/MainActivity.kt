@@ -146,13 +146,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val cookieJar = PersistentCookieJar(this)
-        setContent { ProvideLocalizedText { ObeliskApp(cookieJar, window) } }
+        val httpClient = OkHttpClient.Builder().eventListenerFactory { HvNetworkTiming(it.request()) }.build()
+        setContent { ProvideLocalizedText { ObeliskApp(cookieJar, window, httpClient) } }
     }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
+internal fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window, httpClient: OkHttpClient) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val configuration = LocalConfiguration.current
@@ -180,7 +181,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
     var activeAccountId by remember { mutableStateOf(cookieJar.memberId()) }
     val hasSession = activeAccountId != null
-    val httpClient = remember { OkHttpClient.Builder().eventListenerFactory { HvNetworkTiming(it.request()) }.build() }
     val pageCache = remember(activeAccountId, site) {
         val cacheKey = MessageDigest.getInstance("SHA-256")
             .digest("${activeAccountId.orEmpty()}|${site.name}".toByteArray(Charsets.UTF_8))
@@ -228,7 +228,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var pageLoading by remember { mutableStateOf(false) }
     var pageSource by remember { mutableStateOf<LoadedPageSource?>(null) }
     var loadSerial by remember { mutableStateOf(0) }
-    var pendingForwardUrl by remember { mutableStateOf<String?>(null) }
     var characterActionBusy by remember { mutableStateOf(false) }
     var challengeBusy by remember { mutableStateOf(false) }
     var characterActionError by remember { mutableStateOf<String?>(null) }
@@ -341,7 +340,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         val requestWorld = world
         val requestRoute = route
         val requestedUrl = currentUrl.toHttpUrl()
-        val previousUrl = pendingForwardUrl
         loadSerial++
         val requestSerial = loadSerial
         pageSource = null
@@ -356,9 +354,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             val response = client.fetchPage(requestWorld, requestedUrl, forceNetwork)
             requestState = acceptPage(requestRoute, requestWorld, response.html, response.url, requestSerial = requestSerial)
             if (route != requestRoute) nativeBackStack = emptyList()
-            else if (previousUrl != null && previousUrl != response.url.toString()) {
-                nativeBackStack = (nativeBackStack + previousUrl).takeLast(32)
-            }
             nativeNeedsRefresh = false
             nativeSubmissionUnconfirmed = false
             staminaNeedsRefresh = false
@@ -376,7 +371,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             }
         } finally {
             if (requestSerial == loadSerial) {
-                pendingForwardUrl = null
                 pageLoading = false
             }
         }
@@ -390,7 +384,12 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         forceRefresh = false
         loadSerial++
         pageSource = null
-        pendingForwardUrl = forwardFrom
+        if (forwardFrom != null) {
+            // Only pages the user has actually seen belong in history. Superseded reads may still be pending.
+            val path = if (nativeBackStack.lastOrNull() == forwardFrom) nativeBackStack else nativeBackStack + forwardFrom
+            val ancestor = path.indexOfLast { it == url.toString() }
+            nativeBackStack = if (ancestor >= 0) path.take(ancestor) else path.takeLast(32)
+        }
         pageLoading = true
         nativeError = null
         characterActionError = null
@@ -411,20 +410,37 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         retryNonce++
     }
 
+    fun pageInteraction(): PageInteraction {
+        val ready = route == displayedRoute && !nativeBusy && !nativeSubmissionUnconfirmed &&
+            !staminaBusy && !characterActionBusy && !challengeBusy
+        return PageInteraction(canNavigate = ready && !battleSessionActive, canSubmit = ready && !pageLoading && !nativeNeedsRefresh)
+    }
+
+    fun returnToPage(action: NativeAction) {
+        if (!action.isPageNavigation || !pageInteraction().canNavigate) return
+        val target = world.urlAtSite(action.url, site)
+        // The market's root and its explicit browseitems URL show the same list.
+        val implicitList = if (route == HvRoute.Market && target.queryParameter("screen") == "browseitems")
+            target.newBuilder().removeAllQueryParameters("screen").build().toString() else null
+        val ancestor = nativeBackStack.indexOfLast { it == target.toString() || it == implicitList }
+        val previous = nativeBackStack.getOrNull(ancestor)?.toHttpUrl() ?: target
+        nativeBackStack = nativeBackStack.take(ancestor.coerceAtLeast(0))
+        navigatePage(route, previous)
+    }
+
     fun selectAbilityTree(id: String) {
-        if (route != HvRoute.Abilities || displayedRoute != route || nativeBusy || characterActionBusy ||
-            challengeBusy || staminaBusy || nativeNeedsRefresh || nativeSubmissionUnconfirmed) return
+        if (route != HvRoute.Abilities || !pageInteraction().canNavigate) return
         val page = (requestState as? RequestState.CharacterSectionReady)?.page ?: return
         val link = page.navigation.singleOrNull { it.abilityTreeId == id } ?: return
         val url = if (link.selected) displayedUrl.toHttpUrl() else link.action?.takeIf { it.method == "GET" }?.url ?: return
         if (link.selected && !pageLoading) return
-        navigatePage(route, world.urlAtSite(url, site), pendingForwardUrl ?: displayedUrl)
+        navigatePage(route, world.urlAtSite(url, site), displayedUrl)
     }
 
     fun executeNativeAction(action: NativeAction) {
-        if (pageLoading || nativeBusy || nativeNeedsRefresh || nativeSubmissionUnconfirmed || staminaBusy || characterActionBusy || challengeBusy) return
+        if (!pageInteraction().allows(action)) return
         if (action.method == "GET") {
-            navigatePage(route, world.urlAtSite(action.url, site), currentUrl)
+            navigatePage(route, world.urlAtSite(action.url, site), displayedUrl)
             return
         }
         loadSerial++
@@ -531,7 +547,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         loadSerial++
         pageSource = null
         pageSnapshots.clear()
-        pendingForwardUrl = null
         pageLoading = false
         requestState = RequestState.Idle
         navigation = null
@@ -552,7 +567,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         if (pageLoading || nativeBusy || challengeBusy || staminaBusy || characterActionBusy || requestState is RequestState.BattleBusy) return
         loadSerial++
         pageSource = null
-        pendingForwardUrl = null
         forceRefresh = true
         pageLoading = true
         retryNonce++
@@ -749,7 +763,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     loadSerial++
                     pageSource = null
                     pageSnapshots.clear()
-                    pendingForwardUrl = null
                     requestState = RequestState.Idle
                     navigation = null
                 },
@@ -810,9 +823,9 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     navigation = navigation,
                     nativeBusy = nativeBusy,
                     nativeError = nativeError,
-                    nativeNeedsRefresh = nativeNeedsRefresh,
-                    nativeSubmissionUnconfirmed = nativeSubmissionUnconfirmed,
+                    access = pageInteraction(),
                     onNativeAction = ::executeNativeAction,
+                    onReturnToPage = ::returnToPage,
                     onAbilityTree = ::selectAbilityTree,
                     pendingAbilityTree = if (route == HvRoute.Abilities && pageLoading)
                         currentUrl.toHttpUrl().queryParameter("tree") ?: "general" else null,
@@ -831,7 +844,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     onWorldSelected = {
                         loadSerial++
                         pageSource = null
-                        pendingForwardUrl = null
                         requestState = RequestState.Loading
                         world = it
                         if (!route.isAvailableIn(it)) route = route.category.defaultRoute
@@ -995,9 +1007,9 @@ private fun GameShell(
     navigation: HvNavigation?,
     nativeBusy: Boolean,
     nativeError: String?,
-    nativeNeedsRefresh: Boolean,
-    nativeSubmissionUnconfirmed: Boolean,
+    access: PageInteraction,
     onNativeAction: (NativeAction) -> Unit,
+    onReturnToPage: (NativeAction) -> Unit,
     onAbilityTree: (String) -> Unit,
     pendingAbilityTree: String?,
     loadAbilityTree: suspend (HttpUrl) -> CharacterSectionsPage,
@@ -1038,7 +1050,8 @@ private fun GameShell(
     // of getting stuck behind the error state.
     val navigationEnabled = !characterActionBusy && !challengeBusy && !staminaBusy &&
         !nativeBusy
-    val contentEnabled = navigationEnabled && !pageLoading && !nativeNeedsRefresh && !nativeSubmissionUnconfirmed
+    val contentEnabled = access.canSubmit
+    val canGoBack = navigationEnabled && (!pageLoading || access.canNavigate)
     val stamina = navigation?.stamina
     fun pages(section: HvSection) = navigation?.routes?.filter { it.category == section }
         ?: HvRoute.pages(section, world)
@@ -1047,9 +1060,12 @@ private fun GameShell(
         if (characterHasDraft) pendingNavigation = action else action()
     }
     fun nativeAction(action: NativeAction) {
-        if (!contentEnabled) return
-        if (action.method == "GET") navigate { onNativeAction(action) }
+        if (!access.allows(action)) return
+        if (action.isPageNavigation) navigate { onNativeAction(action) }
         else if (action.confirmation != null) pendingNativeAction = action else onNativeAction(action)
+    }
+    fun nativeBack(fallback: NativeAction) {
+        if (access.canNavigate) navigate { if (hasNativeBack) onNativeBack() else onReturnToPage(fallback) }
     }
     pendingNativeAction?.let { action ->
         var checked by remember(action) { mutableStateOf<Set<Int>>(emptySet()) }
@@ -1076,8 +1092,8 @@ private fun GameShell(
             dismissButton = { TextButton(onClick = { pendingNativeAction = null }) { Text(stringResource(R.string.app_cancel)) } },
         )
     }
-    BackHandler(enabled = !navigationEnabled || pageLoading) { }
-    BackHandler(enabled = navigationEnabled && !pageLoading && (hasNativeBack || route != route.category.defaultRoute) &&
+    BackHandler(enabled = !canGoBack) { }
+    BackHandler(enabled = canGoBack && (hasNativeBack || route != route.category.defaultRoute) &&
         menuSection == null && !staminaOpen) {
         navigate { if (hasNativeBack) onNativeBack() else onRouteSelected(route.category.defaultRoute) }
     }
@@ -1148,7 +1164,7 @@ private fun GameShell(
                         ) { Icon(Icons.Filled.Refresh, stringResource(R.string.app_refresh_page)) }
                     }
                     IconButton(onClick = { navigate(onSettings) },
-                        enabled = navigationEnabled && !pageLoading && state !is RequestState.Loading) {
+                        enabled = access.canNavigate && state !is RequestState.Loading) {
                         Icon(Icons.Filled.Settings, stringResource(R.string.app_settings))
                     }
                     if (compactMarketHeader) Box {
@@ -1252,33 +1268,36 @@ private fun GameShell(
                         onStartChallenge = onStartChallenge,
                     )
                     is RequestState.BattleReady, is RequestState.BattleBusy, is RequestState.RiddleReady -> Unit
-                    is RequestState.CharacterSectionReady -> if (state.page.route == HvRoute.Abilities) {
-                        AbilitiesScreen(state.page, !contentEnabled, ::nativeAction, pageLoading,
-                            treeEnabled = navigationEnabled && selectedRoute == HvRoute.Abilities && !nativeNeedsRefresh && !nativeSubmissionUnconfirmed,
+                    is RequestState.CharacterSectionReady -> when (state.page.route) {
+                        HvRoute.Equipment -> EquipmentScreen(state.page, access, onBack = ::nativeBack,
+                            onAction = ::nativeAction, onDraftChanged = { characterHasDraft = it }, responseRevision = characterRevision)
+                        HvRoute.Abilities -> AbilitiesScreen(state.page, !contentEnabled, ::nativeAction, pageLoading,
+                            treeEnabled = access.canNavigate,
                             pendingTree = pendingAbilityTree, onTree = { navigate { onAbilityTree(it) } }, loadTree = loadAbilityTree,
                             loadError = nativeError, onRetry = { navigate(onRetry) })
-                    } else CharacterSectionsScreen(state.page,
-                        busy = !contentEnabled, onAction = ::nativeAction,
-                        onDraftChanged = { characterHasDraft = it }, responseRevision = characterRevision)
+                        else -> CharacterSectionsScreen(state.page,
+                            access = access, onAction = ::nativeAction,
+                            onDraftChanged = { characterHasDraft = it }, responseRevision = characterRevision)
+                    }
                     is RequestState.BazaarSectionReady -> {
                         if (state.page.route == HvRoute.Bazaar) ItemShopScreen(state.page,
-                            busy = !contentEnabled, onAction = ::nativeAction, responseRevision = characterRevision)
+                            access = access, onAction = ::nativeAction)
                         else if (state.page.route == HvRoute.MoogleMail) MailScreen(state.page,
-                            busy = !contentEnabled, onAction = ::nativeAction, responseRevision = characterRevision,
-                            onBack = { fallback -> navigate { if (hasNativeBack) onNativeBack() else onNativeAction(fallback) } },
+                            access = access, onAction = ::nativeAction, responseRevision = characterRevision,
+                            onBack = ::nativeBack,
                             onDraftChanged = { characterHasDraft = it })
                         else if (state.page.route == HvRoute.Armory) ArmoryScreen(state.page,
-                            busy = !contentEnabled, onAction = ::nativeAction, responseRevision = characterRevision,
-                            onBack = { fallback -> navigate { if (hasNativeBack) onNativeBack() else onNativeAction(fallback) } })
-                        else if (state.page.route == HvRoute.Market) MarketScreen(state.page,
-                            busy = !contentEnabled, onAction = ::nativeAction,
+                            access = access, onAction = ::nativeAction, responseRevision = characterRevision,
+                            onBack = ::nativeBack)
+                        else if (state.page.route == HvRoute.Market) MarketScreen(state.page, onBack = { back -> navigate { onReturnToPage(back) } },
+                            access = access, onAction = ::nativeAction,
                             onDraftChanged = { characterHasDraft = it }, responseRevision = characterRevision)
                         else BazaarSectionsScreen(state.page,
-                            busy = !contentEnabled, onAction = ::nativeAction,
+                            access = access, onAction = ::nativeAction,
                             onDraftChanged = { characterHasDraft = it }, responseRevision = characterRevision)
                     }
                     is RequestState.BattleModeReady -> BattleModesScreen(state.page,
-                        busy = !contentEnabled, onAction = ::nativeAction, onStartBattle = onStartBattleMode,
+                        access = access, onAction = ::nativeAction, onStartBattle = onStartBattleMode,
                         responseRevision = characterRevision)
                     RequestState.Idle -> Unit
                 }
