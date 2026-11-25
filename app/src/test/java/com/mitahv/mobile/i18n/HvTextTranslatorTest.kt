@@ -46,6 +46,19 @@ class HvTextTranslatorTest {
         assertSame(page("Bazaar", "am"), page("Bazaar", "am"))
     }
 
+    @Test fun fragmentMatchingKeepsLongestPhrasesBoundariesAndWhitespace() {
+        val local = HvTextTranslator("""{"groups":[{"rules":[
+            {"text":"Fire","value":"F"},{"text":"Fire Shield","value":"FS"},
+            {"text":" of Ice","value":"+I"},{"text":"[Ice]","value":"IC"},
+            {"text":"❌ the ","value":"X"},{"text":"Level ","value":"L"},
+            {"text":"Anti-","value":"A"},{"text":"Anti-Block","value":"AB"}
+        ]}]}""")
+        assertEquals("FS+I / IC", local.translate("FIRE\tShield   of Ice / [Ice]"))
+        assertEquals("fire-proof _fire fire2 F", local.translate("fire-proof _fire fire2 Fire"))
+        assertEquals("XL7", local.translate("❌ the Level   7"))
+        assertEquals("AB ABlock-ext", local.translate("Anti-Block Anti-Block-ext"))
+    }
+
     @Test fun equipmentUsesPlainSourceTermsWhileOriginalNamesKeepTheirSymbols() {
         val equipment = page("Character", "eq")
         val cases = mapOf(

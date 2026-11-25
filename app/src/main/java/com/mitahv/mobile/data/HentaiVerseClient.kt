@@ -59,6 +59,10 @@ internal class HentaiVerseClient(
         .cache(scriptCache)
         .addNetworkInterceptor(HvScriptCaches.cookieVaryInterceptor)
         .build()
+    // Normal page navigation keeps its HTTP cache and connection pool, but never queues behind assets.
+    private val pageClient = client.newBuilder()
+        .dispatcher(Dispatcher(client.dispatcher.executorService))
+        .build()
     // A burst of same-host icons or dictionaries can occupy every normal dispatcher slot.
     // Keep actions and authoritative battle refreshes off that queue, reusing the same connections.
     private val interactiveClient = client.newBuilder()
@@ -235,7 +239,7 @@ internal class HentaiVerseClient(
         val transport = when {
             isMutation -> mutationClient
             routed.cacheControl.noCache -> interactiveClient
-            else -> client
+            else -> pageClient
         }
         return transport.newCall(routed).awaitBody { response ->
             if (!response.isSuccessful) throw HvHttpException(response.code)

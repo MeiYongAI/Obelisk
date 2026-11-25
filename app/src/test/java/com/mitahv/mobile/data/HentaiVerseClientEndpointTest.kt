@@ -65,7 +65,7 @@ class HentaiVerseClientEndpointTest {
         assertTrue(refresh.cacheControl.noCache)
     }
 
-    @Test fun battleActionAndNextRoundGetProceedWhileSameHostImagesAreStillPending() = runBlocking {
+    @Test fun foregroundPagesAndBattleActionsProceedWhileSameHostImagesAreStillPending() = runBlocking {
         val world = HvWorld.Persistent
         val url = HvRoute.Battle.url(world)
         val imageSlots = CountDownLatch(5)
@@ -85,6 +85,10 @@ class HentaiVerseClientEndpointTest {
                     assertTrue(request.cacheControl.noStore)
                     reply.body("{}".toResponseBody())
                 }
+                request.url == HvRoute.Equipment.url(world) -> {
+                    assertFalse(request.cacheControl.noCache)
+                    reply.body("<html>Equipment</html>".toResponseBody())
+                }
                 else -> {
                     assertEquals(url, request.url)
                     assertTrue(request.cacheControl.noCache)
@@ -100,6 +104,7 @@ class HentaiVerseClientEndpointTest {
         }
         try {
             assertTrue(imageSlots.await(4, TimeUnit.SECONDS))
+            assertEquals("<html>Equipment</html>", client.fetchPage(world, HvRoute.Equipment.url(world)).html)
             client.submitBattleAction(world, url, "fixture", BattleAction("attack", 1))
             assertEquals("<html>Round 2</html>", client.fetchPage(world, url, forceNetwork = true).html)
         } finally {

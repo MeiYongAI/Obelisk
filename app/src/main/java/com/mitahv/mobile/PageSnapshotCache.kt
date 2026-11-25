@@ -3,15 +3,18 @@ package com.mitahv.mobile
 import com.mitahv.mobile.model.HvNavigation
 import com.mitahv.mobile.model.HvRoute
 import okhttp3.HttpUrl
+import okio.ByteString
 
 internal data class PageSnapshot(
     val route: HvRoute,
     val url: HttpUrl,
     val navigation: HvNavigation?,
     val state: RequestState,
+    val playerLevel: Int? = null,
+    val bodyDigest: ByteString? = null,
 )
 
-/** Session-local previews only; the fresh response remains authoritative for actions. */
+/** Session-local previews. A complete model can also serve a matching, freshly received response. */
 internal class PageSnapshotCache {
     // Keep enough recent subpages to cover normal movement between the many
     // Character and Bazaar screens without retaining parsed battle/riddle data.

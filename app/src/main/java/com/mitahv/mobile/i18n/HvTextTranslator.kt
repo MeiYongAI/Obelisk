@@ -90,7 +90,7 @@ class HvTextTranslator(json: String) {
     private class ScopedTranslator(rules: List<Rule>, private val battle: Boolean) {
         private val words: Map<String, String>
         private val singleLetterLabels: Map<String, String>
-        private val wordPattern: Regex?
+        private val phrases: Map<String, Lazy<Regex>>
         private val sentences = rules.filter { it.pattern != null }
         private val wholeSentences = sentences.filter { it.pattern!!.pattern.startsWith('^') && it.pattern.pattern.endsWith('$') }
 
@@ -107,12 +107,17 @@ class HvTextTranslator(json: String) {
             }
             singleLetterLabels = byLetter
             words = byText.mapValues { it.value.second }
-            wordPattern = byText.values.takeIf { it.isNotEmpty() }?.sortedByDescending { it.first.length }
-                ?.joinToString("|") { (text, _) ->
-                    val start = if (text.first().isAsciiWord()) "(?<![A-Za-z0-9_-])" else ""
-                    val end = if (text.last().isAsciiWord()) "(?![A-Za-z0-9_-])" else ""
-                    start + text.split(WHITESPACE).joinToString("\\s+") { Regex.escape(it) } + end
-                }?.let { Regex(it, RegexOption.IGNORE_CASE) }
+            // Only phrases starting with the current token can match. Exact labels use words directly.
+            // Compile each small set on first use, preserving the original longest-first alternatives.
+            phrases = byText.values.map { it.first }.groupBy { firstToken(it) }.mapValues { (_, terms) ->
+                lazy {
+                    Regex(terms.sortedByDescending(String::length).joinToString("|") { text ->
+                        val start = if (text.first().isAsciiWord()) "(?<![A-Za-z0-9_-])" else ""
+                        val end = if (text.last().isAsciiWord()) "(?![A-Za-z0-9_-])" else ""
+                        start + text.split(WHITESPACE).joinToString("\\s+") { Regex.escape(it) } + end
+                    }, RegexOption.IGNORE_CASE)
+                }
+            }
         }
 
         fun translate(text: String): String {
@@ -187,13 +192,26 @@ class HvTextTranslator(json: String) {
             return spans
         }
 
-        private fun translateWords(text: String): String = words[key(text)] ?: wordPattern?.replace(text) {
-            words[key(it.value)] ?: it.value
-        } ?: text
+        private fun translateWords(text: String): String {
+            words[key(text)]?.let { return it }
+            var copied = 0
+            val result = StringBuilder()
+            for (token in TOKENS.findAll(text)) {
+                if (token.range.first < copied) continue
+                val pattern = phrases[tokenKey(token.value)] ?: continue
+                val match = pattern.value.matchAt(text, token.range.first) ?: continue
+                result.append(text, copied, token.range.first).append(words[key(match.value)] ?: match.value)
+                copied = match.range.last + 1
+            }
+            return if (copied == 0) text else result.append(text, copied, text.length).toString()
+        }
     }
 
     private companion object {
         val WHITESPACE = Regex("\\s+")
+        val TOKENS = Regex("[A-Za-z0-9_]+|\\s+|(?s:.)", RegexOption.IGNORE_CASE)
+        fun tokenKey(token: String) = if (token.first().isWhitespace()) " " else token.uppercase(Locale.ROOT).lowercase(Locale.ROOT)
+        fun firstToken(text: String) = tokenKey(TOKENS.find(text)!!.value)
         val CAPTURE = Regex("\\$(\\d+)")
         val RESISTED_SUFFIX = Regex("^(.*?) \\(([\\d.]+)% resisted\\)[.!]?$")
         fun key(text: String) = text.trim().replace(WHITESPACE, " ").lowercase(Locale.ROOT)

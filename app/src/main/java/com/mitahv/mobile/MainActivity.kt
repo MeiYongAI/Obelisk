@@ -136,6 +136,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Cache
 import java.security.MessageDigest
 import okhttp3.Request
+import okio.ByteString
+import okio.ByteString.Companion.encodeUtf8
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
@@ -222,9 +224,9 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     var displayedRoute by remember(world, site, activeAccountId) { mutableStateOf(route) }
     var displayedUrl by remember(world, site, activeAccountId) { mutableStateOf(currentUrl) }
     var retryNonce by remember { mutableStateOf(0) }
+    var forceRefresh by remember(world, site, activeAccountId) { mutableStateOf(false) }
     var pageLoading by remember { mutableStateOf(false) }
     var pageSource by remember { mutableStateOf<LoadedPageSource?>(null) }
-    var responseSerial by remember { mutableStateOf(0) }
     var loadSerial by remember { mutableStateOf(0) }
     var pendingForwardUrl by remember { mutableStateOf<String?>(null) }
     var characterActionBusy by remember { mutableStateOf(false) }
@@ -251,28 +253,22 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     suspend fun acceptPage(requestRoute: HvRoute, requestWorld: HvWorld, html: String,
         url: HttpUrl = requestRoute.url(requestWorld, site),
         requestSerial: Int = loadSerial, nextRoundFrom: BattlePage? = null): RequestState {
+        val section = url.queryParameterValues("s").singleOrNull()
+        val subsection = url.queryParameterValues("ss").singleOrNull()
         val responseRoute = HvRoute.entries.firstOrNull {
-            url.queryParameterValues("s") == listOf(it.section) &&
-                url.queryParameterValues("ss") == listOf(it.subsection) && it.isAvailableIn(requestWorld)
+            it.section == section && it.subsection == subsection && it.isAvailableIn(requestWorld)
         } ?: requestRoute
         val started = SystemClock.elapsedRealtime()
+        val previous = pageSnapshots[url]
         val parsed = withContext(Dispatchers.Default) {
-            val document = Jsoup.parse(html, url.toString())
-            val parsedNavigation = HvNavigationParser.parse(document, requestWorld, responseRoute, url)
-            val scripts = if (RiddlePageParser.isRiddlePage(document)) emptyList()
-                else HvDataScriptRequests.fromPage(document, requestWorld, site, url)
-            val cachedScripts = client.cachedSupplementalScripts(scripts)
-            val parsedPage = parseLoadedPage(responseRoute, requestWorld, html, parsedNavigation != null, url, cachedScripts.orEmpty(), document)
-            val level = if (parsedPage is RequestState.BattleReady || parsedPage is RequestState.RiddleReady) null
-                else document.hvPlayerLevel()
-            ParsedPage(document, parsedNavigation, parsedPage, if (cachedScripts == null) scripts else emptyList(), level)
+            parsePageResponse(responseRoute, requestWorld, site, html, url, previous, client)
         }
-        val parsedNavigation = parsed.navigation
-        val received = parsed.state
+        val snapshot = parsed.snapshot
+        val received = snapshot.state
         val parsedPage = if (received is RequestState.BattleReady && nextRoundFrom != null)
             RequestState.BattleReady(received.page.afterRoundContinuation(nextRoundFrom)) else received
         if (requestSerial != loadSerial) throw CancellationException("Page superseded")
-        parsed.playerLevel?.let { playerLevel = it }
+        snapshot.playerLevel?.let { playerLevel = it }
         observeEquipment(parsedPage)
         if (parsedPage is RequestState.BattleReady || parsedPage is RequestState.RiddleReady) {
             pageSnapshots.clear()
@@ -287,14 +283,11 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         route = responseRoute
         displayedRoute = responseRoute
         displayedUrl = url.toString()
-        navigation = parsedNavigation
+        navigation = snapshot.navigation
         currentUrl = url.toString()
         nativeError = null
-        responseSerial++
-        pageSnapshots.put(PageSnapshot(responseRoute, url, parsedNavigation, parsedPage))
-        pageSource = if (parsed.scripts.isEmpty()) null
-            else LoadedPageSource(responseSerial, responseRoute, requestWorld, html, url, parsedNavigation != null,
-                parsed.document, parsed.scripts)
+        pageSnapshots.put(snapshot)
+        pageSource = parsed.source
         Log.d("HvLoading", "parsed ${responseRoute.name} in ${SystemClock.elapsedRealtime() - started}ms")
         return parsedPage
     }
@@ -304,7 +297,8 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             val details = client.fetchSupplementalScripts(source.scripts)
             if (details.scripts.isNotEmpty()) {
                 val enriched = withContext(Dispatchers.Default) {
-                    parseLoadedPage(source.route, source.world, source.html, source.hasNavigation, source.url, details.scripts, source.document)
+                    parseLoadedPage(source.snapshot.route, source.world, source.document, source.snapshot.navigation != null,
+                        source.snapshot.url, details.scripts)
                 }
                 if (pageSource == source) {
                     observeEquipment(enriched)
@@ -313,7 +307,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     val ready = if (before != null && enriched is RequestState.BattleReady)
                         RequestState.BattleReady(before.copy(items = enriched.page.items, itemText = enriched.page.itemText)) else enriched
                     requestState = ready
-                    pageSnapshots.put(PageSnapshot(source.route, source.url, navigation, ready))
+                    pageSnapshots.put(source.snapshot.copy(state = ready, bodyDigest = source.bodyDigest.takeIf { details.failures.isEmpty() }))
                 }
             }
             if (pageSource == source && details.failures.isNotEmpty()) {
@@ -357,7 +351,9 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         if (requestState is RequestState.Idle || requestState is RequestState.Failed) requestState = RequestState.Loading
         val started = SystemClock.elapsedRealtime()
         try {
-            val response = client.fetchPage(requestWorld, requestedUrl, forceNetwork = battleSessionActive)
+            val forceNetwork = battleSessionActive || forceRefresh
+            forceRefresh = false
+            val response = client.fetchPage(requestWorld, requestedUrl, forceNetwork)
             requestState = acceptPage(requestRoute, requestWorld, response.html, response.url, requestSerial = requestSerial)
             if (route != requestRoute) nativeBackStack = emptyList()
             else if (previousUrl != null && previousUrl != response.url.toString()) {
@@ -391,6 +387,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         // flight. Reusing that request avoids canceling it and immediately
         // issuing an identical network call.
         if (pageLoading && currentUrl == url.toString()) return
+        forceRefresh = false
         loadSerial++
         pageSource = null
         pendingForwardUrl = forwardFrom
@@ -406,7 +403,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
             navigation = preview.navigation
             requestState = preview.state
             Log.d("HvLoading", "preview ${preview.route.name} ready without network wait")
-        } else if (requestState is RequestState.Idle || requestState is RequestState.Failed) {
+        } else if (displayedRoute != destination || requestState is RequestState.Idle || requestState is RequestState.Failed) {
             displayedRoute = destination
             displayedUrl = currentUrl
             requestState = RequestState.Loading
@@ -556,6 +553,7 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         loadSerial++
         pageSource = null
         pendingForwardUrl = null
+        forceRefresh = true
         pageLoading = true
         retryNonce++
     }
@@ -697,13 +695,15 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     val detectedStyle = remember(loadout) { loadout?.style }
     val strategy = key(configLibrary) { rememberStrategy(configLibrary, detectedStyle, scene, battleSessionActive) }
 
-    val colorScheme = when {
-        dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && dark ->
-            dynamicDarkColorScheme(context)
-        dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S ->
-            dynamicLightColorScheme(context)
-        dark -> darkColorScheme()
-        else -> lightColorScheme()
+    val colorScheme = remember(context, configuration, dynamicColor, dark) {
+        when {
+            dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && dark ->
+                dynamicDarkColorScheme(context)
+            dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S ->
+                dynamicLightColorScheme(context)
+            dark -> darkColorScheme()
+            else -> lightColorScheme()
+        }
     }
 
     MaterialExpressiveTheme(
@@ -903,24 +903,34 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
     }
 }
 
-private data class LoadedPageSource(
-    val serial: Int,
-    val route: HvRoute,
+internal class LoadedPageSource(
+    val snapshot: PageSnapshot,
+    val bodyDigest: ByteString?,
     val world: HvWorld,
-    val html: String,
-    val url: HttpUrl,
-    val hasNavigation: Boolean,
     val document: Document,
     val scripts: List<Request>,
 )
 
-private data class ParsedPage(
-    val document: Document,
-    val navigation: HvNavigation?,
-    val state: RequestState,
-    val scripts: List<Request>,
-    val playerLevel: Int?,
-)
+internal class ParsedPage(val snapshot: PageSnapshot, val source: LoadedPageSource? = null)
+
+internal fun parsePageResponse(route: HvRoute, world: HvWorld, site: HvSite, html: String, url: HttpUrl,
+    previous: PageSnapshot?, client: HentaiVerseClient): ParsedPage {
+    val digest by lazy(LazyThreadSafetyMode.NONE) { html.encodeUtf8().sha256() }
+    if (previous != null && previous.url == url && previous.route == route &&
+        previous.bodyDigest != null && previous.bodyDigest == digest) return ParsedPage(previous)
+
+    val document = Jsoup.parse(html, url.toString())
+    val navigation = HvNavigationParser.parse(document, world, route, url)
+    val scripts = if (RiddlePageParser.isRiddlePage(document)) emptyList()
+        else HvDataScriptRequests.fromPage(document, world, site, url)
+    val cached = client.cachedSupplementalScripts(scripts)
+    val state = parseLoadedPage(route, world, document, navigation != null, url, cached.orEmpty())
+    val sessionPage = state is RequestState.BattleReady || state is RequestState.RiddleReady
+    val bodyDigest = if (sessionPage) null else digest
+    val snapshot = PageSnapshot(route, url, navigation, state, if (sessionPage) null else document.hvPlayerLevel(),
+        bodyDigest.takeIf { cached != null })
+    return ParsedPage(snapshot, if (cached == null) LoadedPageSource(snapshot, bodyDigest, world, document, scripts) else null)
+}
 
 internal sealed interface RequestState {
     data object Idle : RequestState
@@ -937,7 +947,11 @@ internal sealed interface RequestState {
 }
 
 internal fun parseLoadedPage(route: HvRoute, world: HvWorld, html: String, hasNavigation: Boolean,
-    currentUrl: HttpUrl, supplementalScripts: List<String>, document: Document = Jsoup.parse(html, currentUrl.toString())): RequestState = try {
+    currentUrl: HttpUrl, supplementalScripts: List<String>): RequestState =
+    parseLoadedPage(route, world, Jsoup.parse(html, currentUrl.toString()), hasNavigation, currentUrl, supplementalScripts)
+
+internal fun parseLoadedPage(route: HvRoute, world: HvWorld, document: Document, hasNavigation: Boolean,
+    currentUrl: HttpUrl, supplementalScripts: List<String>): RequestState = try {
     when {
         RiddlePageParser.isRiddlePage(document) -> RequestState.RiddleReady(RiddlePageParser.parse(document, world, currentUrl))
         BattlePageParser.isBattlePage(document) -> RequestState.BattleReady(

@@ -11,8 +11,10 @@ internal fun Document.hvPlayerLevel(): Int? = playerLevelPattern.find(selectFirs
 /** Reads both custom-font text and the bitmap fonts defined by HV's hvg.css. */
 internal fun Element?.hvText(): String {
     if (this == null) return ""
-    classGlyph(this)?.let { return it }
-    inlineGlyph(this)?.let { return it }
+    if (childrenSize() == 0) return classGlyph(this) ?: inlineGlyph(this) ?: text()
+    // Ordinary HTML text can be read directly. Only sprite text needs a mutable copy for decoding.
+    if (stream().noneMatch { node -> node.childrenSize() == 0 &&
+            (classGlyph(node) != null || inlineGlyph(node) != null) }) return text()
     val copy = clone()
     decodeBitmapText(copy)
     return copy.text()
@@ -37,8 +39,9 @@ private fun decodeBitmapText(element: Element) {
 }
 
 private fun classGlyph(element: Element): String? {
-    if (element.children().isNotEmpty() || element.ownText().isNotBlank()) return null
+    if (!element.hasAttr("class") || element.childrenSize() != 0) return null
     val name = element.classNames().firstOrNull { GLYPH_CLASS.matches(it) } ?: return null
+    if (element.ownText().isNotBlank()) return null
     return when (name[1]) {
         '2', '4' -> PUNCTUATION_GLYPHS.getOrNull(name[2].digitToInt(36))?.toString()
         '3', '5' -> if (name[2] == '9') " " else name[2].uppercaseChar().toString()
@@ -47,9 +50,10 @@ private fun classGlyph(element: Element): String? {
 }
 
 private fun inlineGlyph(element: Element): String? {
-    if (element.children().isNotEmpty() || element.ownText().isNotBlank()) return null
+    if (!element.hasAttr("style") || element.childrenSize() != 0) return null
     val style = element.attr("style")
     val height = FONT_IMAGE.find(style)?.groupValues?.get(1)?.toIntOrNull() ?: return null
+    if (element.ownText().isNotBlank()) return null
     val offset = FONT_POSITION.find(style)?.groupValues?.get(1)?.toIntOrNull() ?: return null
     if (offset > 0 || -offset % height != 0) return null
     return PUNCTUATION_GLYPHS.getOrNull(-offset / height)?.toString()
