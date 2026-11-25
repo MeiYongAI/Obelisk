@@ -49,11 +49,13 @@ class StoreLibraryTest {
         }
         assertEquals(edited, library.load(id))
         val updated = store.save(envelope("normalAttack"), newer, "update", key, local["revision"].asString)
+        assertEquals(newer["sha256"], store.savedVersions()["17"])
         assertEquals(key, updated["id"].asString)
         assertEquals("stop", JpxDocument(library.load(id, published = true)).rules(mode, "rules")[0].asJsonObject["type"].asString)
         assertEquals("normalAttack", JpxDocument(library.load(id)).rules(mode, "rules")[0].asJsonObject["type"].asString)
         assertThrows(IllegalStateException::class.java) { store.save(envelope(), source) }
         val copy = store.save(envelope(), source, "copy")
+        assertEquals(source["sha256"], store.savedVersions()["17"])
         assertNotEquals(key, copy["id"].asString)
         assertEquals(2, library.catalog().entries.size)
         assertThrows(IllegalStateException::class.java) { store.remove(key, first["revision"].asString) }
@@ -61,6 +63,8 @@ class StoreLibraryTest {
         assertNull(store.get(key))
         assertEquals(1, library.catalog().entries.size)
         assertEquals(copy["id"], store.findSource(source)!!["id"])
+        store.remove(copy["id"].asString, copy["revision"].asString)
+        assertFalse(store.savedVersions().has("17"))
     }
 
     @Test fun foreignWorldAndStatisticsAreStoredExactlyAndScopedByAccountAndWorld() {
@@ -75,6 +79,7 @@ class StoreLibraryTest {
         assertEquals(JsonParser.parseString(stats), store.get(entry["id"].asString)!!["envelope"])
         assertEquals(saved["id"], store.findSource(source)!!["id"])
         for (other in listOf(JpxLibrary(db, "account", "Isekai"), JpxLibrary(db, "another", "Persistent"))) {
+            assertEquals(0, other.store.savedVersions().size())
             assertEquals(0, other.store.list().size())
             assertNull(other.store.findSource(source))
             assertNull(other.store.get(saved["id"].asString))

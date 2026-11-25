@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -70,12 +71,21 @@ private class StoreAssets(private val context: Context) : WebViewClient() {
 /** The only document this view can load is the bundled store. The native HTTP client owns all remote calls. */
 private class StoreBridge(
     private val view: WebView, private val store: StoreLibrary, private val language: String, private val shareId: String?,
+    darkTheme: Boolean,
     private val download: (String, String) -> String,
 ) {
     private val transport = StoreTransport()
     private val preferences = view.context.getSharedPreferences("jpx-store-" + store.storageNamespace, Context.MODE_PRIVATE)
     private val requests = ConcurrentHashMap<String, Call>()
     @Volatile private var closed = false
+    @Volatile private var dark = darkTheme
+
+    fun updateTheme(value: Boolean) {
+        if (dark == value) return
+        dark = value
+        val theme = if (value) "dark" else "light"
+        view.evaluateJavascript("document.documentElement.dataset.jpxTheme = '$theme'", null)
+    }
 
     @JavascriptInterface fun call(method: String, payload: String): String = try {
         check(!closed)
@@ -84,8 +94,9 @@ private class StoreBridge(
         fun optional(name: String) = if (args.isNull(name)) null else args.getString(name)
         fun key() = args.getString("key").also { require(it.startsWith("jpx-config-") && it.length <= 160) }
         val value: Any? = when (method) {
-            "init" -> JSONObject().put("language", language).put("shareId", shareId ?: JSONObject.NULL)
+            "init" -> JSONObject().put("language", language).put("shareId", shareId ?: JSONObject.NULL).put("darkTheme", dark)
             "listProfiles" -> JSONArray(store.list().toString())
+            "savedVersions" -> JSONObject(store.savedVersions().toString())
             "getProfile" -> store.get(args.getString("id"))?.let { JSONObject(it.toString()) }
             "findSource" -> store.findSource(objectAt("source"))?.let { JSONObject(it.toString()) }
             "removeCopy" -> { store.remove(args.getString("id"), args.getString("revision")); true }
@@ -164,6 +175,8 @@ private fun WebView.finishStoreExport(ticket: String, saved: Boolean) {
 internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Unit) {
     val context = LocalContext.current
     val language = LocalConfiguration.current.locales[0].toLanguageTag()
+    val darkTheme = MaterialTheme.colorScheme.surface.luminance() < MaterialTheme.colorScheme.onSurface.luminance()
+    val textZoom = (LocalConfiguration.current.fontScale * 100).toInt()
     val scope = rememberCoroutineScope()
     var view by remember { mutableStateOf<WebView?>(null) }
     // The document picker can outlive this Activity. Only the pending file name enters saved instance state.
@@ -210,7 +223,7 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
                     CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
                     webViewClient = StoreAssets(ctx)
                     val web = this
-                    val host = StoreBridge(this, store, language, shareId) { filename, text ->
+                    val host = StoreBridge(this, store, language, shareId, darkTheme) { filename, text ->
                         val file = File.createTempFile("store-export-", ".json", ctx.cacheDir)
                         try { file.writeText(text) } catch (e: IOException) { file.delete(); throw e }
                         web.post {
@@ -235,6 +248,9 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
                     addJavascriptInterface(host, "ObeliskStore")
                     loadUrl(storeHome)
                 }
+            }, update = { web ->
+                if (web.settings.textZoom != textZoom) web.settings.textZoom = textZoom
+                (web.tag as StoreBridge).updateTheme(darkTheme)
             }, onRelease = { old ->
                 (old.tag as? StoreBridge)?.close()
                 old.tag = null

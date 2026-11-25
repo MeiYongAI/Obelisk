@@ -1,5 +1,5 @@
 :root {
-    color-scheme: light dark;
+    color-scheme: light;
     --jpx-theme-text: #241f20;
     --jpx-theme-muted: #665a5b;
     --jpx-theme-border: #cebdbe;
@@ -10,22 +10,21 @@
     --jpx-theme-accent: #913f3a;
     font-family: Roboto, system-ui, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-    :root {
-        --jpx-theme-text: #f3dddb; --jpx-theme-muted: #d7c0be; --jpx-theme-border: #655251;
-        --jpx-theme-surface: #201a19; --jpx-theme-field: #2b2221; --jpx-theme-selected: #643735;
-        --jpx-theme-hover: #392a29; --jpx-theme-accent: #ffb5ac;
-    }
+:root[data-jpx-theme=dark] {
+    color-scheme: dark;
+    --jpx-theme-text: #f3dddb; --jpx-theme-muted: #d7c0be; --jpx-theme-border: #655251;
+    --jpx-theme-surface: #201a19; --jpx-theme-field: #2b2221; --jpx-theme-selected: #643735;
+    --jpx-theme-hover: #392a29; --jpx-theme-accent: #ffb5ac;
 }
 * { box-sizing: border-box; }
 html, body, main, #panel_configStore { width: 100%; height: 100%; min-height: 0; margin: 0; }
 body { background: var(--jpx-theme-surface); color: var(--jpx-theme-text); }
-#settings-container main { display: flex; flex-direction: column; }
-#settings-container #panel_configStore { display: flex; flex: 1; padding: 8px 12px; }
+/* WebView can report a zero percentage height while its visible viewport is already measured. */
+#settings-container main.jpx-config-manager { position: fixed; inset: 0; height: auto; display: flex; flex-direction: column; }
+#settings-container #panel_configStore { display: flex; flex: 1; }
 #settings-container .jpx-store .jpx-store-stage { padding-bottom: 12px; }
 #settings-container .jpx-store :is(button, input, select, .jpx-store-link) { min-height: 44px; }
 #settings-container .jpx-store-querybar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-#settings-container .jpx-store-filters { display: flex; flex-wrap: wrap; gap: 6px; }
 #settings-container :is(.jpx-store, dialog) { font-family: Roboto, system-ui, sans-serif; }
 dialog { padding: 18px; width: min(94%, 440px); max-height: 88%; overflow: auto; border: 1px solid var(--jpx-theme-border);
     border-radius: 16px; color: var(--jpx-theme-text); background: var(--jpx-theme-surface); }
@@ -36,3 +35,118 @@ dialog button { display: block; width: 100%; min-height: 44px; border: 0; paddin
     background: transparent; text-align: start; font: inherit; }
 dialog button:active { background: var(--jpx-theme-selected); }
 #localStatus { flex: none; padding: 8px 14px; margin: 0; }
+
+/* App typography and controls also apply to the navigation outside the store panel. */
+#settings-container main.jpx-config-manager,
+#settings-container main .jpx-store { font: 0.9375rem/1.45 Roboto, system-ui, sans-serif; }
+#settings-container #storeToolbar {
+    padding: 0 16px 8px; border: 0; gap: 4px 16px; flex-wrap: wrap;
+}
+#settings-container #storeToolbar > .jpx-store-toolbar { flex: 1 1 auto; margin: 0; justify-content: space-between; }
+#settings-container #storeToolbar .jpx-store-navigation { gap: 2px; border: 0; }
+#settings-container #storeToolbar .jpx-store-navigation button,
+#settings-container #storeToolbar .jpx-store-account button {
+    min-height: 48px; min-width: 48px; padding-inline: 9px; font-size: .875rem;
+}
+#settings-container #storeToolbar .jpx-store-navigation button {
+    border: 0; border-bottom: 3px solid transparent; border-radius: 0; color: var(--jpx-theme-muted); background: transparent;
+}
+#settings-container #storeToolbar .jpx-store-navigation button[aria-pressed=true] {
+    color: var(--jpx-theme-accent); border-bottom-color: currentColor; font-weight: 650;
+}
+#settings-container #storeToolbar .jpx-store-account button { border: 0; background: transparent; }
+#settings-container #storeToolbar .jpx-store-querybar { gap: 4px; }
+#settings-container .jpx-config-manager .jpx-store-querybar input {
+    border-radius: 12px; min-height: 48px; padding-inline: 12px; font-size: 1rem;
+}
+#settings-container .jpx-config-manager :is(.jpx-store-filter-toggle,.jpx-store-refresh,.jpx-store-download) {
+    border-radius: 12px; min-height: 48px; min-width: 48px; border: 0; background: var(--jpx-theme-field);
+}
+#settings-container .jpx-config-manager button.jpx-store-filter-toggle[aria-expanded=true],
+#settings-container .jpx-config-manager button.jpx-store-download[data-state=updateAvailable] {
+    background: var(--jpx-theme-selected); color: var(--jpx-theme-accent);
+}
+#settings-container .jpx-config-manager button.jpx-store-download[data-state=saved] { background: transparent; }
+#settings-container .jpx-config-manager .jpx-store.jpx-store-browsing > .jpx-store-view-header {
+    padding: 0 16px; gap: 4px; border-bottom: 1px solid var(--jpx-theme-border);
+}
+#settings-container .jpx-config-manager .jpx-store-results { min-height: 44px; gap: 6px; }
+#settings-container .jpx-config-manager .jpx-store-results select {
+    border: 0; border-radius: 8px; min-height: 44px; background: transparent; color: var(--jpx-theme-muted); font-size: .8125rem;
+}
+#settings-container .jpx-config-manager .jpx-store-browsing > .jpx-store-stage { padding: 0 16px 12px; scrollbar-gutter: auto; }
+#settings-container .jpx-config-manager .jpx-store-row[data-store-id],
+#settings-container .jpx-config-manager .store-local-row {
+    grid-template-columns: minmax(0,1fr) auto; gap: 2px 8px; padding: 10px 0 12px;
+}
+#settings-container .jpx-config-manager .jpx-store-row .jpx-store-title {
+    grid-column: 1; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px;
+    font-size: 1rem; line-height: 1.35; font-weight: 650; color: var(--jpx-theme-text);
+    white-space: normal; border-radius: 8px;
+}
+#settings-container .jpx-store-title > span:last-child {
+    min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
+}
+.store-mark {
+    display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 9px;
+    --ground: #2e3c4a; --ink: #adcad8; --glint: #eef8ff; background: var(--ground);
+}
+.store-mark[data-mark=staff] { --ground: #372747; --ink: #c398d7; --glint: #f8dff9; }
+.store-mark[data-mark=greatsword] { --ground: #493629; --ink: #daaa78; --glint: #ffe8c0; }
+.store-mark[data-mark=blades] { --ground: #19474a; --ink: #79d9d2; --glint: #e0fff2; }
+.store-mark[data-mark=impact], .store-mark[data-mark=book] { --ground: #4d3b22; --ink: #f2bc62; --glint: #fff0c0; }
+.store-mark[data-mark=stats] { --ground: #303356; --ink: #a7afef; --glint: #e7ecff; }
+.store-mark svg { width: 32px; height: 32px; fill: var(--ink); }
+.store-mark svg path + path { fill: var(--glint); }
+#settings-container .jpx-config-manager .jpx-store-row-tools { grid-row: 1; }
+#settings-container .jpx-config-manager .jpx-store-row :is(.jpx-config-tags,.jpx-store-rating-summary) {
+    grid-column: 1/-1; padding-inline-start: 50px; gap: 4px 8px; min-width: 0;
+}
+#settings-container .jpx-config-manager .jpx-store-row .jpx-store-rating-summary {
+    font-size: .8125rem; color: var(--jpx-theme-muted);
+}
+#settings-container .jpx-config-manager .jpx-config-tags { flex-wrap: wrap; }
+#settings-container .jpx-config-manager .jpx-config-tags .jpx-config-tag {
+    border-radius: 6px; font: 500 .75rem/1.4 Roboto, system-ui, sans-serif;
+}
+#settings-container .jpx-config-manager .jpx-config-tags button.jpx-config-tag {
+    min-width: 48px; min-height: 48px; border-block: 10px solid transparent; background-clip: padding-box;
+}
+#settings-container .jpx-config-manager .jpx-store-date,
+#settings-container .jpx-config-manager .jpx-config-tag-author { font-size: .8125rem; }
+#settings-container .jpx-config-manager .jpx-store-rating-summary time { margin-inline-start: auto; }
+#settings-container .jpx-config-manager .jpx-store:not(.jpx-store-browsing) { padding: 8px 16px 12px; }
+#settings-container .jpx-config-manager .jpx-store-heading h3 { font-size: 1.25rem; line-height: 1.3; color: var(--jpx-theme-text); }
+#settings-container .jpx-config-manager .jpx-store-actions button,
+#settings-container .jpx-config-manager .jpx-store-form button,
+#settings-container .jpx-config-manager .jpx-store-field :is(input,textarea,select) {
+    min-height: 48px; border-radius: 10px;
+}
+#settings-container .jpx-config-manager .jpx-store-actions button { min-width: 48px; padding-inline: 16px; }
+#settings-container .jpx-config-manager .jpx-store-actions .jpx-store-primary,
+#settings-container .jpx-config-manager .jpx-store-form .jpx-store-primary {
+    background: var(--jpx-theme-accent); color: var(--jpx-theme-surface); border-color: var(--jpx-theme-accent);
+}
+#settings-container .jpx-config-manager .store-local-row .jpx-store-title,
+#settings-container .jpx-config-manager .store-local-row .jpx-config-tags { grid-column: 1/-1; }
+#settings-container .jpx-config-manager .store-remove { justify-self: start; margin-top: 12px; }
+#settings-container main .jpx-store-stage { grid-auto-rows: max-content; }
+#settings-container .jpx-config-manager .jpx-store-raw { border-radius: 10px; }
+#settings-container .jpx-config-manager .jpx-store-raw summary { padding: 12px; }
+#settings-container .jpx-config-manager :is(a,summary,button,input,select,textarea):focus-visible,
+dialog button:focus-visible { outline: 2px solid var(--jpx-theme-accent); outline-offset: -2px; }
+#settings-container .jpx-config-manager button:active:not(:disabled), dialog button:active { background: var(--jpx-theme-selected); }
+@media (max-width: 719px) {
+    #settings-container #storeToolbar > .jpx-store-toolbar { flex-basis: 100%; flex-wrap: wrap; gap: 0 4px; }
+    #settings-container #storeToolbar > .jpx-store-querybar { flex: 1 1 100%; max-width: none; }
+    #settings-container #storeToolbar .jpx-store-navigation { flex-wrap: wrap; }
+}
+@media (min-width: 720px) {
+    #settings-container main.jpx-config-manager { max-width: 980px; margin-inline: auto; }
+    #settings-container #storeToolbar { padding-top: 4px; }
+    #settings-container .jpx-config-manager .jpx-store-row[data-store-id] { padding-block: 12px; }
+}
+/* Let the toolbar scroll away on a short viewport, including while the keyboard is open. */
+#settings-container.store-short main.jpx-config-manager { display: block; overflow: auto; }
+#settings-container.store-short #panel_configStore, #settings-container.store-short .jpx-config-manager .jpx-store,
+#settings-container.store-short .jpx-config-manager .jpx-store-stage { height: auto; overflow: visible; }

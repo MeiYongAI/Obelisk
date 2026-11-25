@@ -2,6 +2,13 @@
 const storeLanguages = {
   "zh": {
     "cStore": {
+      "library": "配置库",
+      "searchLocal": "搜索本地配置",
+      "emptyLocal": "配置库中还没有配置。",
+      "exportFile": "导出文件",
+      "removeCopy": "删除本地副本",
+      "confirmRemove": "删除此副本及其关联的本地战斗配置？",
+      "updateAvailable": "有更新",
       "rules": "规则",
       "name": "配置商店",
       "browse": "浏览",
@@ -184,6 +191,15 @@ const storeLanguages = {
     }
   },
   "en": {
+    "cStore": {
+      "library": "Local library",
+      "searchLocal": "Search local configs",
+      "emptyLocal": "No saved configurations.",
+      "exportFile": "Export file",
+      "removeCopy": "Delete local copy",
+      "confirmRemove": "Delete this copy and its linked battle profiles?",
+      "updateAvailable": "Update available"
+    },
     "cM": {
       "typeSort": "By type",
       "multiStyle": "Mixed styles",

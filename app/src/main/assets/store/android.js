@@ -89,7 +89,30 @@ function storeCategoryHooks(labels, styles, scenes, text) {
         const left = classify(a).rank, right = classify(b).rank;
         return left[0] - right[0] || left[1] - right[1] || left[2] - right[2];
     }
-    return { renderTags, compareTypes };
+    // Use the same two-tone weapon shapes as the native Abilities screen.
+    const marks = {
+        sword: ['M23 5L28 4L26 12L15 23L11 20L8 23L10 25L7 28L4 25L8 21L5 18L7 16L11 18Z', 'M24 8L23 12L13 21L12 19Z'],
+        greatsword: ['M22 4L28 4L27 11L18 20L18 22L15 24L12 21L8 26L6 28L3 25L10 19L7 16L10 13L13 14Z', 'M24 6L24 11L15 18L14 16Z'],
+        blades: ['M4 4L10 7L20 19L22 17L25 20L22 23L26 26L24 28L19 24L16 25L14 23L16 21L5 10ZM28 4L27 11L9 27L6 26L5 24L10 20L8 17L10 15L13 17L23 7Z', 'M24 9L23 12L15 19L14 18ZM7 8L10 10L15 16L13 16Z'],
+        staff: ['M7 25L18 12L17 7L21 3L26 4L28 8L25 13L21 14L10 28L6 28Z', 'M21 6L24 5L26 8L23 11L20 10Z'],
+        impact: ['M16 4L19 13L26 8L23 16L29 18L21 21L24 27L16 23L9 28L10 21L3 22L9 16L5 9L13 12Z', 'M18 11L17 16L21 16L13 23L15 18L11 18Z'],
+        stats: ['M5 17H11V27H5ZM13 10H19V27H13ZM21 5H27V27H21Z', 'M5 17H11V20H5ZM13 10H19V13H13ZM21 5H27V8H21Z'],
+        book: ['M4 7Q11 5 16 9Q21 5 28 7V25Q21 23 16 27Q11 23 4 25Z', 'M15 11H17V24H15ZM7 10Q10 9 13 11V13Q10 11 7 12Z'],
+    };
+    const weapons = { OneHanded: 'sword', '1H_Mage': 'sword', TwoHanded: 'greatsword', '2H_Mage': 'greatsword',
+        DualWielding: 'blades', DW_Mage: 'blades', NitenIchiryu: 'blades', NI_Mage: 'blades', Staff: 'staff', Unarmed: 'impact' };
+    function renderMark(entry) {
+        const styles = classify(entry).styles;
+        const kind = entry.kind === 'stats' ? 'stats' : styles.length === 1 ? weapons[styles[0]] || 'book' : 'book';
+        const mark = document.createElement('span');
+        mark.className = 'store-mark';
+        mark.dataset.mark = kind;
+        mark.setAttribute('aria-hidden', 'true');
+        const [body, accent] = marks[kind];
+        mark.innerHTML = '<svg viewBox="0 0 32 32"><path d="' + body + '"/><path d="' + accent + '"/></svg>';
+        return mark;
+    }
+    return { renderTags, compareTypes, renderMark };
 }
 
 const pendingRequests = new Map();
@@ -125,17 +148,14 @@ function GM_xmlhttpRequest(request) {
 }
 
 (() => {
-    const { language, shareId } = storeCall('init');
+    const { language, shareId, darkTheme } = storeCall('init');
     const zh = language?.startsWith('zh');
     const words = zh ? {
-        library: '配置库', share: '分享配置', download: '导出文件', empty: '配置库中还没有配置', cancel: '取消',
+        cancel: '取消',
         already: '配置库已有此配置', update: '更新已有配置', copy: '保存副本', error: '无法读取或保存配置',
-        remove: '删除本地副本', confirmRemove: '删除此副本及其关联的本地战斗配置？',
     } : {
-        library: 'Local library', share: 'Share config', download: 'Export file', empty: 'No saved configurations', cancel: 'Cancel',
-        already: 'Already in your library', update: 'Update existing copy', copy: 'Save another copy',
-        error: 'Could not read or save the configuration',
-        remove: 'Delete local copy', confirmRemove: 'Delete this copy and its linked local battle profiles?',
+        cancel: 'Cancel',
+        already: 'Already in your library', update: 'Update existing copy', copy: 'Save another copy', error: 'Could not read or save the configuration',
     };
     const pack = storeLanguages[zh ? 'zh' : 'en'];
     document.documentElement.lang = zh ? 'zh-CN' : 'en';
@@ -147,13 +167,14 @@ function GM_xmlhttpRequest(request) {
     });
     const panel = document.getElementById('panel_configStore');
     const toolbar = document.getElementById('storeToolbar');
-    const setLayout = () => document.body.classList.toggle('jpx-settings-mobile', window.innerWidth < 720);
+    const setLayout = () => {
+        document.body.classList.toggle('jpx-settings-mobile', window.innerWidth < 720);
+        document.body.classList.toggle('store-short', (window.visualViewport?.height || window.innerHeight) <= 480);
+    };
     window.addEventListener('resize', setLayout);
+    window.visualViewport?.addEventListener('resize', setLayout);
     setLayout();
-    const dark = matchMedia('(prefers-color-scheme: dark)');
-    const setTheme = () => { document.documentElement.dataset.jpxTheme = dark.matches ? 'dark' : 'light'; };
-    dark.addEventListener('change', setTheme);
-    setTheme();
+    document.documentElement.dataset.jpxTheme = darkTheme ? 'dark' : 'light';
     const status = document.getElementById('localStatus');
     let dispose;
     let noticeTimer;
@@ -194,6 +215,8 @@ function GM_xmlhttpRequest(request) {
         panel.replaceChildren();
         dispose = store.render(panel, {
             listShareConfigs, getShareConfig,
+            savedVersions: () => storeCall('savedVersions'),
+            removeCopy: (id, revision) => storeCall('removeCopy', { id, revision }),
             async saveConfig(envelope, remote) {
                 const existing = storeCall('findSource', { source: remote.source });
                 let choice = 'new';
@@ -209,35 +232,6 @@ function GM_xmlhttpRequest(request) {
             notify: notice,
         }, { toolbarHost: toolbar, showBrowseTab: true, ...(entry && { share: entry.envelope,
             localSource: { id: entry.id, revision: entry.revision, title: entry.envelope.title }, onBack: () => render() }) });
-        const nav = toolbar.querySelector('.jpx-store-navigation');
-        const share = document.createElement('button');
-        share.textContent = words.library;
-        share.addEventListener('click', async () => {
-            share.disabled = true;
-            try {
-                const entries = listShareConfigs();
-                const id = await choose(words.library, entries.length ? '' : words.empty,
-                    entries.map(item => [item.id, item.envelope.title]));
-                if (id) {
-                    const local = getShareConfig(id);
-                    if (!local) { notice(words.error); return; }
-                    const actions = [['share', words.share], ['export', words.download]];
-                    if (local.source) actions.push(['remove', words.remove]);
-                    const action = await choose(local.envelope.title, '', actions);
-                    if (action === 'share') render(local);
-                    if (action === 'export') {
-                        const filename = local.envelope.title.replace(/[^\p{L}\p{N}_. -]/gu, '_').slice(0, 100) || 'jpx-config';
-                        await exportFile(filename + '.json', JSON.stringify(local.envelope, null, 2));
-                    }
-                    if (action === 'remove' && await choose(words.confirmRemove, local.envelope.title, [[true, words.remove]])) {
-                        storeCall('removeCopy', { id, revision: local.revision });
-                        render();
-                    }
-                }
-            } catch { notice(words.error); }
-            finally { share.disabled = false; }
-        });
-        nav.append(share);
     }
     document.addEventListener('click', event => {
         const link = event.target.closest?.('a[href]');

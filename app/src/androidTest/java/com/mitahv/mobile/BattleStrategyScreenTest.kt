@@ -59,9 +59,7 @@ class BattleStrategyScreenTest {
                     js("$title?.value") == org.json.JSONObject.quote(name)
                 }
                 assertEquals("true", js("storeCall('init').shareId === 'profile:$id' && typeof window.obeliskBack === 'function'"))
-                assertEquals("true", js("document.querySelector('.jpx-store-raw').open = true"))
-                await { js("document.querySelector('.jpx-store-raw pre')?.textContent.includes('stop')") == "true" }
-                fun enterText(field: String, value: String) {
+                fun tapElement(field: String) {
                     js("$field.scrollIntoView({block:'center'})")
                     val center = org.json.JSONArray(js("""(() => {
                         const r = $field.getBoundingClientRect(), scale = devicePixelRatio * visualViewport.scale;
@@ -74,6 +72,11 @@ class BattleStrategyScreenTest {
                     android.os.ParcelFileDescriptor.AutoCloseInputStream(
                         instrument.uiAutomation.executeShellCommand("input tap $x $y")
                     ).use { it.readBytes() }
+                }
+                tapElement("document.querySelector('.jpx-store-raw summary')")
+                await { js("document.querySelector('.jpx-store-raw[open] pre')?.textContent.includes('stop')") == "true" }
+                fun enterText(field: String, value: String) {
+                    tapElement(field)
                     await({ "Field did not receive touch focus" }) { js("document.activeElement === $field") == "true" }
                     js("$field.select()")
                     instrument.sendStringSync(value)
@@ -92,6 +95,19 @@ class BattleStrategyScreenTest {
                     val count = js("document.querySelectorAll('[data-store-id]').length")?.toIntOrNull() ?: 0
                     assertTrue("Public catalog: ${js("document.body.innerText")}", count > 0)
                     android.util.Log.i("ObeliskStoreTest", "Public catalog rows: $count")
+                }
+                js("document.querySelector('.jpx-store-navigation [data-local-library]').click()")
+                await { js("!!document.querySelector('[data-local-id]')") == "true" }
+                js("const q=document.querySelector('.jpx-store-view-header input'); q.value='missing fixture'; q.dispatchEvent(new Event('input'))")
+                assertEquals("0", js("document.querySelectorAll('[data-local-id]').length"))
+                js("document.querySelector('.jpx-store-empty button').click()")
+                js("document.querySelector('[data-local-id] button').click()")
+                await { js("document.querySelector('.jpx-store-heading h3')?.textContent") == org.json.JSONObject.quote(name) }
+                js("document.querySelector('.jpx-store-actions .jpx-store-primary').click()")
+                await { js("!!document.querySelector('form[data-store-editor=share]')") == "true" }
+                for (view in listOf("localDetail", "local", "browse")) {
+                    scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+                    await { js("document.querySelector('.jpx-store').dataset.storeView") == org.json.JSONObject.quote(view) }
                 }
                 scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
                 find(name)

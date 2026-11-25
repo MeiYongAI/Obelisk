@@ -13,6 +13,18 @@ internal class StoreLibrary(private val library: JpxLibrary, private val account
     private val scope = arrayOf(account, world)
     val storageNamespace = digest(account + "\u0000" + world)
 
+    /** Same most recent copy as findSource, without loading profiles or computing draft revisions. */
+    fun savedVersions(): JsonObject = library.read { sql ->
+        JsonObject().apply {
+            sql.rawQuery("SELECT issue, source FROM store_copies WHERE account=? AND world=? ORDER BY id DESC", scope).use { rows ->
+                while (rows.moveToNext()) {
+                    val issue = rows.getString(0)
+                    if (!has(issue)) add(issue, JsonParser.parseString(rows.getString(1)).asJsonObject["sha256"])
+                }
+            }
+        }
+    }
+
     fun list(): JsonArray = library.read { sql ->
         JsonArray().apply {
             sql.rawQuery("SELECT id FROM store_copies WHERE account=? AND world=? ORDER BY id DESC", scope).use { cursor ->

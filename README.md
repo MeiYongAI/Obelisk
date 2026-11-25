@@ -65,6 +65,8 @@ Tap any rule to edit its action, conditions or custom JavaScript. Drag a rule by
 - **Apply configuration** pins a profile across battlefields and styles. Turning off **Apply automatically** pins the current selection. Turn it back on to resume automatic selection.
 - **⋮ → Export configuration** saves one profile, including its draft edits, as an importable JSON file. Removing a profile clears its assignments and manual pin.
 
+The store’s **Local library** tab lets you search saved configurations and open one to share, export or remove its store copy. In **Browse**, a bookmark saves a configuration, a check marks the saved store version, and an update arrow means the author published a different version. Open the entry to read the full description and choose how to save it.
+
 ### Run rules during a fight
 
 Tap **Auto** at the start of each round to run the selected rules. Obelisk submits one action at a time and uses the server’s reply to choose the next move. Enable **Auto-advance rounds** in settings to load the next wave in place. Each new round waits for a manual action or another tap on **Auto**. **Pause** is available while a combat action is in flight. Opening settings, leaving the foreground, or receiving an uncertain result pauses the strategy. Riddles and final results wait for you.
