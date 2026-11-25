@@ -51,7 +51,7 @@ main.jpx-config-manager, .jpx-store { font: .875rem/1.45 Roboto, system-ui, sans
 }
 #storeToolbar { flex-wrap: wrap; padding: 8px 16px 0; gap: 8px; min-height: 0; border: 0; }
 #storeToolbar > .jpx-store-toolbar { flex: 1 0 100%; margin: 0; justify-content: space-between; }
-.native-navigation #storeToolbar > .jpx-store-toolbar, .native-navigation .jpx-store-back { display: none; }
+.native-navigation #storeToolbar > .jpx-store-toolbar, .native-navigation .jpx-store-heading { display: none; }
 .native-navigation #storeToolbar:not(:has(.jpx-store-querybar)) { padding: 0; }
 .jpx-store-navigation { gap: 2px; }
 .jpx-store-navigation button[aria-pressed=true] { background: var(--jpx-theme-selected); color: var(--jpx-theme-on-selected); }
@@ -171,3 +171,35 @@ dialog button { display: block; width: 100%; text-align: end; }
 @media (prefers-reduced-motion: reduce) {
     .jpx-store *, #storeToolbar * { animation: none !important; transition: none !important; }
 }
+
+.native-navigation .jpx-store-view-header:has(.jpx-store-heading:only-child) { display: none; }
+.native-navigation .jpx-store:not(.jpx-store-browsing) { padding-top: 12px; }
+.store-overview { display: grid; gap: 16px; }
+.store-identity, .store-share-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.store-identity .store-mark { width: 44px; height: 44px; }
+.store-facts { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.store-facts strong, .store-share-title { font-size: 1rem; font-weight: 500; }
+.store-overview .jpx-store-actions { display: flex; flex-wrap: wrap; }
+.store-overview .jpx-store-actions button { flex: 1 1 8rem; }
+.jpx-store-description { white-space: pre-line; overflow-wrap: anywhere; }
+.jpx-store-stage > .jpx-config-tags { align-items: center; gap: 2px 8px; }
+.jpx-store [data-shared-id] { padding: 12px; }
+.jpx-store [data-shared-id] .jpx-store-badge { border: 0; background: var(--jpx-theme-selected); color: var(--jpx-theme-on-selected); }
+.jpx-store-form .jpx-store-primary { width: 100%; }
+.jpx-store-form .jpx-store-field > span { font-weight: 500; }
+
+/* The same weapon tiles shown by GameArt in the native collection. */
+.native-navigation .store-mark {
+    --tile: #303356; --ink: #a7afef; --glint: #e7ecff;
+    background: var(--tile); color: var(--ink); border-radius: 8px;
+}
+.native-navigation [data-mark=sword] { --tile: #2e3c4a; --ink: #adcad8; --glint: #eef8ff; }
+.native-navigation [data-mark=greatsword] { --tile: #493629; --ink: #daaa78; --glint: #ffe8c0; }
+.native-navigation [data-mark=blades] { --tile: #19474a; --ink: #79d9d2; --glint: #e0fff2; }
+.native-navigation [data-mark=impact] { --tile: #4d3b22; --ink: #f2bc62; --glint: #fff0c0; }
+.native-navigation [data-mark=stats] { --tile: #1d453a; --ink: #7dd6a5; --glint: #dffff0; }
+.native-navigation .store-mark svg { width: 100%; height: 100%; }
+.native-navigation .store-mark svg path + path { fill: var(--glint); }
+
+[data-store-view=shareDetail] [data-shared-id] { align-items: center; gap: 12px; border-radius: 16px; }
+[data-store-view=shareDetail] [data-shared-id] > .jpx-config-tags { padding-inline-start: 0; }

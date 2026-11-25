@@ -693,6 +693,7 @@ function renderConfigStore(parent, hooks, options = {}) {
     doc.defaultView.addEventListener('resize', layoutBrowseControls, { signal: layoutEvents.signal });
     doc.defaultView.visualViewport?.addEventListener('resize', layoutBrowseControls, { signal: layoutEvents.signal });
     function message(text, error = false) {
+        if (hooks.showCollection && ['browse', 'local', 'mine'].includes(state.view)) hooks.onCollectionMessage?.(text || '', error);
         status.textContent = text || '';
         status.hidden = !text;
         status.dataset.error = String(error);
@@ -780,7 +781,7 @@ function renderConfigStore(parent, hooks, options = {}) {
                 await jpxConfigStore.logout();
                 if (!alive() || generation !== state.authGeneration) return;
                 state.user = null; accountControls();
-                if (state.view === 'mine') await mine();
+                if (['mine', 'shareDetail'].includes(state.view)) await mine();
                 message(tr('signedOut'));
                 account.querySelector('button')?.focus({ preventScroll: true });
             });
@@ -799,7 +800,7 @@ function renderConfigStore(parent, hooks, options = {}) {
             };
             return login(returnTo, returnTo);
         }));
-        hooks.onNavigate?.(state.view, state.user?.login);
+        hooks.onNavigate?.(state.view, state.user?.login, state.title);
         commentView?.authChanged(); ratingView?.authChanged();
     }
     const closeViews = () => { commentView?.dispose(); ratingView?.dispose(); commentView = ratingView = null; };
@@ -810,8 +811,8 @@ function renderConfigStore(parent, hooks, options = {}) {
         state.login?.abort(); state.login = null;
         if (view !== 'edit' && view !== 'login') state.editor = null;
         if (view !== 'detail') state.currentEntry = null;
-        state.view = view; state.back = null;
-        hooks.onNavigate?.(view, state.user?.login);
+        state.view = view; state.back = null; state.title = '';
+        if (['browse', 'local', 'mine'].includes(view)) hooks.onNavigate?.(view, state.user?.login);
         root.dataset.storeView = view;
         const browsing = !!options.toolbarHost && view === 'browse';
         root.classList.toggle('jpx-store-browsing', browsing);
@@ -831,6 +832,8 @@ function renderConfigStore(parent, hooks, options = {}) {
     function heading(title, back) {
         const row = div('jpx-store-heading');
         state.back = back || null;
+        state.title = title;
+        hooks.onNavigate?.(state.view, state.user?.login, title);
         if (back) row.append(button(tr('back'), back, 'jpx-store-back'));
         row.append(el('h3', title)); viewHeader.append(row);
     }
@@ -850,19 +853,47 @@ function renderConfigStore(parent, hooks, options = {}) {
         return title;
     }
     function localLibrary(restoreId) {
-        open('local');
+        const request = open('local');
         state.back = () => browse();
-        const search = searchField(state.localQuery, tr('searchLocal'));
-        const bar = div('jpx-store-querybar');
-        bar.append(search); viewHeader.append(bar);
-        const list = div('jpx-store-list');
-        stage.append(list);
+        let search, list;
+        if (!hooks.showCollection) {
+            search = searchField(state.localQuery, tr('searchLocal'));
+            const bar = div('jpx-store-querybar');
+            bar.append(search); viewHeader.append(bar);
+            list = div('jpx-store-list'); stage.append(list);
+        }
         const normalize = value => value.normalize('NFKC').toLocaleLowerCase().trim();
-        const entries = hooks.listShareConfigs().map(record => ({
-            record, text: normalize([record.envelope.title, record.source?.author, info(record.envelope)].filter(Boolean).join(' ')),
-        }));
+        let entries;
+        try {
+            entries = hooks.listShareConfigs().map(record => ({
+                record, text: normalize([record.envelope.title, record.source?.author, info(record.envelope)].filter(Boolean).join(' ')),
+            }));
+        } catch (error) {
+            message(errorMessage(error), true);
+            if (hooks.showCollection) hooks.showCollection({ page: 'local', request, query: state.localQuery, search: tr('searchLocal'),
+                rows: [], emptyAction: tr('retry') }, (token, action) => {
+                if (token === request && live(request) && action === 'empty') localLibrary();
+            });
+            else empty(tr('cannotLoad'), () => localLibrary());
+            return;
+        }
         function draw() {
             const terms = normalize(state.localQuery).split(/\s+/).filter(Boolean);
+            if (hooks.showCollection) {
+                const rows = entries.filter(({ text }) => terms.every(term => text.includes(term))).map(({ record }) => ({
+                    id: record.id, title: record.envelope.title, mark: hooks.markKind(record.envelope),
+                    subtitle: info(record.envelope, record.source?.author),
+                }));
+                hooks.showCollection({ page: 'local', request, query: state.localQuery, search: tr('searchLocal'), rows,
+                    empty: rows.length ? '' : tr(entries.length ? 'noMatches' : 'emptyLocal'),
+                    emptyAction: tr(entries.length ? 'clearFilters' : 'browse') }, (token, action, value) => {
+                    if (token !== request || !live(request)) return;
+                    if (action === 'open') localDetail(value);
+                    if (action === 'query') { state.localQuery = value; draw(); }
+                    if (action === 'empty') { if (entries.length) { state.localQuery = ''; draw(); } else browse(); }
+                });
+                return;
+            }
             list.replaceChildren();
             for (const { record, text } of entries) {
                 if (!terms.every(term => text.includes(term))) continue;
@@ -880,9 +911,9 @@ function renderConfigStore(parent, hooks, options = {}) {
                 } : () => browse(), tr(entries.length ? 'clearFilters' : 'browse'), list);
             }
         }
-        search.addEventListener('input', () => { state.localQuery = search.value; scroller().scrollTop = 0; draw(); });
+        search?.addEventListener('input', () => { state.localQuery = search.value; scroller().scrollTop = 0; draw(); });
         draw();
-        if (restoreId) {
+        if (restoreId && list) {
             Array.from(list.children).find(row => row.dataset.localId === restoreId)?.querySelector('button')?.focus({ preventScroll: true });
             scroller().scrollTop = state.localScroll;
         }
@@ -894,7 +925,6 @@ function renderConfigStore(parent, hooks, options = {}) {
         state.localId = id;
         const envelope = record.envelope;
         heading(envelope.title, () => localLibrary(id));
-        stage.append(tags(envelope, record.source?.author));
         const actions = div('jpx-store-actions');
         actions.append(button(tr('share'), () => edit({ envelope: clone(envelope),
             localSource: { id, revision: record.revision, title: envelope.title }, back: () => localDetail(id) }), 'jpx-store-primary'));
@@ -902,9 +932,8 @@ function renderConfigStore(parent, hooks, options = {}) {
             const name = envelope.title.replace(/[^\p{L}\p{N}_. -]/gu, '_').slice(0, 100) || 'jpx-config';
             return hooks.download(name + '.json', JSON.stringify(envelope, null, 2));
         }));
-        stage.append(actions);
-        if (envelope.description) stage.append(el('p', envelope.description, 'jpx-store-description'));
-        stage.append(el('p', configSummary(envelope), 'jpx-store-meta'), rawPreview(envelope));
+        detailOverview(envelope, record.source?.author, actions, configSummary(envelope));
+        stage.append(rawPreview(envelope));
         if (record.source) stage.append(button(tr('removeCopy'), async () => {
             if (await confirmShare(tr('removeCopy'), tr('confirmRemove'), tr('removeCopy')) && live(request)) {
                 hooks.removeCopy(id, record.revision);
@@ -921,66 +950,79 @@ function renderConfigStore(parent, hooks, options = {}) {
         const backEntry = state.view === 'detail' ? state.currentEntry?.id : null;
         const backScroll = state.view === 'browse' ? 0 : state.browseScroll;
         const request = open('browse');
-        const queryBar = div('jpx-store-querybar');
-        const search = searchField(state.query, tr('search'));
-        const filters = div('jpx-store-filter-grid');
-        filters.id = 'jpx-store-catalog-filters';
-        const toggle = button(tr('filters'), () => { state.filtersOpen = !state.filtersOpen; updateFilters(); }, 'jpx-store-filter-toggle');
-        toggle.setAttribute('aria-controls', filters.id);
-        const refreshButton = refreshControl(() => loadCatalog(true));
-        queryBar.append(search, toggle, refreshButton);
-        const controls = {};
-        for (const [key, choices] of [
+        const filterChoices = [
             ['world', [['', tr('allWorlds')], ...['Persistent', 'Isekai'].map(value => [value, worldName(value)])]],
             ['style', [['', tr('allStyles')], ...styles.map(value => [value, styleName(value)])]],
             ['battleType', [['', tr('allBattles')], ...battleTypes.map(value => [value, battleName(value)])]],
             ['kind', [['', tr('allTypes')], ...kinds()]]
-        ]) {
-            const control = select(choices, state[key]); controls[key] = control;
-            control.setAttribute('aria-label', tr(key === 'kind' ? 'type' : key)); control.dataset.storeFilter = key;
-            control.addEventListener('change', () => { chooseFilter(key, control.value); render(true); });
-            filters.append(control);
-        }
-        const results = div('jpx-store-results');
-        const count = el('span', '', 'jpx-store-result-count');
-        count.setAttribute('role', 'status'); count.setAttribute('aria-live', 'polite');
+        ];
+        const sortChoices = [['updated', tr('latest')], ['name', tr('nameSort')], ...(hooks.compareTypes ? [['type', t('cM.typeSort')]] : [])];
         const reset = () => {
             state.query = state.kind = state.world = state.style = state.battleType = '';
-            search.value = ''; render(true);
+            if (web) web.search.value = '';
+            render(true);
         };
-        const clear = button(tr('clearFilters'), reset, 'jpx-store-clear');
-        const sort = select([['updated', tr('latest')], ['name', tr('nameSort')], ...(hooks.compareTypes ? [['type', t('cM.typeSort')]] : [])], state.sort);
-        sort.setAttribute('aria-label', tr('sort')); sort.dataset.storeSort = '';
-        sort.addEventListener('change', () => { state.sort = sort.value; render(true); });
-        results.append(count, clear, sort);
-        const list = div('jpx-store-list');
-        list.setAttribute('aria-busy', 'true');
-        const focusEntry = id => list.querySelector('[data-store-id="' + id + '"] .jpx-store-title')?.focus({ preventScroll: true });
-        browseControls = { queryBar, results, refresh: refreshButton, clear, sort };
-        viewHeader.append(queryBar, filters, results); stage.append(list); layoutBrowseControls();
+        const web = hooks.showCollection ? null : createBrowseControls();
+        function createBrowseControls() {
+            const queryBar = div('jpx-store-querybar');
+            const search = searchField(state.query, tr('search'));
+            const filters = div('jpx-store-filter-grid');
+            filters.id = 'jpx-store-catalog-filters';
+            const toggle = button(tr('filters'), () => { state.filtersOpen = !state.filtersOpen; updateFilters(); }, 'jpx-store-filter-toggle');
+            toggle.setAttribute('aria-controls', filters.id);
+            const refreshButton = refreshControl(() => loadCatalog(true));
+            queryBar.append(search, toggle, refreshButton);
+            const controls = {};
+            for (const [key, choices] of filterChoices) {
+                const control = select(choices, state[key]); controls[key] = control;
+                control.setAttribute('aria-label', tr(key === 'kind' ? 'type' : key)); control.dataset.storeFilter = key;
+                control.addEventListener('change', () => { chooseFilter(key, control.value); render(true); });
+                filters.append(control);
+            }
+            const results = div('jpx-store-results');
+            const count = el('span', '', 'jpx-store-result-count');
+            count.setAttribute('role', 'status'); count.setAttribute('aria-live', 'polite');
+            const clear = button(tr('clearFilters'), reset, 'jpx-store-clear');
+            const sort = select(sortChoices, state.sort);
+            sort.setAttribute('aria-label', tr('sort')); sort.dataset.storeSort = '';
+            sort.addEventListener('change', () => { state.sort = sort.value; render(true); });
+            results.append(count, clear, sort);
+            const list = div('jpx-store-list');
+            list.setAttribute('aria-busy', 'true');
+            const focusEntry = id => list.querySelector('[data-store-id="' + id + '"] .jpx-store-title')?.focus({ preventScroll: true });
+            browseControls = { queryBar, results, refresh: refreshButton, clear, sort };
+            viewHeader.append(queryBar, filters, results); stage.append(list); layoutBrowseControls();
+            function updateFilters() {
+                const active = ['world', 'style', 'battleType', 'kind'].filter(key => state[key]).length;
+                toggle.textContent = tr('filters') + (active ? ' (' + active + ')' : '');
+                toggle.setAttribute('aria-expanded', String(state.filtersOpen));
+                filters.dataset.open = String(state.filtersOpen);
+                clear.hidden = !active && !state.query;
+                for (const [key, control] of Object.entries(controls)) {
+                    control.value = state[key];
+                    control.disabled = ['style', 'battleType'].includes(key) && state.kind === 'stats';
+                }
+            }
+            filters.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && state.filtersOpen && root.closest('.jpx-settings-mobile')) {
+                    event.stopPropagation(); state.filtersOpen = false; updateFilters(); toggle.focus();
+                }
+            });
+            search.addEventListener('input', event => { state.query = search.value; if (!event.isComposing) render(true); });
+            search.addEventListener('compositionend', () => { state.query = search.value; render(true); });
+            updateFilters();
+            return { search, list, count, clear, refreshButton, focusEntry, updateFilters };
+        }
         // Normalize catalog metadata once, then filter locally without more requests.
         const normalize = value => String(value || '').normalize('NFKC').toLocaleLowerCase().replace(/[@_·/\-]+/g, ' ').replace(/\s+/g, ' ').trim();
         const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
         let index = null, orderedBy = null;
-        function updateFilters() {
-            const active = ['world', 'style', 'battleType', 'kind'].filter(key => state[key]).length;
-            toggle.textContent = tr('filters') + (active ? ' (' + active + ')' : '');
-            toggle.setAttribute('aria-expanded', String(state.filtersOpen));
-            filters.dataset.open = String(state.filtersOpen);
-            clear.hidden = !active && !state.query;
-            for (const [key, control] of Object.entries(controls)) {
-                control.value = state[key];
-                control.disabled = ['style', 'battleType'].includes(key) && state.kind === 'stats';
-            }
-        }
-        filters.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && state.filtersOpen && root.closest('.jpx-settings-mobile')) {
-                event.stopPropagation(); state.filtersOpen = false; updateFilters(); toggle.focus();
-            }
-        });
         function render(resetPosition = false) {
-            updateFilters();
-            if (!index) return;
+            web?.updateFilters();
+            if (!index) {
+                if (hooks.showCollection) publishCollection([]);
+                return;
+            }
             if (orderedBy !== state.sort) {
                 const byTitle = (a, b) => collator.compare(a.entry.title, b.entry.title) || a.entry.id - b.entry.id;
                 index.sort((a, b) => state.sort === 'type' ? hooks.compareTypes(a.entry, b.entry) || byTitle(a, b) :
@@ -988,13 +1030,16 @@ function renderConfigStore(parent, hooks, options = {}) {
                 orderedBy = state.sort;
             }
             if (resetPosition) { state.visible = 30; state.browseScroll = 0; scroller().scrollTop = 0; }
-            list.replaceChildren();
             const words = normalize(state.query).split(' ').filter(Boolean);
             const matches = index.filter(({ entry, modes, text }) => (!state.kind || entry.kind === state.kind) &&
                 (!state.world || entry.world === state.world || entry.world === 'Any') &&
                 ((!state.style && !state.battleType) || modes.some(mode => { const [style, battle] = splitMode(mode);
                     return (!state.style || style === state.style) && (!state.battleType || battle === state.battleType); })) && words.every(word => text.includes(word)));
-            count.textContent = tr('resultCount').replace('${count}', String(matches.length));
+            const label = tr('resultCount').replace('${count}', String(matches.length));
+            if (!web) { publishCollection(matches, label); return; }
+            const { list, count, clear, search, focusEntry } = web;
+            count.textContent = label;
+            list.replaceChildren();
             if (!matches.length) return empty(tr(index.length ? 'noMatches' : 'noConfigs'), clear.hidden ? null : () => { reset(); search.focus(); }, tr('clearFilters'), list);
             const fragment = doc.createDocumentFragment();
             for (const { entry, updated } of matches.slice(0, state.visible)) {
@@ -1044,9 +1089,57 @@ function renderConfigStore(parent, hooks, options = {}) {
             }, 'jpx-store-show-more'));
             list.append(fragment); refreshDownloadCounts();
         }
-        search.addEventListener('input', event => { state.query = search.value; if (!event.isComposing) render(true); });
-        search.addEventListener('compositionend', () => { state.query = search.value; render(true); });
-        updateFilters();
+        let loading = true;
+        const saving = new Set();
+        function publishCollection(matches, count = '') {
+            const visible = matches.slice(0, state.visible);
+            const rows = visible.map(({ entry, modes }) => ({
+                id: String(entry.id), title: entry.title, mark: hooks.markKind(entry),
+                subtitle: [modes.length === 1 ? modeName(modes[0]) : kindName(entry.kind), worldName(entry.world)].join(' · '),
+                author: '@' + entry.author, save: saveState(entry), saveLabel: tr(saveState(entry)), saving: saving.has(entry.id),
+            }));
+            const groups = [['sort', sortChoices], ...filterChoices].map(([key, choices]) => ({
+                key, label: tr(key === 'kind' ? 'type' : key), selected: state[key], choices,
+                enabled: state.kind !== 'stats' || !['style', 'battleType'].includes(key),
+            }));
+            const filtered = state.query || filterChoices.some(([key]) => state[key]);
+            const emptyAction = !index ? 'retry' : filtered ? 'clearFilters' : '';
+            hooks.showCollection({ page: 'browse', request, query: state.query, search: tr('search'), rows, groups,
+                count, loading, resetLabel: tr('clearFilters'), more: matches.length > rows.length ? tr('showMore') : '',
+                empty: !loading && !rows.length && index ? tr(index.length ? 'noMatches' : 'noConfigs') : '',
+                emptyAction: !rows.length && !loading && emptyAction ? tr(emptyAction) : '' }, async (token, action, value) => {
+                if (token !== request || !live(request)) return;
+                try {
+                    if (action === 'query') { state.query = value; render(true); }
+                    if (action === 'filter') {
+                        const group = groups.find(group => group.key === value.key);
+                        if (group?.enabled && group.choices.some(([key]) => key === value.value)) {
+                            chooseFilter(group.key, value.value); render(true);
+                        }
+                    }
+                    if (action === 'resetFilters') {
+                        state.kind = state.world = state.style = state.battleType = '';
+                        state.sort = 'updated'; render(true);
+                    }
+                    if (action === 'more') { state.visible += 30; render(); }
+                    if (action === 'refresh' || (action === 'empty' && !index)) {
+                        if (!loading) await loadCatalog(true);
+                        return;
+                    }
+                    if (action === 'empty' && index) reset();
+                    if (action !== 'open' && action !== 'save') return;
+                    const entry = visible.find(({ entry }) => String(entry.id) === value)?.entry;
+                    if (!entry) return;
+                    if (action === 'open') { await details(entry); return; }
+                    if (saving.has(entry.id)) return;
+                    saving.add(entry.id); render();
+                    try {
+                        const envelope = await jpxConfigStore.load(entry);
+                        if (live(request)) await saveConfig(envelope, entry);
+                    } finally { saving.delete(entry.id); if (live(request)) render(); }
+                } catch (error) { if (live(request)) message(errorMessage(error), true); }
+            });
+        }
         let restorePosition = true;
         function showCatalog(catalog) {
             if (!live(request)) return;
@@ -1063,20 +1156,24 @@ function renderConfigStore(parent, hooks, options = {}) {
             });
             const scroll = restorePosition ? backScroll : scroller().scrollTop;
             render();
-            if (restorePosition && backEntry) focusEntry(backEntry);
+            if (restorePosition && backEntry) web?.focusEntry(backEntry);
             scroller().scrollTop = scroll;
             restorePosition = false;
         }
         async function loadCatalog(force) {
-            refreshButton.disabled = true; refreshButton.setAttribute('aria-busy', 'true'); labelled(refreshButton, tr('loading'));
-            list.setAttribute('aria-busy', 'true'); message('');
+            loading = true; message('');
+            if (web) {
+                web.refreshButton.disabled = true;
+                web.refreshButton.setAttribute('aria-busy', 'true'); labelled(web.refreshButton, tr('loading'));
+                web.list.setAttribute('aria-busy', 'true');
+            } else render();
             try {
                 savedVersions = hooks.savedVersions();
                 let displayed;
                 const catalog = await jpxConfigStore.catalog({ refresh: force, onCached(snapshot) {
                     displayed = snapshot;
                     showCatalog(snapshot);
-                    list.setAttribute('aria-busy', 'false');
+                    web?.list.setAttribute('aria-busy', 'false');
                 } });
                 if (!live(request)) return;
                 if (force) ratingTotals.clear();
@@ -1085,10 +1182,14 @@ function renderConfigStore(parent, hooks, options = {}) {
             } catch (error) {
                 if (!live(request)) return;
                 message(errorMessage(error), true);
-                if (!index) list.replaceChildren(button(tr('retry'), () => loadCatalog(force), 'jpx-store-show-more'));
+                if (web && !index) web.list.replaceChildren(button(tr('retry'), () => loadCatalog(force), 'jpx-store-show-more'));
             } finally {
-                refreshButton.disabled = false; refreshButton.removeAttribute('aria-busy'); labelled(refreshButton, tr('refresh'));
-                list.setAttribute('aria-busy', 'false');
+                loading = false;
+                if (web) {
+                    web.refreshButton.disabled = false;
+                    web.refreshButton.removeAttribute('aria-busy'); labelled(web.refreshButton, tr('refresh'));
+                    web.list.setAttribute('aria-busy', 'false');
+                } else if (live(request)) render();
             }
         }
         await loadCatalog(refresh);
@@ -1111,6 +1212,16 @@ function renderConfigStore(parent, hooks, options = {}) {
             if (code) counts.push(tr('customCode') + ': ' + code);
         }
         return counts.join(' · ');
+    }
+    function detailOverview(envelope, author, actions, summary, choose) {
+        const overview = div('store-overview'), identity = div('store-identity'), facts = div('store-facts');
+        if (author) facts.append(el('strong', '@' + author));
+        facts.append(el('p', summary, 'jpx-store-meta'));
+        identity.append(hooks.renderMark(envelope), facts);
+        overview.append(identity, actions);
+        stage.append(overview);
+        if (envelope.description) stage.append(el('p', envelope.description, 'jpx-store-description'));
+        stage.append(tags(envelope, null, choose));
     }
     function rawPreview(envelope) {
         const details = el('details', undefined, 'jpx-store-raw');
@@ -1139,7 +1250,6 @@ function renderConfigStore(parent, hooks, options = {}) {
             const envelope = await jpxConfigStore.load(entry);
             if (!live(request)) return;
             message('');
-            stage.append(tags(envelope, entry.author, (key, value) => { chooseFilter(key, value); return browse(); }));
             const actions = div('jpx-store-actions');
             const save = button(tr(saveState(entry)), async node => {
                 if (!await saveConfig(envelope, entry)) return;
@@ -1149,9 +1259,10 @@ function renderConfigStore(parent, hooks, options = {}) {
             actions.append(save);
             if (typeof hooks.applyConfig === 'function') actions.append(button(tr('apply'), () => hooks.applyConfig(clone(envelope))));
             actions.append(button(tr('download'), () => downloadConfig(envelope, entry.id)));
-            stage.append(actions);
-            if (envelope.description) stage.append(el('p', envelope.description, 'jpx-store-description'));
-            stage.append(el('p', [configSummary(envelope), tr('scriptVersion') + ': ' + envelope.scriptVersion].join(' · '), 'jpx-store-meta'), rawPreview(envelope));
+            detailOverview(envelope, entry.author, actions, [configSummary(envelope), tr('scriptVersion') + ': ' + envelope.scriptVersion,
+                entry.updatedAt && new Date(entry.updatedAt).toLocaleDateString(doc.documentElement.lang)].filter(Boolean).join(' · '),
+                (key, value) => { chooseFilter(key, value); return browse(); });
+            stage.append(rawPreview(envelope));
             const reopen = () => details(entry), community = { service: jpxConfigStore, entry, tr, el,
                 signIn: () => login(reopen, reopen), user: () => state.user, isCurrent: () => live(request) };
             ratingView = renderJpxStoreRating(stage, { ...community, summary: ratingTotals.get(entry.id) || entry.rating, onChange: value => ratingTotals.set(entry.id, value) });
@@ -1294,12 +1405,37 @@ function renderConfigStore(parent, hooks, options = {}) {
     }
     async function mine() {
         const request = open('mine');
-        let search;
+        state.back = () => browse();
+        let search, shares = [], loading = true, failed = false;
+        const normalize = value => value.normalize('NFKC').toLocaleLowerCase();
+        const terms = () => normalize(state.sharedQuery).trim().split(/\s+/).filter(Boolean);
         const filterShares = () => {
-            const words = state.sharedQuery.normalize('NFKC').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
-            for (const row of stage.querySelectorAll('.jpx-store-row')) row.hidden = !words.every(word => (row.dataset.searchText || row.textContent).normalize('NFKC').toLocaleLowerCase().includes(word));
+            const words = terms();
+            for (const row of stage.querySelectorAll('.jpx-store-row')) row.hidden = !words.every(word => normalize(row.dataset.searchText || row.textContent).includes(word));
         };
-        if (options.toolbarHost) {
+        function collection() {
+            const words = terms();
+            const matches = shares.filter(item => words.every(word => item.search.includes(word)));
+            hooks.showCollection({ page: 'mine', request, query: state.sharedQuery, search: t('cM.search'), loading,
+                rows: matches.map(item => item.row),
+                empty: loading || failed || matches.length ? '' : tr(shares.length ? 'noMatches' : 'noShares'),
+                emptyAction: failed ? tr('retry') : !matches.length && shares.length ? tr('clearFilters') : '',
+            }, (token, action, value) => {
+                if (token !== request || !live(request)) return;
+                if (action === 'query') { state.sharedQuery = value; collection(); }
+                if (action === 'refresh' || (action === 'empty' && failed)) return mine();
+                if (action === 'empty') { state.sharedQuery = ''; collection(); }
+                const item = action === 'open' && matches.find(item => item.row.id === value);
+                if (item) manage(item);
+            });
+        }
+        function manage(item) {
+            const current = open('shareDetail');
+            heading(item.row.title, () => mine());
+            const list = div('jpx-store-list'); stage.append(list);
+            renderIssue(item.issue, list, current, item.row.subtitle, () => manage(item));
+        }
+        if (options.toolbarHost && !hooks.showCollection) {
             const queryBar = div('jpx-store-querybar');
             search = searchField(state.sharedQuery, t('cM.search')); search.disabled = !state.user;
             search.addEventListener('input', () => { state.sharedQuery = search.value; filterShares(); });
@@ -1308,72 +1444,100 @@ function renderConfigStore(parent, hooks, options = {}) {
         }
         if (!state.user) { empty(tr('loginRequired'), () => login(() => mine()), tr('signIn')); return; }
         if (!options.toolbarHost) viewHeader.append(button(tr('refresh'), () => mine()));
-        message(tr('loading'));
+        if (hooks.showCollection) collection(); else message(tr('loading'));
         try {
             const issues = await jpxConfigStore.mine();
             if (!live(request)) return;
+            loading = false;
             message('');
-            if (!issues.length) { empty(tr('noShares')); return; }
-            const list = div('jpx-store-list'); stage.append(list);
-            for (const issue of issues) {
-                const row = el('article', undefined, 'jpx-store-row'); row.dataset.sharedId = issue.id;
-                const title = el('strong', issue.title.replace(/^\[Config\]\s*/, ''));
-                const badge = el('span', tr(issueStatus(issue)), 'jpx-store-badge'), listed = issue.state !== 'closed' && !issue.labels.includes('store:hide');
-                row.append(title, badge);
-                try {
-                    const envelope = jpxConfigStore.parseSubmission(issue.body);
-                    const group = tags(envelope, null, (key, value, label) => {
-                        state.sharedQuery = label; if (search) search.value = label; filterShares();
-                    });
-                    row.append(group);
-                    row.dataset.searchText = [title.textContent, info(envelope), ...group.querySelectorAll('[title]')].map(value => typeof value === 'string' ? value : value.title).join(' ') + ' ' + group.textContent;
-                } catch { /* Keep malformed submissions manageable. */ }
-                const actions = div('jpx-store-actions');
-                if (issue.state !== 'closed') {
-                    actions.append(button(tr('updateShare'), () => edit({ id: issue.id, envelope: jpxConfigStore.parseSubmission(issue.body), originalBody: issue.body, back: () => mine() })),
-                        button(tr('withdraw'), async () => {
-                            if (!await confirmShare(tr('withdraw'), tr('withdrawConfirm'), tr('withdraw'))) return;
-                            if (!live(request)) return;
-                            await jpxConfigStore.withdraw(issue.id); await mine();
-                        }));
-                } else {
-                    actions.append(button(tr('removeShare'), async () => {
-                        if (!await confirmShare(tr('removeShare'), tr('removeShareConfirm'), tr('removeShare'))) return;
-                        if (!live(request)) return;
-                        message('');
-                        await jpxConfigStore.archive(issue.id);
-                        if (!live(request)) return;
-                        const visible = [...list.children].filter(item => !item.hidden), index = visible.indexOf(row);
-                        const neighbor = visible[index + 1] || visible[index - 1];
-                        row.remove();
-                        if (!list.children.length) { list.remove(); empty(tr('noShares')); }
-                        (neighbor?.querySelector('button:not(:disabled)') || search || browseControls?.refresh)?.focus({ preventScroll: true });
-                    }, 'jpx-store-remove-share'));
-                }
-                actions.append(button(tr('review'), async node => {
-                    const old = row.querySelector('.jpx-store-feedback');
-                    if (old) { old.remove(); node.setAttribute('aria-expanded', 'false'); return; }
-                    const feedback = await jpxConfigStore.feedback(issue.id);
-                    if (!live(request)) return;
-                    if (listed) badge.textContent = tr(feedback ? reviewStatus[feedback.status] : 'pending');
-                    const box = div('jpx-store-feedback');
-                    const language = tr('browse') === '浏览' ? 'zh' : 'en';
-                    box.append(el('p', feedback?.summary?.[language] || tr('noReview')));
-                    for (const finding of feedback?.findings || []) box.append(el('p', [finding.path, finding[language]].filter(Boolean).join(' — ')));
-                    row.append(box); node.setAttribute('aria-expanded', 'true');
-                }));
-                row.append(actions); list.append(row);
-                // Reconcile only this session's submissions when the user opens
-                // or refreshes Shared. No battle-time polling or per-row timers.
-                if (issue.pending && listed) jpxConfigStore.feedback(issue.id).then(feedback => {
-                    if (!live(request) || !feedback) return;
-                    badge.textContent = tr(reviewStatus[feedback.status]);
-                }).catch(() => { /* Keep pending until a later refresh succeeds. */ });
+            if (hooks.showCollection) {
+                shares = issues.map(issue => {
+                    let envelope;
+                    try { envelope = jpxConfigStore.parseSubmission(issue.body); } catch { /* A malformed share can still be withdrawn. */ }
+                    const row = { id: String(issue.id), title: issue.title.replace(/^\[Config\]\s*/, ''),
+                        mark: envelope ? hooks.markKind(envelope) : 'book', subtitle: tr(issueStatus(issue)) };
+                    const labels = envelope ? tags(envelope).textContent + ' ' + info(envelope) : '';
+                    return { issue, row, search: normalize(row.title + ' ' + labels) };
+                });
+                collection();
+                for (const item of shares) reconcile(item.issue, request, label => { item.row.subtitle = label; collection(); });
+            } else {
+                if (!issues.length) { empty(tr('noShares')); return; }
+                const list = div('jpx-store-list'); stage.append(list);
+                for (const issue of issues) renderIssue(issue, list, request, tr(issueStatus(issue)), () => mine());
+                filterShares();
             }
-            filterShares();
         } catch (error) {
             if (!live(request)) return;
-            message(errorMessage(error), true); empty(tr('cannotLoad'), () => mine());
+            message(errorMessage(error), true); failed = true; loading = false;
+            if (hooks.showCollection) collection(); else empty(tr('cannotLoad'), () => mine());
+        }
+        function reconcile(issue, generation, update) {
+            if (issue.pending && issue.state !== 'closed' && !issue.labels.includes('store:hide'))
+                jpxConfigStore.feedback(issue.id).then(feedback => {
+                    if (live(generation) && feedback) update(tr(reviewStatus[feedback.status]));
+                }).catch(() => {});
+        }
+        function renderIssue(issue, list, request, statusLabel, back) {
+            const row = el('article', undefined, 'jpx-store-row'); row.dataset.sharedId = issue.id;
+            const title = el('strong', issue.title.replace(/^\[Config\]\s*/, ''));
+            const badge = el('span', statusLabel, 'jpx-store-badge'), listed = issue.state !== 'closed' && !issue.labels.includes('store:hide');
+            if (hooks.showCollection) row.append(badge); else row.append(title, badge);
+            try {
+                const envelope = jpxConfigStore.parseSubmission(issue.body);
+                const group = tags(envelope, null, (key, value, label) => {
+                    state.sharedQuery = label;
+                    if (hooks.showCollection) return mine();
+                    if (search) search.value = label;
+                    filterShares();
+                });
+                if (hooks.showCollection) {
+                    row.prepend(hooks.renderMark(envelope));
+                    if (envelope.description) row.append(el('p', envelope.description, 'jpx-store-description'));
+                } else {
+                    title.prepend(hooks.renderMark(envelope));
+                    title.classList.add('store-share-title');
+                }
+                row.append(group);
+                row.dataset.searchText = [title.textContent, info(envelope), ...group.querySelectorAll('[title]')].map(value => typeof value === 'string' ? value : value.title).join(' ') + ' ' + group.textContent;
+            } catch { /* Keep malformed submissions manageable. */ }
+            const actions = div('jpx-store-actions');
+            if (issue.state !== 'closed') {
+                actions.append(button(tr('updateShare'), () => edit({ id: issue.id, envelope: jpxConfigStore.parseSubmission(issue.body), originalBody: issue.body, back })),
+                    button(tr('withdraw'), async () => {
+                        if (!await confirmShare(tr('withdraw'), tr('withdrawConfirm'), tr('withdraw'))) return;
+                        if (!live(request)) return;
+                        await jpxConfigStore.withdraw(issue.id); if (live(request)) await mine();
+                    }));
+            } else {
+                actions.append(button(tr('removeShare'), async () => {
+                    if (!await confirmShare(tr('removeShare'), tr('removeShareConfirm'), tr('removeShare'))) return;
+                    if (!live(request)) return;
+                    message('');
+                    await jpxConfigStore.archive(issue.id);
+                    if (!live(request)) return;
+                    if (hooks.showCollection) return mine();
+                    const visible = [...list.children].filter(item => !item.hidden), index = visible.indexOf(row);
+                    const neighbor = visible[index + 1] || visible[index - 1];
+                    row.remove();
+                    if (!list.children.length) { list.remove(); empty(tr('noShares')); }
+                    (neighbor?.querySelector('button:not(:disabled)') || search || browseControls?.refresh)?.focus({ preventScroll: true });
+                }, 'jpx-store-remove-share'));
+            }
+            actions.append(button(tr('review'), async node => {
+                const old = row.querySelector('.jpx-store-feedback');
+                if (old) { old.remove(); node.setAttribute('aria-expanded', 'false'); return; }
+                const feedback = await jpxConfigStore.feedback(issue.id);
+                if (!live(request)) return;
+                if (listed) badge.textContent = tr(feedback ? reviewStatus[feedback.status] : 'pending');
+                const box = div('jpx-store-feedback');
+                const language = tr('browse') === '浏览' ? 'zh' : 'en';
+                box.append(el('p', feedback?.summary?.[language] || tr('noReview')));
+                for (const finding of feedback?.findings || []) box.append(el('p', [finding.path, finding[language]].filter(Boolean).join(' — ')));
+                row.append(box); node.setAttribute('aria-expanded', 'true');
+            }));
+            row.append(actions); list.append(row);
+            reconcile(issue, request, label => { badge.textContent = label; });
         }
     }
     const dispose = () => { state.disposed = true; closeViews(); state.login?.abort(); layoutEvents.abort(); browseControls?.queryBar.remove(); toolbar.remove(); observer.disconnect(); };
@@ -1387,7 +1551,12 @@ function renderConfigStore(parent, hooks, options = {}) {
     const authGeneration = state.authGeneration;
     jpxConfigStore.user().then(user => {
         if (!state.disposed && authGeneration === state.authGeneration) {
-            state.user = user; if (alive()) accountControls();
+            const previous = state.user?.login;
+            state.user = user;
+            if (alive()) {
+                accountControls();
+                if (state.view === 'mine' && previous !== user?.login) mine();
+            }
         }
     }).catch(cause => { if (alive() && authGeneration === state.authGeneration) message(errorMessage(cause), true); });
     if (options.share) edit({ envelope: clone(options.share), localSource: options.localSource, back: options.onBack });

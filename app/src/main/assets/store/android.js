@@ -105,9 +105,12 @@ function storeCategoryHooks(labels, styles, scenes, text) {
     };
     const weapons = { OneHanded: 'sword', '1H_Mage': 'sword', TwoHanded: 'greatsword', '2H_Mage': 'greatsword',
         DualWielding: 'blades', DW_Mage: 'blades', NitenIchiryu: 'blades', NI_Mage: 'blades', Staff: 'staff', Unarmed: 'impact' };
-    function renderMark(entry) {
+    function markKind(entry) {
         const styles = classify(entry).styles;
-        const kind = entry.kind === 'stats' ? 'stats' : styles.length === 1 ? weapons[styles[0]] || 'book' : 'book';
+        return entry.kind === 'stats' ? 'stats' : styles.length === 1 ? weapons[styles[0]] || 'book' : 'book';
+    }
+    function renderMark(entry) {
+        const kind = markKind(entry);
         const mark = document.createElement('span');
         mark.className = 'store-mark';
         mark.dataset.mark = kind;
@@ -116,7 +119,7 @@ function storeCategoryHooks(labels, styles, scenes, text) {
         mark.innerHTML = '<svg viewBox="0 0 32 32"><path d="' + body + '"/><path d="' + accent + '"/></svg>';
         return mark;
     }
-    return { renderTags, compareTypes, renderMark };
+    return { renderTags, compareTypes, renderMark, markKind };
 }
 
 const pendingRequests = new Map();
@@ -192,12 +195,20 @@ function GM_xmlhttpRequest(request) {
     let dispose;
     let noticeTimer;
     function notice(message) {
+        if (typeof window.ObeliskStore.notice === 'function') { window.ObeliskStore.notice(message); return; }
         clearTimeout(noticeTimer);
         status.textContent = message;
         status.hidden = false;
         noticeTimer = setTimeout(() => { status.hidden = true; }, 4500);
     }
+    let pendingChoice;
+    window.obeliskChoice = index => pendingChoice?.(index);
     function choose(title, message, choices) {
+        if (typeof window.ObeliskStore.choose === 'function') return new Promise(resolve => {
+            if (pendingChoice) return resolve(null);
+            pendingChoice = index => { pendingChoice = null; resolve(choices[index]?.[0] ?? null); };
+            window.ObeliskStore.choose(title, message || '', JSON.stringify(choices.map(choice => choice[1])));
+        });
         return new Promise(resolve => {
             const dialog = document.createElement('dialog');
             const header = document.createElement('h2');
@@ -223,12 +234,19 @@ function GM_xmlhttpRequest(request) {
     }
     const listShareConfigs = () => storeCall('listProfiles');
     const getShareConfig = id => storeCall('getProfile', { id });
+    let collectionAction;
+    window.obeliskCollectionAction = (...args) => collectionAction?.(...args);
     function render(entry) {
         dispose?.();
         panel.replaceChildren();
         dispose = store.render(panel, {
             listShareConfigs, getShareConfig,
-            onNavigate: nativeNavigation ? (page, user) => window.ObeliskStore.navigation(page, user || '') : undefined,
+            onNavigate: nativeNavigation ? (page, user, title) => window.ObeliskStore.navigation(page, user || '', title || '') : undefined,
+            showCollection: typeof window.ObeliskStore.collection === 'function' ? (model, action) => {
+                collectionAction = action;
+                window.ObeliskStore.collection(JSON.stringify(model));
+            } : undefined,
+            onCollectionMessage: (value, error) => window.ObeliskStore.collectionMessage?.(value, error),
             savedVersions: () => storeCall('savedVersions'),
             removeCopy: (id, revision) => storeCall('removeCopy', { id, revision }),
             async saveConfig(envelope, remote) {

@@ -102,25 +102,38 @@ class BattleStrategyScreenTest {
                 assertEquals("\"Offline\"", js("document.querySelector('form textarea').value"))
                 scenario.onActivity { palette.value = lightColorScheme() }
                 click(context.getString(R.string.app_back))
-                await { js("!!document.querySelector('.jpx-store-querybar input[type=search]')") == "true" }
+                fun nativeNodes() = instrument.uiAutomation.rootInActiveWindow?.let { flattened(it).filter { n -> n.isVisibleToUser }.toList() }.orEmpty()
+                click(context.getString(R.string.game_ui_filter))
+                find(context.getString(R.string.app_close))
+                instrument.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
                 if (InstrumentationRegistry.getArguments().getString("jpxLiveStore") == "true") {
                     val until = SystemClock.elapsedRealtime() + 45_000
-                    while (js("document.querySelectorAll('[data-store-id]').length") == "0" &&
-                        SystemClock.elapsedRealtime() < until) SystemClock.sleep(200)
-                    val count = js("document.querySelectorAll('[data-store-id]').length")?.toIntOrNull() ?: 0
-                    assertTrue("Public catalog: ${js("document.body.innerText")}", count > 0)
-                    android.util.Log.i("ObeliskStoreTest", "Public catalog rows: $count")
+                    fun publicRow() = nativeNodes().firstOrNull { n -> n.text?.lineSequence()?.any { it.startsWith("@") } == true }
+                    while (publicRow() == null && SystemClock.elapsedRealtime() < until) SystemClock.sleep(200)
+                    val row = requireNotNull(publicRow()) { "No public catalog rows in the Android list" }
+                    val lines = row.text.toString().lines()
+                    val author = lines.first { it.startsWith("@") }
+                    val searchAuthor = android.os.Bundle().apply {
+                        putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, author)
+                    }
+                    assertTrue(nativeNodes().first { it.isEditable }.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, searchAuthor))
+                    click(lines.first())
+                    await { js("document.querySelector('.jpx-store').dataset.storeView") == "\"detail\"" }
+                    find(lines.first())
+                    click(context.getString(R.string.app_back))
+                    await { nativeNodes().any { it.isEditable && it.text.toString() == author } && publicRow() != null }
                 }
-                assertEquals("none", js("getComputedStyle(document.querySelector('.jpx-store-toolbar')).display")?.trim('"'))
                 click(context.getString(R.string.store_shared))
-                await { js("document.querySelector('.jpx-store').dataset.storeView") == "\"mine\"" }
+                find(context.getString(R.string.store_shared_sign_in))
                 click(context.getString(R.string.store_library))
-                await { js("!!document.querySelector('[data-local-id]')") == "true" }
-                js("const q=document.querySelector('.jpx-store-view-header input'); q.value='missing fixture'; q.dispatchEvent(new Event('input'))")
-                assertEquals("0", js("document.querySelectorAll('[data-local-id]').length"))
-                js("document.querySelector('.jpx-store-empty button').click()")
-                js("document.querySelector('[data-local-id] button').click()")
-                await { js("document.querySelector('.jpx-store-heading h3')?.textContent") == org.json.JSONObject.quote(name) }
+                find(name)
+                val query = android.os.Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "missing fixture") }
+                assertTrue(nativeNodes().first { it.isEditable }.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, query))
+                await { nativeNodes().none { it.text?.contains(name) == true } }
+                click(context.getString(R.string.game_ui_clear_search))
+                click(name)
+                await { js("document.querySelector('.jpx-store').dataset.storeView") == "\"localDetail\"" }
+                find(name)
                 js("document.querySelector('.jpx-store-actions .jpx-store-primary').click()")
                 await { js("!!document.querySelector('form[data-store-editor=share]')") == "true" }
                 for (view in listOf("localDetail", "local", "browse")) {

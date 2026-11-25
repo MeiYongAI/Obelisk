@@ -6,4 +6,5 @@
     <string name="store_library">Local library</string>
     <string name="store_shared">Shared</string>
     <string name="store_login">Sign in</string>
+    <string name="store_shared_sign_in">Sign in to GitHub to manage your shared configs.</string>
 </resources>

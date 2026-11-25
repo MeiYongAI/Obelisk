@@ -16,10 +16,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -75,9 +76,11 @@ private fun ColorScheme.storeTheme(): String {
     return JSONObject().put("dark", surface.luminance() < onSurface.luminance()).put("colors", colors).toString()
 }
 
-private data class StoreNavigation(val page: String, val user: String) {
+private data class StoreNavigation(val page: String, val user: String, val title: String) {
     val isRoot get() = page == "browse" || page == "local" || page == "mine"
 }
+
+private data class StoreChoice(val title: String, val message: String, val labels: List<String>)
 
 private class StoreAssets(private val context: Context) : WebViewClient() {
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = true
@@ -128,6 +131,8 @@ private class InitialStoreCatalog(context: Context, scope: CoroutineScope) {
 private class StoreBridge(
     private val view: WebView, private val store: StoreLibrary, private val language: String, private val shareId: String?,
     initialTheme: String, private val onNavigation: (StoreNavigation) -> Unit,
+    private val onCollection: (StoreCollection) -> Unit, private val onMessage: (String, Boolean) -> Unit,
+    private val onChoice: (StoreChoice) -> Unit,
     private val scope: CoroutineScope, private val initialCatalog: InitialStoreCatalog?,
     private val download: (String, String) -> String,
 ) {
@@ -144,8 +149,27 @@ private class StoreBridge(
         view.evaluateJavascript("window.obeliskTheme?.($value)", null)
     }
 
-    @JavascriptInterface fun navigation(page: String, user: String) {
-        view.post { if (!closed) onNavigation(StoreNavigation(page, user)) }
+    @JavascriptInterface fun navigation(page: String, user: String, title: String) {
+        view.post { if (!closed) onNavigation(StoreNavigation(page, user, title)) }
+    }
+
+    @JavascriptInterface fun collection(model: String) {
+        val result = StoreCollection(JSONObject(model))
+        view.post { if (!closed) onCollection(result) }
+    }
+
+    @JavascriptInterface fun collectionMessage(text: String, error: Boolean) {
+        view.post { if (!closed) onMessage(text, error) }
+    }
+
+    @JavascriptInterface fun notice(text: String) {
+        view.post { if (!closed) Toast.makeText(view.context, text, Toast.LENGTH_SHORT).show() }
+    }
+
+    @JavascriptInterface fun choose(title: String, message: String, options: String) {
+        val labels = JSONArray(options)
+        val choice = StoreChoice(title, message, List(labels.length(), labels::getString))
+        view.post { if (!closed) onChoice(choice) }
     }
 
     @JavascriptInterface fun readCatalog(): String? = publicCatalog.getString("snapshot", null)
@@ -249,6 +273,12 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
     val colors = MaterialTheme.colorScheme
     val theme = remember(colors) { colors.storeTheme() }
     var navigation by remember(store, language, shareId) { mutableStateOf<StoreNavigation?>(null) }
+    var collection by remember(store, language, shareId) { mutableStateOf<StoreCollection?>(null) }
+    var notice by remember(store, language, shareId) { mutableStateOf("" to false) }
+    var choice by remember(store, language, shareId) { mutableStateOf<StoreChoice?>(null) }
+    val browseState = rememberLazyListState()
+    val localState = rememberLazyListState()
+    val sharesState = rememberLazyListState()
     val textZoom = (LocalConfiguration.current.fontScale * 100).toInt()
     val scope = rememberCoroutineScope()
     var view by remember { mutableStateOf<WebView?>(null) }
@@ -281,87 +311,131 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
     }
     BackHandler(onBack = back)
     fun navigate(destination: String) { view?.evaluateJavascript("window.obeliskNavigate?.('$destination')", null) }
+    fun dispatch(request: Int, action: String, value: Any = "") {
+        val args = JSONArray().put(request).put(action).put(value)
+        view?.evaluateJavascript("window.obeliskCollectionAction?.(...$args)", null)
+    }
+    val page = navigation?.page
+    val sharedLogin = page == "mine" && navigation?.user.isNullOrBlank()
+    val nativeList = navigation?.isRoot == true && !sharedLogin
+    val model = collection?.takeIf { nativeList && it.page == page }
     Column(Modifier.fillMaxSize().background(colors.surface).safeDrawingPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
         TopAppBar(
-            title = { Text(stringResource(R.string.jpx_store)) },
+            title = { Text(navigation?.title?.takeIf(String::isNotBlank) ?: stringResource(R.string.jpx_store),
+                maxLines = 2, overflow = TextOverflow.Ellipsis) },
             navigationIcon = { IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back)) } },
             actions = {
                 val nav = navigation
-                if (nav != null && nav.page != "login") {
-                    val label = if (nav.user.isEmpty()) stringResource(R.string.store_login) else "@" + nav.user
-                    TextButton(onClick = { navigate("account") }, modifier = Modifier.widthIn(max = 148.dp)) {
-                        Icon(Icons.Filled.AccountCircle, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (model != null && model.page != "local") {
+                    IconButton(onClick = { dispatch(model.request, "refresh") }, enabled = !model.loading) {
+                        Icon(Icons.Default.Refresh, stringResource(R.string.app_refresh_page))
                     }
+                }
+                if (nav != null && nav.page != "login" && (nav.page != "mine" || nav.user.isNotBlank())) {
+                    val label = nav.user.ifEmpty { stringResource(R.string.store_login) }
+                    IconButton(onClick = { navigate("account") }) { Icon(Icons.Default.AccountCircle, label) }
                 }
             },
             windowInsets = WindowInsets(0),
         )
         if (navigation?.isRoot == true) {
-            Row(Modifier.widthIn(max = 720.dp).fillMaxWidth().selectableGroup().padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
-                for ((page, label) in listOf("browse" to R.string.store_browse, "local" to R.string.store_library, "mine" to R.string.store_shared)) {
-                    ToggleButton(
-                        checked = navigation?.page == page, onCheckedChange = { if (navigation?.page != page) navigate(page) },
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        shapes = when (page) {
-                            "browse" -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                            "mine" -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                        },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                    ) { Text(stringResource(label)) }
+            val tabs = listOf("browse" to R.string.store_browse, "local" to R.string.store_library, "mine" to R.string.store_shared)
+            PrimaryTabRow(selectedTabIndex = tabs.indexOfFirst { it.first == page }, modifier = Modifier.widthIn(max = 720.dp)) {
+                tabs.forEach { (destination, label) ->
+                    Tab(selected = page == destination, onClick = { if (page != destination) navigate(destination) },
+                        text = { Text(stringResource(label), maxLines = 2, overflow = TextOverflow.Ellipsis) })
                 }
             }
         }
-        key(store, language, shareId) {
-            AndroidView(modifier = Modifier.widthIn(max = 720.dp).fillMaxSize(), factory = { ctx ->
-                val initialCatalog = if (shareId == null) InitialStoreCatalog(ctx.applicationContext, scope) else null
-                WebView(ctx).apply {
-                    settings.javaScriptEnabled = true
-                    settings.allowFileAccess = false
-                    settings.allowContentAccess = false
-                    settings.blockNetworkLoads = true
-                    settings.domStorageEnabled = false
-                    CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
-                    webViewClient = StoreAssets(ctx)
-                    val web = this
-                    val host = StoreBridge(this, store, language, shareId, theme, { navigation = it }, scope, initialCatalog) { filename, text ->
-                        val file = File.createTempFile("store-export-", ".json", ctx.cacheDir)
-                        try { file.writeText(text) } catch (e: IOException) { file.delete(); throw e }
-                        web.post {
-                            if (pending != null || view !== web) {
-                                file.delete()
-                                if (view === web) web.finishStoreExport(file.name, false)
+        Box(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
+            key(store, language, shareId) {
+                AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx ->
+                    val initialCatalog = if (shareId == null) InitialStoreCatalog(ctx.applicationContext, scope) else null
+                    WebView(ctx).apply {
+                        settings.javaScriptEnabled = true
+                        settings.allowFileAccess = false
+                        settings.allowContentAccess = false
+                        settings.blockNetworkLoads = true
+                        settings.domStorageEnabled = false
+                        CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
+                        webViewClient = StoreAssets(ctx)
+                        val web = this
+                        val host = StoreBridge(this, store, language, shareId, theme, { next ->
+                            if (navigation?.page != next.page || (next.page == "mine" && navigation?.user != next.user)) {
+                                collection = null
+                                notice = "" to false
                             }
-                            else {
-                                pending = file.name
-                                try { launcher.launch(filename) }
-                                catch (_: Exception) {
-                                    pending = null; file.delete()
-                                    web.finishStoreExport(file.name, false)
-                                    Toast.makeText(ctx, R.string.jpx_io, Toast.LENGTH_SHORT).show()
+                            navigation = next
+                        }, { collection = it }, { message, error -> notice = message to error }, { choice = it }, scope, initialCatalog) { filename, text ->
+                            val file = File.createTempFile("store-export-", ".json", ctx.cacheDir)
+                            try { file.writeText(text) } catch (e: IOException) { file.delete(); throw e }
+                            web.post {
+                                if (pending != null || view !== web) {
+                                    file.delete()
+                                    if (view === web) web.finishStoreExport(file.name, false)
+                                }
+                                else {
+                                    pending = file.name
+                                    try { launcher.launch(filename) }
+                                    catch (_: Exception) {
+                                        pending = null; file.delete()
+                                        web.finishStoreExport(file.name, false)
+                                        Toast.makeText(ctx, R.string.jpx_io, Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             }
+                            file.name
                         }
-                        file.name
+                        tag = host
+                        view = this
+                        addJavascriptInterface(host, "ObeliskStore")
+                        loadUrl(storeHome)
                     }
-                    tag = host
-                    view = this
-                    addJavascriptInterface(host, "ObeliskStore")
-                    loadUrl(storeHome)
+                }, update = { web ->
+                    web.visibility = if (nativeList || sharedLogin) android.view.View.INVISIBLE else android.view.View.VISIBLE
+                    web.setBackgroundColor(colors.surface.toArgb())
+                    if (web.settings.textZoom != textZoom) web.settings.textZoom = textZoom
+                    (web.tag as StoreBridge).updateTheme(theme)
+                }, onRelease = { old ->
+                    (old.tag as? StoreBridge)?.close()
+                    old.tag = null
+                    if (view === old) view = null
+                    old.removeJavascriptInterface("ObeliskStore"); old.stopLoading(); old.destroy()
+                })
+            }
+            if (nativeList && model != null) {
+                key(model.page, model.request) {
+                    StoreCollectionContent(model, notice, when (page) {
+                        "local" -> localState
+                        "mine" -> sharesState
+                        else -> browseState
+                    }) { action, value ->
+                        dispatch(model.request, action, value)
+                    }
                 }
-            }, update = { web ->
-                web.setBackgroundColor(colors.surface.toArgb())
-                if (web.settings.textZoom != textZoom) web.settings.textZoom = textZoom
-                (web.tag as StoreBridge).updateTheme(theme)
-            }, onRelease = { old ->
-                (old.tag as? StoreBridge)?.close()
-                old.tag = null
-                if (view === old) view = null
-                old.removeJavascriptInterface("ObeliskStore"); old.stopLoading(); old.destroy()
-            })
+            } else if (sharedLogin) {
+                Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Default.AccountCircle, null, Modifier.size(48.dp), tint = colors.primary)
+                    Spacer(Modifier.height(16.dp))
+                    Text(stringResource(R.string.store_shared_sign_in), style = MaterialTheme.typography.bodyLarge, color = colors.onSurface,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Spacer(Modifier.height(12.dp))
+                    Button(onClick = { navigate("account") }) { Text(stringResource(R.string.store_login)) }
+                }
+            } else if (nativeList || navigation == null) LinearProgressIndicator(Modifier.fillMaxWidth())
         }
+    }
+    choice?.let { dialog ->
+        fun answer(index: Int) {
+            choice = null
+            view?.evaluateJavascript("window.obeliskChoice?.($index)", null)
+        }
+        AlertDialog(onDismissRequest = { answer(-1) }, title = { Text(dialog.title) },
+            text = dialog.message.takeIf { it.isNotBlank() }?.let { { Text(it) } },
+            confirmButton = { Column(horizontalAlignment = Alignment.End) {
+                dialog.labels.forEachIndexed { index, label -> TextButton(onClick = { answer(index) }) { Text(label) } }
+            } },
+            dismissButton = { TextButton(onClick = { answer(-1) }) { Text(stringResource(R.string.app_cancel)) } })
     }
 }

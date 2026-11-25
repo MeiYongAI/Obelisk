@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.Dp
 
-private object AbilityGlyphs {
+internal object AbilityGlyphs {
     val heart = GameGlyph(
         "M16 27C13 24 4 18 4 12C4 5 12 3 16 10C20 3 28 5 28 12C28 18 19 24 16 27Z",
         "M6 16H11L14 11L17 19L20 14H26L25 17H22L17 24L14 17L13 19H9Z")
