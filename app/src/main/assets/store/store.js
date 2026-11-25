@@ -753,6 +753,7 @@ function renderConfigStore(parent, hooks, options = {}) {
             };
             return login(returnTo, returnTo);
         }));
+        hooks.onNavigate?.(state.view, state.user?.login);
         commentView?.authChanged(); ratingView?.authChanged();
     }
     const closeViews = () => { commentView?.dispose(); ratingView?.dispose(); commentView = ratingView = null; };
@@ -764,6 +765,7 @@ function renderConfigStore(parent, hooks, options = {}) {
         if (view !== 'edit' && view !== 'login') state.editor = null;
         if (view !== 'detail') state.currentEntry = null;
         state.view = view; state.back = null;
+        hooks.onNavigate?.(view, state.user?.login);
         root.dataset.storeView = view;
         const browsing = !!options.toolbarHost && view === 'browse';
         root.classList.toggle('jpx-store-browsing', browsing);
@@ -1333,6 +1335,11 @@ function renderConfigStore(parent, hooks, options = {}) {
     }).catch(cause => { if (alive() && authGeneration === state.authGeneration) message(errorMessage(cause), true); });
     if (options.share) edit({ envelope: clone(options.share), localSource: options.localSource, back: options.onBack });
     else browse();
+    dispose.navigate = destination => {
+        if (!alive()) return;
+        const control = { browse: browseButton, local: libraryButton, mine: mineButton, account: account.firstElementChild }[destination];
+        control?.click();
+    };
     dispose.back = () => {
         if (!alive() || !state.back) return false;
         Promise.resolve().then(state.back).catch(error => { if (alive()) message(errorMessage(error), true); });
@@ -1361,7 +1368,7 @@ function renderConfigStore(parent, hooks, options = {}) {
         const doc = parent.ownerDocument;
         if (!doc.getElementById('jpx-integrated-store-style')) {
             const style = doc.createElement('style'); style.id = 'jpx-integrated-store-style';
-            style.textContent = `
+            style.textContent = `@layer jpx {
 #settings-container #panel_configStore { overflow: hidden; }
 #settings-container .jpx-store { display: flex; flex: 1; flex-direction: column; gap: 12px; width: 100%; min-width: 0; min-height: 0; color: var(--jpx-theme-text, #392d25); font: 13px/1.45 Arial, Helvetica, sans-serif; }
 #settings-container .jpx-store * { box-sizing: border-box; }
@@ -1410,7 +1417,7 @@ function renderConfigStore(parent, hooks, options = {}) {
     #settings-container .jpx-store button, #settings-container .jpx-store-link { padding: 5px 8px; }
     #settings-container .jpx-store :is(button, input, select), #settings-container .jpx-store-link { min-height: 44px; }
 }
-`; doc.head.append(style);
+}`; doc.head.append(style);
         }
         return renderConfigStore(parent, { ...categoryHooks, ...hooks }, options);
     } });

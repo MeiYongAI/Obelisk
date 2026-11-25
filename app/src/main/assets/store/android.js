@@ -68,7 +68,11 @@ function storeCategoryHooks(labels, styles, scenes, text) {
             tag.className = 'jpx-config-tag';
             tag.dataset.tagKind = kind;
             tag.dataset.tagValue = value;
-            tag.textContent = label;
+            if (active) {
+                const caption = document.createElement('span');
+                caption.textContent = label;
+                tag.append(caption);
+            } else tag.textContent = label;
             if (title) tag.title = title;
             group.append(tag);
         }
@@ -148,7 +152,15 @@ function GM_xmlhttpRequest(request) {
 }
 
 (() => {
-    const { language, shareId, darkTheme } = storeCall('init');
+    const { language, shareId, theme, darkTheme } = storeCall('init');
+    const nativeNavigation = typeof window.ObeliskStore.navigation === 'function';
+    document.body.classList.toggle('native-navigation', nativeNavigation);
+    window.obeliskTheme = value => {
+        const root = document.documentElement;
+        root.dataset.jpxTheme = value.dark ? 'dark' : 'light';
+        for (const [role, color] of Object.entries(value.colors || {})) root.style.setProperty('--jpx-theme-' + role, color);
+    };
+    window.obeliskTheme(theme || { dark: darkTheme });
     const zh = language?.startsWith('zh');
     const words = zh ? {
         cancel: '取消',
@@ -174,7 +186,6 @@ function GM_xmlhttpRequest(request) {
     window.addEventListener('resize', setLayout);
     window.visualViewport?.addEventListener('resize', setLayout);
     setLayout();
-    document.documentElement.dataset.jpxTheme = darkTheme ? 'dark' : 'light';
     const status = document.getElementById('localStatus');
     let dispose;
     let noticeTimer;
@@ -215,6 +226,7 @@ function GM_xmlhttpRequest(request) {
         panel.replaceChildren();
         dispose = store.render(panel, {
             listShareConfigs, getShareConfig,
+            onNavigate: nativeNavigation ? (page, user) => window.ObeliskStore.navigation(page, user || '') : undefined,
             savedVersions: () => storeCall('savedVersions'),
             removeCopy: (id, revision) => storeCall('removeCopy', { id, revision }),
             async saveConfig(envelope, remote) {
@@ -233,6 +245,9 @@ function GM_xmlhttpRequest(request) {
         }, { toolbarHost: toolbar, showBrowseTab: true, ...(entry && { share: entry.envelope,
             localSource: { id: entry.id, revision: entry.revision, title: entry.envelope.title }, onBack: () => render() }) });
     }
+    window.obeliskNavigate = destination => {
+        if (!document.querySelector('dialog[open]')) dispose?.navigate(destination);
+    };
     document.addEventListener('click', event => {
         const link = event.target.closest?.('a[href]');
         if (!link) return;

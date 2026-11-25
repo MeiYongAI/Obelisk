@@ -14,18 +14,23 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.gson.JsonParser
@@ -50,6 +55,22 @@ private const val storeHome = "https://appassets.androidplatform.net/store/index
 private val storeFiles = setOf("index.html", "android.css", "manager.css", "languages.js", "store.js",
     "ratings.js", "downloads.js", "comments.js", "android.js")
 
+private fun ColorScheme.storeTheme(): String {
+    val roles = mapOf(
+        "surface" to surface, "text" to onSurface, "muted" to onSurfaceVariant, "border" to outlineVariant,
+        "outline" to outline, "card" to surfaceContainerLow, "field" to surfaceContainerHigh, "hover" to surfaceContainerHighest,
+        "accent" to primary, "on-accent" to onPrimary, "selected" to secondaryContainer, "on-selected" to onSecondaryContainer,
+        "danger" to error, "inverse" to inverseSurface, "on-inverse" to inverseOnSurface,
+    )
+    val colors = JSONObject()
+    for ((name, color) in roles) colors.put(name, "#" + (color.toArgb() and 0xffffff).toString(16).padStart(6, '0'))
+    return JSONObject().put("dark", surface.luminance() < onSurface.luminance()).put("colors", colors).toString()
+}
+
+private data class StoreNavigation(val page: String, val user: String) {
+    val isRoot get() = page == "browse" || page == "local" || page == "mine"
+}
+
 private class StoreAssets(private val context: Context) : WebViewClient() {
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = true
 
@@ -71,20 +92,23 @@ private class StoreAssets(private val context: Context) : WebViewClient() {
 /** The only document this view can load is the bundled store. The native HTTP client owns all remote calls. */
 private class StoreBridge(
     private val view: WebView, private val store: StoreLibrary, private val language: String, private val shareId: String?,
-    darkTheme: Boolean,
+    initialTheme: String, private val onNavigation: (StoreNavigation) -> Unit,
     private val download: (String, String) -> String,
 ) {
     private val transport = StoreTransport()
     private val preferences = view.context.getSharedPreferences("jpx-store-" + store.storageNamespace, Context.MODE_PRIVATE)
     private val requests = ConcurrentHashMap<String, Call>()
     @Volatile private var closed = false
-    @Volatile private var dark = darkTheme
+    @Volatile private var theme = initialTheme
 
-    fun updateTheme(value: Boolean) {
-        if (dark == value) return
-        dark = value
-        val theme = if (value) "dark" else "light"
-        view.evaluateJavascript("document.documentElement.dataset.jpxTheme = '$theme'", null)
+    fun updateTheme(value: String) {
+        if (theme == value) return
+        theme = value
+        view.evaluateJavascript("window.obeliskTheme?.($value)", null)
+    }
+
+    @JavascriptInterface fun navigation(page: String, user: String) {
+        view.post { if (!closed) onNavigation(StoreNavigation(page, user)) }
     }
 
     @JavascriptInterface fun call(method: String, payload: String): String = try {
@@ -94,7 +118,7 @@ private class StoreBridge(
         fun optional(name: String) = if (args.isNull(name)) null else args.getString(name)
         fun key() = args.getString("key").also { require(it.startsWith("jpx-config-") && it.length <= 160) }
         val value: Any? = when (method) {
-            "init" -> JSONObject().put("language", language).put("shareId", shareId ?: JSONObject.NULL).put("darkTheme", dark)
+            "init" -> JSONObject().put("language", language).put("shareId", shareId ?: JSONObject.NULL).put("theme", JSONObject(theme))
             "listProfiles" -> JSONArray(store.list().toString())
             "savedVersions" -> JSONObject(store.savedVersions().toString())
             "getProfile" -> store.get(args.getString("id"))?.let { JSONObject(it.toString()) }
@@ -171,11 +195,14 @@ private fun WebView.finishStoreExport(ticket: String, saved: Boolean) {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Unit) {
     val context = LocalContext.current
     val language = LocalConfiguration.current.locales[0].toLanguageTag()
-    val darkTheme = MaterialTheme.colorScheme.surface.luminance() < MaterialTheme.colorScheme.onSurface.luminance()
+    val colors = MaterialTheme.colorScheme
+    val theme = remember(colors) { colors.storeTheme() }
+    var navigation by remember(store, language, shareId) { mutableStateOf<StoreNavigation?>(null) }
     val textZoom = (LocalConfiguration.current.fontScale * 100).toInt()
     val scope = rememberCoroutineScope()
     var view by remember { mutableStateOf<WebView?>(null) }
@@ -207,13 +234,43 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
         }
     }
     BackHandler(onBack = back)
-    Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back)) }
-            Text(stringResource(R.string.jpx_store), style = MaterialTheme.typography.titleLarge)
+    fun navigate(destination: String) { view?.evaluateJavascript("window.obeliskNavigate?.('$destination')", null) }
+    Column(Modifier.fillMaxSize().background(colors.surface).safeDrawingPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
+        TopAppBar(
+            title = { Text(stringResource(R.string.jpx_store)) },
+            navigationIcon = { IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back)) } },
+            actions = {
+                val nav = navigation
+                if (nav != null && nav.page != "login") {
+                    val label = if (nav.user.isEmpty()) stringResource(R.string.store_login) else "@" + nav.user
+                    TextButton(onClick = { navigate("account") }, modifier = Modifier.widthIn(max = 148.dp)) {
+                        Icon(Icons.Filled.AccountCircle, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            },
+            windowInsets = WindowInsets(0),
+        )
+        if (navigation?.isRoot == true) {
+            Row(Modifier.widthIn(max = 720.dp).fillMaxWidth().selectableGroup().padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
+                for ((page, label) in listOf("browse" to R.string.store_browse, "local" to R.string.store_library, "mine" to R.string.store_shared)) {
+                    ToggleButton(
+                        checked = navigation?.page == page, onCheckedChange = { if (navigation?.page != page) navigate(page) },
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        shapes = when (page) {
+                            "browse" -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                            "mine" -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    ) { Text(stringResource(label)) }
+                }
+            }
         }
         key(store, language, shareId) {
-            AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx ->
+            AndroidView(modifier = Modifier.widthIn(max = 720.dp).fillMaxSize(), factory = { ctx ->
                 WebView(ctx).apply {
                     settings.javaScriptEnabled = true
                     settings.allowFileAccess = false
@@ -223,7 +280,7 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
                     CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
                     webViewClient = StoreAssets(ctx)
                     val web = this
-                    val host = StoreBridge(this, store, language, shareId, darkTheme) { filename, text ->
+                    val host = StoreBridge(this, store, language, shareId, theme, { navigation = it }) { filename, text ->
                         val file = File.createTempFile("store-export-", ".json", ctx.cacheDir)
                         try { file.writeText(text) } catch (e: IOException) { file.delete(); throw e }
                         web.post {
@@ -249,8 +306,9 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
                     loadUrl(storeHome)
                 }
             }, update = { web ->
+                web.setBackgroundColor(colors.surface.toArgb())
                 if (web.settings.textZoom != textZoom) web.settings.textZoom = textZoom
-                (web.tag as StoreBridge).updateTheme(darkTheme)
+                (web.tag as StoreBridge).updateTheme(theme)
             }, onRelease = { old ->
                 (old.tag as? StoreBridge)?.close()
                 old.tag = null

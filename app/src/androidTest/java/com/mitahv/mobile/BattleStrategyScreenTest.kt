@@ -2,6 +2,11 @@ package com.mitahv.mobile
 
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,6 +29,7 @@ class BattleStrategyScreenTest {
     private val instrument = InstrumentationRegistry.getInstrumentation()
     private val context = instrument.targetContext
 
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test fun sharingALocalProfileOpensTheAndroidWebViewAndReturnsToTheLibrary() {
         val filename = "share-ui-${UUID.randomUUID()}.db"
         val name = "Smoke profile"
@@ -34,7 +40,8 @@ class BattleStrategyScreenTest {
             val id = library.catalog().entries.single().id
             library.rename(id, name)
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-                scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                val palette = mutableStateOf(lightColorScheme())
+                scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialExpressiveTheme(colorScheme = palette.value) {
                     BattleConfigsScreen(library, rememberStrategy(library, null, null, false)) {}
                 } } } }
                 val mode = context.getString(R.string.jpx_mode_label, context.getString(R.string.strategy_staff),
@@ -86,6 +93,14 @@ class BattleStrategyScreenTest {
                 }
                 enterText(title, "Review")
                 enterText("document.querySelector('form textarea')", "Offline")
+                fun accent() = js("getComputedStyle(document.documentElement).getPropertyValue('--jpx-theme-accent').trim()")
+                scenario.onActivity { palette.value = lightColorScheme(primary = Color(0xff165e55)) }
+                await { accent() == "\"#165e55\"" }
+                scenario.onActivity { palette.value = darkColorScheme(primary = Color(0xff8bd5c8)) }
+                await { accent() == "\"#8bd5c8\"" && js("document.documentElement.dataset.jpxTheme") == "\"dark\"" }
+                assertEquals("\"Review\"", js("$title.value"))
+                assertEquals("\"Offline\"", js("document.querySelector('form textarea').value"))
+                scenario.onActivity { palette.value = lightColorScheme() }
                 click(context.getString(R.string.app_back))
                 await { js("!!document.querySelector('.jpx-store-querybar input[type=search]')") == "true" }
                 if (InstrumentationRegistry.getArguments().getString("jpxLiveStore") == "true") {
@@ -96,7 +111,10 @@ class BattleStrategyScreenTest {
                     assertTrue("Public catalog: ${js("document.body.innerText")}", count > 0)
                     android.util.Log.i("ObeliskStoreTest", "Public catalog rows: $count")
                 }
-                js("document.querySelector('.jpx-store-navigation [data-local-library]').click()")
+                assertEquals("none", js("getComputedStyle(document.querySelector('.jpx-store-toolbar')).display")?.trim('"'))
+                click(context.getString(R.string.store_shared))
+                await { js("document.querySelector('.jpx-store').dataset.storeView") == "\"mine\"" }
+                click(context.getString(R.string.store_library))
                 await { js("!!document.querySelector('[data-local-id]')") == "true" }
                 js("const q=document.querySelector('.jpx-store-view-header input'); q.value='missing fixture'; q.dispatchEvent(new Event('input'))")
                 assertEquals("0", js("document.querySelectorAll('[data-local-id]').length"))
