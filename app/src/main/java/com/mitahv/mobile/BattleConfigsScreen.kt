@@ -49,6 +49,8 @@ internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, 
     val catalog = strategy.catalog
     val entries = catalog?.entries.orEmpty()
     var configuringRoutes by rememberSaveable { mutableStateOf(false) }
+    var creating by rememberSaveable { mutableStateOf(false) }
+    var storePage by rememberSaveable { mutableStateOf<String?>(null) }
     var draft by remember { mutableStateOf<JpxDraft?>(null) }
     var deleting by remember { mutableStateOf<JpxEntry?>(null) }
     var renaming by remember { mutableStateOf<JpxEntry?>(null) }
@@ -99,6 +101,10 @@ internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, 
         } }
     }
     BackHandler(onBack = onBack)
+    storePage?.let { page ->
+        StoreScreen(library.store, page.takeIf(String::isNotEmpty)) { storePage = null }
+        return
+    }
     fun variant(entry: JpxEntry) = catalog?.variant(entry).orEmpty()
     if (configuringRoutes && catalog != null) {
         StrategyRoutesScreen(catalog, strategy.style, library.world, busy, error, onBack = { configuringRoutes = false }) { style, scene, id ->
@@ -119,16 +125,28 @@ internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, 
         BackHandler { openId = null }
         Column(Modifier.safeDrawingPadding()) {
             IconButton(onClick = { openId = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.app_back)) }
-            val failure = if (error != 0) error else if (catalog?.readFailed == true || (catalog != null && entry == null)) R.string.jpx_io else 0
+            val failure = if (error != 0) error else if (catalog?.readFailed == true) R.string.jpx_io else 0
             if (failure != 0) Text(stringResource(failure)) else LinearProgressIndicator(Modifier.fillMaxWidth())
         }
     } else ConfigLibraryContent(
         strategy = strategy, onRoutes = { configuringRoutes = true },
         onAutomatic = { enabled -> change { library.setAutomatic(enabled, strategy.match?.entry?.id) } },
         world = library.world, entries = entries, busy = busy || catalog == null, error = if (catalog?.readFailed == true) R.string.jpx_io else error, onBack = onBack, listState = listState, variant = ::variant,
-        onImport = { picker.launch(arrayOf("*/*")) }, onOpen = { document=null; openId=it.id }, onApply = { applyId=it.id },
+        onCreate = { error = 0; creating = true }, onImport = { picker.launch(arrayOf("*/*")) }, onOpen = { document=null; openId=it.id }, onApply = { applyId=it.id },
         onExport=::export, onRename={ renaming=it }, onRemove = { deleting = it },
+        onStore = { storePage = "" }, onShare = { storePage = "profile:${it.id}" },
     )
+    if (creating) NewBattleConfigDialog(strategy.style, strategy.scene, library.world, busy, error,
+        onDismiss = { if (!busy) creating = false }) { name, style, scene ->
+        scope.launch {
+            if (!busy) perform {
+                val id = withContext(Dispatchers.IO) { library.create(name, style, scene) }
+                creating = false
+                document = null
+                openId = id
+            }
+        }
+    }
     val applying = entries.find { it.id == applyId }
     if (applying != null) AlertDialog(onDismissRequest={applyId=null},title={Text(stringResource(R.string.jpx_apply))},
         text={ Text(stringResource(R.string.jpx_apply_body, profileLabel(applying, variant(applying)), optionLabel(library.world))) },
@@ -164,11 +182,55 @@ internal fun BattleConfigsScreen(library: JpxLibrary, strategy: BattleStrategy, 
 }
 
 @Composable
+private fun NewBattleConfigDialog(detectedStyle: BattleStyle?, detectedScene: BattleScene?, world: String,
+    busy: Boolean, error: Int, onDismiss: () -> Unit, onCreate: (String, BattleStyle, BattleScene) -> Unit) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var style by rememberSaveable { mutableStateOf(detectedStyle ?: BattleStyle.OneHanded) }
+    val scenes = BattleScene.entries.filter { it != BattleScene.Tower || world == "Isekai" }
+    var scene by rememberSaveable { mutableStateOf(detectedScene?.takeIf { it in scenes } ?: BattleScene.General) }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.jpx_new_profile)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it.take(80) }, singleLine = true, enabled = !busy,
+                    label = { Text(stringResource(R.string.jpx_profile_name)) }, modifier = Modifier.fillMaxWidth())
+                ProfileChoice(stringResource(R.string.jpx_profile_style), style, BattleStyle.entries, !busy,
+                    label = { styleLabel(it) }, onSelect = { style = it })
+                ProfileChoice(stringResource(R.string.jpx_profile_scene), scene, scenes, !busy,
+                    label = { stringResource(it.label) }, onSelect = { scene = it })
+                if (error != 0) Text(stringResource(error), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = name.isNotBlank() && !busy, onClick = { onCreate(name, style, scene) }) {
+                Text(stringResource(R.string.game_ui_create))
+            }
+        },
+        dismissButton = { TextButton(enabled = !busy, onClick = onDismiss) { Text(stringResource(R.string.game_ui_cancel)) } })
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> ProfileChoice(title: String, selected: T, options: List<T>, enabled: Boolean,
+    label: @Composable (T) -> String, onSelect: (T) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = open, onExpandedChange = { open = it }) {
+        OutlinedTextField(value = label(selected), onValueChange = {}, readOnly = true, singleLine = true, enabled = enabled,
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
+            label = { Text(title) }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) })
+        ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            for (option in options) DropdownMenuItem(text = { Text(label(option)) }, onClick = { onSelect(option); open = false })
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
 private fun ConfigLibraryContent(
     strategy: BattleStrategy, onRoutes: () -> Unit, onAutomatic: (Boolean) -> Unit,
     world: String, entries: List<JpxEntry>, busy: Boolean, error: Int,
     listState: LazyListState, variant: (JpxEntry) -> String, onRename: (JpxEntry) -> Unit,
-    onBack: () -> Unit, onImport: () -> Unit, onOpen: (JpxEntry) -> Unit, onApply: (JpxEntry) -> Unit, onExport: (JpxEntry) -> Unit, onRemove: (JpxEntry) -> Unit,
+    onBack: () -> Unit, onCreate: () -> Unit, onImport: () -> Unit, onOpen: (JpxEntry) -> Unit, onApply: (JpxEntry) -> Unit, onExport: (JpxEntry) -> Unit, onRemove: (JpxEntry) -> Unit,
+    onStore: () -> Unit, onShare: (JpxEntry) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(Modifier.fillMaxSize()) {
@@ -180,11 +242,7 @@ private fun ConfigLibraryContent(
                     Text(stringResource(R.string.jpx_title), Modifier.semantics { heading() }, style = MaterialTheme.typography.titleLarge)
                     Text(stringResource(R.string.jpx_scope, optionLabel(world)), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                 }
-                if (entries.isNotEmpty()) TextButton(onClick = onImport, enabled = !busy) {
-                    Icon(Icons.Filled.Add, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.jpx_import))
-                }
+                TextButton(onClick = onStore) { Text(stringResource(R.string.jpx_store)) }
             }
             LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
                 state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
@@ -197,24 +255,26 @@ private fun ConfigLibraryContent(
                     StrategyControls(automatic = strategy.catalog?.manual != true, enabled = !busy && strategy.catalog?.readFailed == false,
                         onAutomatic = onAutomatic, onRoutes = onRoutes)
                 }
-                if (entries.isEmpty() && !busy) item {
-                    Surface(shape = MaterialTheme.shapes.large, color = colors.surfaceContainerLow) {
-                        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-                            Icon(Icons.Filled.FolderOpen, null, tint = colors.primary)
-                            Spacer(Modifier.height(12.dp))
-                            Text(stringResource(R.string.jpx_empty), style = MaterialTheme.typography.titleMedium)
-                            Text(stringResource(R.string.jpx_hint), Modifier.padding(top = 4.dp), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp))
-                            Button(onClick = onImport) { Text(stringResource(R.string.jpx_import)) }
+                item {
+                    FlowRow(Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onCreate, enabled = !busy) {
+                            Icon(Icons.Filled.Add, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.jpx_new_profile))
                         }
+                        OutlinedButton(onClick = onImport, enabled = !busy) { Text(stringResource(R.string.jpx_import)) }
                     }
+                }
+                if (entries.isEmpty() && !busy) item {
+                    Text(stringResource(R.string.jpx_empty), Modifier.padding(vertical = 8.dp), color = colors.onSurfaceVariant)
                 }
                 if (entries.isNotEmpty()) item {
                     Text(stringResource(R.string.jpx_saved, entries.size), Modifier.padding(start = 8.dp, bottom = 8.dp).semantics { heading() },
                         style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant)
                 }
                 items(entries, key = { it.id }) { entry ->
-                    ConfigRow(entry, variant(entry), strategy.detected(entry), strategy.match?.entry?.id == entry.id, !busy, onRename = { onRename(entry) }, onOpen = { onOpen(entry) }, onApply={onApply(entry)}, onExport={onExport(entry)}, onRemove = { onRemove(entry) })
+                    ConfigRow(entry, variant(entry), strategy.detected(entry), strategy.match?.entry?.id == entry.id, !busy, onRename = { onRename(entry) }, onOpen = { onOpen(entry) }, onApply={onApply(entry)}, onExport={onExport(entry)}, onRemove = { onRemove(entry) }, onShare = { onShare(entry) })
                 }
             }
         }
@@ -222,7 +282,7 @@ private fun ConfigLibraryContent(
 }
 
 @Composable
-private fun ConfigRow(entry: JpxEntry, variant: String, detected: Boolean, active: Boolean, enabled: Boolean, onRename: () -> Unit, onOpen: () -> Unit, onApply: () -> Unit, onExport: () -> Unit, onRemove: () -> Unit) {
+private fun ConfigRow(entry: JpxEntry, variant: String, detected: Boolean, active: Boolean, enabled: Boolean, onRename: () -> Unit, onOpen: () -> Unit, onApply: () -> Unit, onExport: () -> Unit, onRemove: () -> Unit, onShare: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     Surface(shape = MaterialTheme.shapes.medium, color = if (active) colors.secondaryContainer else colors.surface) {
@@ -248,6 +308,7 @@ private fun ConfigRow(entry: JpxEntry, variant: String, detected: Boolean, activ
                     DropdownMenuItem(text={Text(stringResource(R.string.jpx_apply))},onClick={menu=false;onApply()})
                     DropdownMenuItem(text={Text(stringResource(R.string.jpx_nickname))},onClick={menu=false;onRename()})
                     DropdownMenuItem(text={Text(stringResource(R.string.jpx_export))},onClick={menu=false;onExport()})
+                    DropdownMenuItem(text={Text(stringResource(R.string.jpx_share))}, enabled=entry.rules > 0, onClick={menu=false;onShare()})
                     DropdownMenuItem(text = { Text(stringResource(R.string.jpx_remove)) }, onClick = { menu = false; onRemove() })
                 }
             }

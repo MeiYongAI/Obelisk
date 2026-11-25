@@ -41,7 +41,13 @@ data class BattlePage(
     val completionLines: List<String> = emptyList(),
     val itemText: Map<String, BattleItemText> = emptyMap(),
     val remainingCooldowns: Map<String, Int> = emptyMap(),
+    val difficulty: String? = null,
+    val monsterEffects: Map<String, List<BattleEffect>> = emptyMap(),
 ) {
+    // These exact fragments describe this instance's parsed lists. A copy can replace a list
+    // or enrich the item dictionary, so copy() intentionally starts with no recorded fragments.
+    internal var parsedPaneHtml: Map<String, String> = emptyMap()
+
     internal fun afterRoundContinuation(previous: BattlePage): BattlePage {
         if (isComplete || !previous.isComplete || previous.continuation?.isNextRound != true) return this
         if (scene != null && previous.scene != null && scene != previous.scene) return this
@@ -53,10 +59,13 @@ data class BattlePage(
         if (round.current != null && expectedRound != null && round.current != expectedRound) return this
         // The server's next-round control still identifies the encounter if its log was truncated.
         return copy(encounterKey = previous.encounterKey, scene = scene ?: previous.scene,
-            round = round.copy(current = round.current ?: expectedRound, total = total))
+            difficulty = difficulty ?: previous.difficulty,
+            round = round.copy(current = round.current ?: expectedRound, total = total).after(previous.round))
     }
 
     val canContinue: Boolean get() = continuation != null
+    internal fun effectsOf(enemy: BattleEnemy): List<BattleEffect> =
+        if (enemy.targetable && enemy.effects.size == 6) monsterEffects[enemy.name] ?: enemy.effects else enemy.effects
 }
 
 /** A missing GET action means the official continue control reloads the current battle URL. */
@@ -85,7 +94,7 @@ data class BattleEnemy(
 )
 
 data class BattleEffect(val name: String, val description: String, val duration: String,
-    val iconKey: String? = null, val iconUrl: okhttp3.HttpUrl? = null)
+    val iconKey: String? = null, val unknownStack: Boolean = false)
 
 data class BattleControl(val mode: String, val enabled: Boolean, val selected: Boolean = false)
 
@@ -101,6 +110,8 @@ data class BattleActionOption(
     val chargeCost: Int? = null,
     val cooldown: Int? = null,
     val group: String = "",
+    val iconKey: String? = null,
+    val itemId: Int? = null,
 )
 
 data class BattleAction(

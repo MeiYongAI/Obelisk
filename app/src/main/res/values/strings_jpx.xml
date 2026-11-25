@@ -2,7 +2,10 @@
 <resources>
     <string name="jpx_title">Battle configurations</string>
     <string name="jpx_scope">Current account · %1$s</string>
-    <string name="jpx_hint">Choose a JPX battle export (.txt or .json, up to 2 MiB).</string>
+    <string name="jpx_new_profile">New configuration</string>
+    <string name="jpx_profile_name">Configuration name</string>
+    <string name="jpx_profile_style">Fighting style</string>
+    <string name="jpx_profile_scene">Battlefield</string>
     <string name="jpx_import">Import file</string>
     <string name="jpx_large">File exceeds 2 MiB. Choose a smaller battle export.</string>
     <string name="jpx_wrong_world">This file is for another world. Switch worlds before importing it.</string>

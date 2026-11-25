@@ -2,7 +2,10 @@
 <resources>
     <string name="jpx_title">战斗配置</string>
     <string name="jpx_scope">当前账号 · %1$s</string>
-    <string name="jpx_hint">从设备选择 JPX 战斗配置文件（.txt 或 .json，最大 2 MiB）。</string>
+    <string name="jpx_new_profile">新建配置</string>
+    <string name="jpx_profile_name">配置名称</string>
+    <string name="jpx_profile_style">战斗流派</string>
+    <string name="jpx_profile_scene">战场</string>
     <string name="jpx_import">导入文件</string>
     <string name="jpx_large">文件超过 2 MiB，请选择较小的战斗配置。</string>
     <string name="jpx_wrong_world">配置适用于另一个世界。请先切换世界，再导入。</string>
@@ -14,10 +17,10 @@
     <string name="jpx_preview">导入战斗配置</string>
     <string name="jpx_confirm_remove">移除“%1$s”？如果正在使用，也会取消应用。其他配置和原文件不变。</string>
     <string name="jpx_sign_in">登录后可管理配置</string>
-    <string name="jpx_manage">导入和选用 JPX 配置</string>
+    <string name="jpx_manage">管理战斗配置</string>
     <string name="jpx_scene_general">通用</string>
     <string name="jpx_mode_label">%1$s · %2$s</string>
-    <string name="jpx_saved">已导入（%1$d）</string>
+    <string name="jpx_saved">已保存（%1$d）</string>
     <string name="jpx_options">%1$s 的更多选项</string>
     <string name="jpx_scene_arena">竞技场</string>
     <string name="jpx_scene_encounter">遭遇战</string>

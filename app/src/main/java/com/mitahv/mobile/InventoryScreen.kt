@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mitahv.mobile.i18n.gameText
 import com.mitahv.mobile.i18n.messageText
@@ -142,7 +143,9 @@ private fun InventoryItemRow(row: CharacterSectionRow, equipped: Boolean, onClic
         color = MaterialTheme.colorScheme.surfaceContainerLow) {
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(gameText(row.title), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            ItemArtwork(row.title, row.inventory?.category.orEmpty(), Modifier.size(32.dp))
+            Text(gameText(row.title), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (equipped) Icon(Icons.Default.Check, stringResource(R.string.inventory_ui_equipped),
                 Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
             InventoryQuantity(row.value)
@@ -156,7 +159,12 @@ private fun InventoryItemRow(row: CharacterSectionRow, equipped: Boolean, onClic
 private fun InventoryItemDetails(row: CharacterSectionRow, busy: Boolean, onDismiss: () -> Unit,
     onAction: (NativeAction) -> Unit) {
     AlertDialog(onDismissRequest = onDismiss,
-        title = { Text(gameText(row.title)) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ItemArtwork(row.title, row.inventory?.category.orEmpty(), Modifier.size(36.dp))
+                Text(gameText(row.title))
+            }
+        },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 InventoryQuantity(row.value)
@@ -183,7 +191,8 @@ private fun InventorySlotTile(form: CharacterSectionForm, busy: Boolean, onClick
         Column(Modifier.fillMaxWidth().heightIn(min = 104.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(characterLabel(form.title), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-                Icon(if (empty) Icons.Default.Add else Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(18.dp))
+                if (empty) Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+                else if (option != null) ItemArtwork(option.itemName, "", Modifier.size(28.dp))
             }
             Text(if (empty) stringResource(R.string.character_ui_empty) else gameText(option?.itemName.orEmpty()),
                 style = MaterialTheme.typography.titleSmall)
@@ -226,6 +235,7 @@ private fun InventorySlotSheet(form: CharacterSectionForm, busy: Boolean, onDism
                     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
                         Row(Modifier.heightIn(min = 48.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            if (option.value != "0") ItemArtwork(option.itemName, "", Modifier.size(28.dp))
                             Text(if (option.value == "0") stringResource(R.string.character_ui_empty) else gameText(option.itemName),
                                 Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                             InventoryQuantity(option.itemCount)

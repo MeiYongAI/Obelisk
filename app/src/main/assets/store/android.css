@@ -1,0 +1,38 @@
+:root {
+    color-scheme: light dark;
+    --jpx-theme-text: #241f20;
+    --jpx-theme-muted: #665a5b;
+    --jpx-theme-border: #cebdbe;
+    --jpx-theme-surface: #fffbfa;
+    --jpx-theme-field: #fff8f7;
+    --jpx-theme-selected: #ffded9;
+    --jpx-theme-hover: #f9eae7;
+    --jpx-theme-accent: #913f3a;
+    font-family: Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --jpx-theme-text: #f3dddb; --jpx-theme-muted: #d7c0be; --jpx-theme-border: #655251;
+        --jpx-theme-surface: #201a19; --jpx-theme-field: #2b2221; --jpx-theme-selected: #643735;
+        --jpx-theme-hover: #392a29; --jpx-theme-accent: #ffb5ac;
+    }
+}
+* { box-sizing: border-box; }
+html, body, main, #panel_configStore { width: 100%; height: 100%; min-height: 0; margin: 0; }
+body { background: var(--jpx-theme-surface); color: var(--jpx-theme-text); }
+#settings-container main { display: flex; flex-direction: column; }
+#settings-container #panel_configStore { display: flex; flex: 1; padding: 8px 12px; }
+#settings-container .jpx-store .jpx-store-stage { padding-bottom: 12px; }
+#settings-container .jpx-store :is(button, input, select, .jpx-store-link) { min-height: 44px; }
+#settings-container .jpx-store-querybar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+#settings-container .jpx-store-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+#settings-container :is(.jpx-store, dialog) { font-family: Roboto, system-ui, sans-serif; }
+dialog { padding: 18px; width: min(94%, 440px); max-height: 88%; overflow: auto; border: 1px solid var(--jpx-theme-border);
+    border-radius: 16px; color: var(--jpx-theme-text); background: var(--jpx-theme-surface); }
+dialog::backdrop { background: #0008; }
+dialog h2 { margin: 0 0 16px; font-size: 1.15rem; }
+dialog p { white-space: pre-wrap; overflow-wrap: anywhere; }
+dialog button { display: block; width: 100%; min-height: 44px; border: 0; padding: 8px; color: var(--jpx-theme-accent);
+    background: transparent; text-align: start; font: inherit; }
+dialog button:active { background: var(--jpx-theme-selected); }
+#localStatus { flex: none; padding: 8px 14px; margin: 0; }

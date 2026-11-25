@@ -3,6 +3,11 @@ package com.mitahv.mobile.data
 // JPX action/condition vocabulary, not preset configurations.
 internal object JpxFields {
     val types = "target spellSupport item toggle stop smartDebuff spellDebuff spellDamage skill normalAttack kamisamaniNattaHi".split(' ')
+    fun typesForGroup(group: String): List<String> = when (group) {
+        "supports" -> listOf("spellSupport", "item", "toggle", "stop")
+        "attacks" -> listOf("target", "toggle", "smartDebuff", "spellDebuff", "spellDamage", "skill", "normalAttack", "kamisamaniNattaHi")
+        else -> types
+    }
     val conditions = "world pLevel pMaxSpellType battleTypes difficulty roundCurrent roundLeft roundTotal floor pActionCooldown pActionHistory pActionCounts pTotalActionCounts pHP pMP pSP pOC pSpiritStatus pEffects pIgnoredEffects pEffectStacks monsters activeMonsters defeatedMonsters bosses activeBosses defeatedBosses mLevel mWithoutEffects tName tTypes tClasses tPowerLevel tIndex tHP tMP tSP tEffects tIgnoredEffects tEffectStacks tDaysSinceUpdate".split(' ')
     val withNames = setOf("spellSupport", "item", "toggle", "smartDebuff", "spellDebuff", "spellDamage", "skill")
     val ranges = "pLevel roundCurrent roundLeft roundTotal floor pHP pMP pSP pOC monsters activeMonsters defeatedMonsters bosses activeBosses defeatedBosses mLevel tPowerLevel tIndex tHP tMP tSP tDaysSinceUpdate".split(' ').toSet()

@@ -6,7 +6,7 @@ import com.mitahv.mobile.model.BattleEffect
 import com.mitahv.mobile.model.BattleScene
 
 /** A known false conjunct rules out the action even if another conjunct is unobservable. */
-internal fun RuleContext.matches(conditions: List<JsonObject>, target: Int?): Boolean {
+internal suspend fun RuleContext.matches(conditions: List<JsonObject>, target: Int?): Boolean {
     var missing: UnknownRuleField? = null
     for (condition in conditions) try {
         if (!test(condition, target)) return false
@@ -15,7 +15,7 @@ internal fun RuleContext.matches(conditions: List<JsonObject>, target: Int?): Bo
     return true
 }
 
-private fun RuleContext.test(c: JsonObject, target: Int?): Boolean {
+private suspend fun RuleContext.test(c: JsonObject, target: Int?): Boolean {
     val key = c["key"].string ?: unknown("key")
     val value = c["value"]
     fun values(v: JsonElement? = value) = v?.takeIf { it.isJsonArray }?.asJsonArray?.toList() ?: unknown(key)
@@ -24,14 +24,14 @@ private fun RuleContext.test(c: JsonObject, target: Int?): Boolean {
         val a = values(v); val min = number(a.getOrNull(0)); val max = number(a.getOrNull(1))
         return (n?.toDouble() ?: unknown(key)) in min..max
     }
-    fun names(skip: Int = 0) = values().drop(skip).map { it.string ?: unknown(key) }.ifEmpty { unknown(key) }
+    fun names(skip: Int = 0) = values().drop(skip).map { it.string ?: unknown(key) }
     fun effects(list: List<BattleEffect>): Boolean {
         val ignore = key.endsWith("IgnoredEffects")
         return names(2).all { name ->
             val effect = list.find { it.name.substringBefore(" (x") == name }
             val hit = when {
                 effect == null -> range(-1)
-                key.endsWith("Stacks") -> range(stack.find(effect.name)?.groupValues?.get(1)?.toIntOrNull() ?: 1)
+                key.endsWith("Stacks") -> effect.unknownStack || range(stack.find(effect.name)?.groupValues?.get(1)?.toIntOrNull() ?: 1)
                 effect.duration == "permanent" -> range(9999)
                 effect.duration in setOf("autocast", "decaying", "-") -> true // JPX treats nonnumeric duration as in range.
                 else -> range(effect.duration.toIntOrNull())
@@ -44,15 +44,21 @@ private fun RuleContext.test(c: JsonObject, target: Int?): Boolean {
         val count = alive.count { i ->
             val e = enemies[i]
             i - target in offset[0]..offset[1] && when (key) {
-                "tHP" -> range(if (e.healthMeasured) ratio(e.healthFraction) else null)
-                "tMP" -> range(e.magicFraction?.let { ratio(it) })
-                "tSP" -> range(e.spiritFraction?.let { ratio(it) })
-                "tName" -> { val name = value.string ?: unknown(key); if (name.startsWith('/')) unknown(key); e.name.contains(name, ignoreCase = true) }
+                "tHP" -> range(monsterRatio(e.healthFraction.takeIf { e.healthMeasured }))
+                "tMP" -> range(monsterRatio(e.magicFraction))
+                "tSP" -> range(monsterRatio(e.spiritFraction))
+                "tName" -> {
+                    val input = value.string ?: unknown(key)
+                    if (input.startsWith('/') && isNameExpression(input))
+                        nameMatches?.invoke(input, e.name) ?: unknown(key)
+                    else e.name.contains(input, ignoreCase = true)
+                }
                 "tTypes" -> bossType(e.name) in names()
                 "tIndex" -> { val a = values().map { number(it).toInt().let { n -> if (n > 0) n-1 else if (n < 0) enemies.size+n else 0 } }; if (a.size != 2) unknown(key); i in a[0]..a[1] }
-                "tEffects", "tIgnoredEffects", "tEffectStacks" -> effects(e.effects)
-                // JPX has no match for these predicates without its optional external monster DB.
-                "tClasses", "tPowerLevel", "tDaysSinceUpdate" -> false
+                "tEffects", "tIgnoredEffects", "tEffectStacks" -> effects(page.effectsOf(e))
+                "tClasses" -> monsterInfo[e.target]?.monsterClass in names()
+                "tPowerLevel" -> monsterInfo[e.target]?.let { range(it.plvl) } ?: false
+                "tDaysSinceUpdate" -> monsterInfo.isNotEmpty() && range(monsterInfo[e.target]?.daysSince() ?: 9999)
                 else -> unknown(key)
             }
         }
@@ -60,6 +66,7 @@ private fun RuleContext.test(c: JsonObject, target: Int?): Boolean {
     }
     return when (key) {
         "world" -> world in names()
+        "difficulty" -> (difficulty ?: unknown(key)) in names()
         "battleTypes" -> (scene?.name ?: unknown(key)) in names()
         "pLevel" -> range(playerLevel)
         "pMaxSpellType" -> (school?.name?.lowercase() ?: unknown(key)) in names()
@@ -75,22 +82,38 @@ private fun RuleContext.test(c: JsonObject, target: Int?): Boolean {
         "bosses", "activeBosses", "defeatedBosses" -> range(enemies.count { bossType(it.name) != "Normal" &&
             (key == "bosses" || it.targetable == (key == "activeBosses")) })
         "mLevel" -> range(enemies.firstOrNull()?.level?.substringAfterLast(' ')?.toIntOrNull())
-        "mWithoutEffects" -> { val effects = names(2); range(alive.count { i -> effects.any { name -> enemies[i].effects.none { it.name.substringBefore(" (x") == name } } }) }
+        "mWithoutEffects" -> { val effects = names(2); range(alive.count { i -> effects.any { name -> page.effectsOf(enemies[i]).none { it.name.substringBefore(" (x") == name } } }) }
         "roundCurrent" -> range(page.round.current)
         "roundTotal" -> range(page.round.total)
         "roundLeft" -> range((page.round.total ?: unknown(key)) - (page.round.current ?: unknown(key)))
         "floor" -> if (scene == null) unknown(key) else scene != BattleScene.Tower || range(page.round.floor)
-        "pActionCooldown" -> names(2).all { raw ->
-            val name = spellName(raw); val options = page.spells + page.skills + page.items
-            when { options.any { it.name == name && it.enabled } -> range(0); options.none { it.name == name } -> false; else -> unknown(key) }
+        "pActionCooldown" -> names(2).all { raw -> cooldown(spellName(raw))?.let { range(it) } ?: false }
+        "pActionCounts" -> names(2).all { range(casts(spellName(it))) }
+        "pTotalActionCounts" -> names(2).all {
+            if (!page.round.sawStart || (!page.round.priorRoundsKnown && page.round.current != 1)) unknown(key)
+            range(page.round.totalCasts(spellName(it)))
         }
-        "pActionCounts" -> names(2).all { raw -> val name = spellName(raw); if ((page.spells + page.skills).none { it.name == name }) unknown(key); range(casts(name)) }
+        "pActionHistory" -> names(2).all { raw ->
+            val name = spellName(raw)
+            val known = page.round.history
+            when {
+                known.indices.any { i -> known[i] == name && range(i + 1) } -> true
+                !page.round.sawStart && number(values().getOrNull(1)) >= known.size + 1 -> unknown(key)
+                else -> false
+            }
+        }
         else -> unknown(key)
     }
 }
 
 internal fun RuleContext.casts(name: String): Int = if (page.round.sawStart) page.round.casts[name] ?: 0 else unknown("pActionCounts")
 private val stack = Regex(""" \(x(\d+)\)$""")
+// JPX recognizes /^\/(.*?)\/([dgimsuvy]*)$/ with JavaScript's four line terminators.
+private fun isNameExpression(input: String): Boolean {
+    val end = input.lastIndexOf('/')
+    return end > 0 && (1 until end).none { input[it] in "\n\r\u2028\u2029" } &&
+        (end + 1 until input.length).all { input[it] in "dgimsuvy" }
+}
 private val bossTypes = buildMap {
     fun add(type: String, names: String) = names.split('|').forEach { put(it, type) }
     add("Rare", "Manbearpig|White Bunneh|Mithra|Dalek")

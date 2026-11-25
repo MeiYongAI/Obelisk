@@ -134,6 +134,7 @@ private fun ItemShopRow(entry: BazaarSectionsEntry, buying: Boolean, busy: Boole
         Column {
             Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                ItemArtwork(entry.title, entry.category, Modifier.size(32.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(gameText(entry.title), style = MaterialTheme.typography.bodyLarge)
                     if (item != null) Text(if (buying) stringResource(R.string.shop_owned, shopNumber(item.owned))

@@ -238,7 +238,9 @@ private fun AbilityRow(row: CharacterSectionRow, busy: Boolean, onAction: (Nativ
         Column {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(Modifier.weight(1f).clickable(onClickLabel = detailLabel, onClick = onDetail)
-                    .heightIn(min = 68.dp).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    .heightIn(min = 68.dp).padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AbilityArtwork(row.title, ability.family, size = 32.dp, acquired = ability.acquired)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(messageText(row.title), style = MaterialTheme.typography.titleSmall)
                         if (summary.isNotEmpty()) Text(summary, style = MaterialTheme.typography.bodySmall,
@@ -291,7 +293,7 @@ private fun AbilitySlotTile(row: CharacterSectionRow, enabled: Boolean = true, c
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(row.title.substringAfterLast(' '), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
                 if (!slot.unlocked) Icon(Icons.Default.Lock, null, Modifier.size(16.dp))
-                else if (occupied) Icon(Icons.Default.CheckCircle, null, Modifier.size(16.dp))
+                else if (occupied) AbilityArtwork(slot.equippedName, slot.family, size = 24.dp)
             }
             Text(if (!slot.unlocked) slotUnlockLabel(row)
                 else if (occupied) messageText(slot.equippedName) else stringResource(R.string.character_ui_empty),
@@ -323,7 +325,12 @@ private fun AbilityDetailDialog(row: CharacterSectionRow, busy: Boolean, onDismi
     val ability = requireNotNull(row.ability)
     val upgrade = row.actionFor("unlock_ability")
     val reset = row.actionFor("reset_ability")
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(messageText(row.title)) },
+    AlertDialog(onDismissRequest = onDismiss, title = {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            AbilityArtwork(row.title, ability.family, size = 36.dp, acquired = ability.acquired)
+            Text(messageText(row.title))
+        }
+    },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (ability.tiers.isEmpty()) {
@@ -419,7 +426,10 @@ private fun AbilitySlotDialog(row: CharacterSectionRow, tree: String, canChooseT
                 if (!slot.unlocked) Text(slotUnlockLabel(row))
                 else {
                     if (slot.equippedName.isNotBlank()) {
-                        Text(messageText(slot.equippedName), style = MaterialTheme.typography.titleSmall)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AbilityArtwork(slot.equippedName, slot.family, size = 28.dp)
+                            Text(messageText(slot.equippedName), style = MaterialTheme.typography.titleSmall)
+                        }
                         if (row.expandedDetail.isNotBlank()) TextButton(onClick = { details = !details }) {
                             Text(stringResource(if (details) R.string.ability_ui_hide_details else R.string.game_ui_details))
                         }
@@ -439,7 +449,9 @@ private fun AbilitySlotDialog(row: CharacterSectionRow, tree: String, canChooseT
                                 onAction(requireNotNull(form).actionWith(mapOf("equip_ability" to option.value), emptyMap()))
                             }, enabled = !busy && !selected, shape = MaterialTheme.shapes.medium,
                                 color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh) {
-                                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    AbilityArtwork(option.label, slot.family, size = 24.dp)
                                     Text(messageText(option.label), Modifier.weight(1f))
                                     if (selected) Icon(Icons.Default.CheckCircle, null, Modifier.size(20.dp))
                                 }

@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.mitahv.mobile.model.BattleScene
 import com.mitahv.mobile.model.BattleStyle
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
+import java.util.UUID
 
 internal class JpxLibrary(private val db: Database, private val account: String, val world: String) {
     class Database(context: Context, name: String = "battle-profiles.db") : SQLiteOpenHelper(context.applicationContext, name, null, 1) {
@@ -34,6 +37,7 @@ internal class JpxLibrary(private val db: Database, private val account: String,
                 account TEXT NOT NULL, world TEXT NOT NULL, target TEXT NOT NULL,
                 profile INTEGER REFERENCES profiles(id) ON DELETE SET NULL,
                 PRIMARY KEY(account,world,target))""")
+            StoreLibrary.open(db)
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) =
@@ -46,6 +50,7 @@ internal class JpxLibrary(private val db: Database, private val account: String,
 
     private val changes = MutableStateFlow(0L)
     val revision = changes.asStateFlow()
+    val store = StoreLibrary(this, account, world)
 
     fun catalog(): JpxCatalog = read(::readCatalog)
 
@@ -57,7 +62,7 @@ internal class JpxLibrary(private val db: Database, private val account: String,
         BattleStrategy(catalog, style, scene, inBattle, match, published)
     }
 
-    private fun <T> read(action: (SQLiteDatabase) -> T): T {
+    internal fun <T> read(action: (SQLiteDatabase) -> T): T {
         val sql = db.readableDatabase
         sql.beginTransactionNonExclusive()
         try { return action(sql).also { sql.setTransactionSuccessful() } } finally { sql.endTransaction() }
@@ -109,6 +114,27 @@ internal class JpxLibrary(private val db: Database, private val account: String,
             }
             JpxDraft(c.getString(0), listOf(c.getString(1)), c.getInt(2), out.toString("UTF-8"))
         }
+    }
+
+    fun create(name: String, style: BattleStyle, scene: BattleScene): Long = transaction { sql ->
+        val title = name.trim()
+        require(title.length in 1..80)
+        val mode = style.slot(scene)
+        val source = JsonObject().apply {
+            addProperty("battleVersion", 20251216)
+            add(mode, JsonObject().apply { add("rules", JsonArray()) })
+        }
+        sql.insertOrThrow("profiles", null, ContentValues().apply {
+            put("account", account)
+            put("world", world)
+            // Locally authored variants can start with identical rules, even in the same mode.
+            put("import_hash", "local-${UUID.randomUUID()}")
+            put("origin", title)
+            put("nickname", title)
+            put("slot", mode)
+            put("rules", 0)
+            put("source", source.toString())
+        })
     }
 
     /** Re-import restores missing modes but leaves edited profiles alone. */
@@ -186,7 +212,7 @@ internal class JpxLibrary(private val db: Database, private val account: String,
 
     fun remove(id: Long) = transaction { sql -> check(sql.delete("profiles", row, scope + id.toString()) == 1) }
 
-    private fun <T> transaction(action: (SQLiteDatabase) -> T): T {
+    internal fun <T> transaction(action: (SQLiteDatabase) -> T): T {
         val sql = db.writableDatabase
         sql.beginTransaction()
         val result = try { action(sql).also { sql.setTransactionSuccessful() } } finally { sql.endTransaction() }

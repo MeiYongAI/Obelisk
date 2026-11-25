@@ -49,17 +49,18 @@ internal object CharacterSectionsParser {
         val hands = mutableMapOf<String, String?>()
         val slotRows = doc.select("#eqsb .eqb, #equipselect_left > .eqb").map { slot ->
             val title = slot.children().firstOrNull().hvText()
-            val detail = slot.children().getOrNull(1).hvText()
-            val equipmentId = slot.children().getOrNull(1)?.attr("data-eid")?.takeIf { it.toLongOrNull() != null }
+            val item = slot.children().getOrNull(1)
+            val emptySlot = item?.hasClass("eqempty") == true
+            val detail = item.hvText()
+            val equipmentId = item?.attr("data-eid")?.takeIf { it.toLongOrNull() != null }
                 ?: slot.select("[onmouseover]").firstNotNullOfOrNull {
                     Regex("(?:equips\\.set|hover_equip)\\(\\s*(\\d+)").find(it.attr("onmouseover"))?.groupValues?.get(1)
                 } ?: currentEquipmentId.takeIf { slot.parent()?.id() == "equipselect_left" }
-            val data = equipmentId?.let { equipment?.optJSONObject(it) }
+            val data = if (emptySlot) null else equipmentId?.let { equipment?.optJSONObject(it) }
             val originalName = data?.optString("n")?.takeIf(String::isNotBlank)
             val target = location(slot.attr("onclick"), url)
             if (slot.parent()?.id() == "eqsb") {
-                val item = slot.children().getOrNull(1)
-                hands[title.lowercase()] = if (item?.hasClass("eqempty") == true) ""
+                hands[title.lowercase()] = if (emptySlot) ""
                     else originalName ?: data?.optString("t")?.takeIf(String::isNotBlank)
             }
             val comparison = if (slot.parent()?.id() == "equipselect_left") doc.selectFirst("#equipcompare")?.html().orEmpty() else ""
@@ -68,7 +69,7 @@ internal object CharacterSectionsParser {
                 NativeAction(it, "GET", label = if (doc.selectFirst("#equipselect_outer") != null) "返回装备" else "选择装备")
             }), expandedDetail = equipmentDetails(comparison.ifBlank {
                 data?.optString("d").orEmpty()
-            }), originalEquipmentName = originalName)
+            }), originalEquipmentName = originalName, emptyEquipmentSlot = emptySlot)
         }
         if (slotRows.isNotEmpty()) groups += CharacterSectionGroup("Equipment Slots", slotRows)
         doc.select("#stats_scrollable > table").forEach { table ->

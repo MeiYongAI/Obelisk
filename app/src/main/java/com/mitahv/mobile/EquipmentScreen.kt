@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.mitahv.mobile.i18n.gameText
 import com.mitahv.mobile.i18n.messageText
 import com.mitahv.mobile.model.*
 
@@ -83,7 +84,7 @@ private fun EquipmentOverview(page: CharacterSectionsPage, slots: List<Character
 @Composable
 private fun EquipmentSlot(slot: CharacterSectionRow, busy: Boolean, onClick: (() -> Unit)?, onDetail: () -> Unit,
     current: Boolean = false) {
-    val empty = slot.detail.equals("(empty)", ignoreCase = true)
+    val empty = slot.emptyEquipmentSlot
     Surface(onClick = { onClick?.invoke() }, enabled = !busy && onClick != null,
         shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 12.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
@@ -96,9 +97,11 @@ private fun EquipmentSlot(slot: CharacterSectionRow, busy: Boolean, onClick: (()
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(if (current) stringResource(R.string.equipment_ui_current) else messageText(slot.title),
                     style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (empty) Text(stringResource(R.string.character_ui_empty), style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                else EquipmentNameText(slot.detail, originalName = slot.originalEquipmentName,
+                if (empty) {
+                    val status = if (slot.detail.isBlank() || slot.detail.equals("(empty)", ignoreCase = true))
+                        stringResource(R.string.character_ui_empty) else gameText(slot.detail)
+                    Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else EquipmentNameText(slot.detail, originalName = slot.originalEquipmentName,
                     style = MaterialTheme.typography.bodyMedium)
             }
             if (slot.expandedDetail.isNotBlank()) IconButton(onClick = onDetail) {

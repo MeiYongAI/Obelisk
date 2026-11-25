@@ -77,6 +77,7 @@ data class CharacterSectionRow(
     val originalEquipmentName: String? = null,
     val training: CharacterTrainingInfo? = null,
     val inventory: CharacterInventoryItemInfo? = null,
+    val emptyEquipmentSlot: Boolean = false,
 )
 
 enum class CharacterInventoryKind { General, Scroll, Infusion }

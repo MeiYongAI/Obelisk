@@ -1,0 +1,5 @@
+<resources>
+    <string name="jpx_store">配置商店</string>
+    <string name="jpx_share">分享</string>
+    <string name="jpx_store_browser_error">无法在浏览器中打开 GitHub。</string>
+</resources>

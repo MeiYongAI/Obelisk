@@ -4,16 +4,20 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.gson.*
 import com.mitahv.mobile.data.JpxFields
@@ -46,22 +50,24 @@ private fun Choice(label: String, value: String, options: List<String>, display:
 }
 
 internal fun JsonObject.text(key: String): String = get(key)?.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
-private fun ruleTemplate(type: String) = JsonObject().apply {
+internal fun ruleTemplate(type: String) = JsonObject().apply {
     addProperty("type", type)
     JpxFields.choices(type).firstOrNull()?.let { addProperty("name", it) }
     for (key in JpxFields.extras(type)) when (key) {
         "priorityRule" -> addProperty(key, JpxFields.choices(key).first())
         "toggled", "bottomUp" -> addProperty(key, false)
-        "targetCount" -> addProperty(key, 1)
-        "tailSkip", "maxAtFirst", "minMonstersLeft" -> addProperty(key, 0)
+        "targetCount" -> addProperty(key, 3)
+        "tailSkip" -> addProperty(key, 0)
+        "maxAtFirst", "minMonstersLeft" -> addProperty(key, 10)
         else -> addProperty(key, "")
     }
     add("conditions", JsonArray())
 }
 
 @Composable
-internal fun JpxRuleEditor(original: JsonObject?, busy: Boolean, error: Int, onBack: () -> Unit, onSave: (JsonObject) -> Unit) {
-    val initial = remember(original) { original ?: ruleTemplate("normalAttack") }
+internal fun JpxRuleEditor(original: JsonObject?, types: List<String>, defaultType: String, busy: Boolean, error: Int,
+    onBack: () -> Unit, onSave: (JsonObject) -> Unit) {
+    val initial = remember(original, defaultType) { original ?: ruleTemplate(defaultType) }
     var rule by remember(initial) { mutableStateOf(initial.deepCopy()) }
     var bad by remember { mutableStateOf(false) }
     var discard by remember { mutableStateOf(false) }
@@ -77,32 +83,44 @@ internal fun JpxRuleEditor(original: JsonObject?, busy: Boolean, error: Int, onB
             Text(stringResource(if (original == null) R.string.jpx_add_rule else R.string.jpx_edit_rule), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
         }
         Column(Modifier.weight(1f).widthIn(max = 720.dp).fillMaxWidth().align(Alignment.CenterHorizontally).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Choice(stringResource(R.string.jpx_action), type, (listOf(type) + JpxFields.types).distinct(), { fieldLabel(it) }) { next ->
+            Choice(stringResource(R.string.jpx_action), type, (types + type).distinct(), { fieldLabel(it) }) { next ->
                 if (next != type) {
                     val old = rule
                     rule = ruleTemplate(next).apply {
-                        for ((k,v) in old.entrySet()) if (k !in JpxFields.extras(type) && k !in setOf("type", "name")) add(k,v.deepCopy())
+                        for ((k,v) in old.entrySet()) if (k !in JpxFields.extras(type) && k !in setOf("type", "name", "bottomUp", "code")) add(k,v.deepCopy())
                     }; bad = false
                 }
             }
             val options = JpxFields.choices(type)
             if (options.isNotEmpty()) Choice(stringResource(R.string.jpx_name), rule.text("name"), (options + rule.text("name")).filter { it.isNotEmpty() }.distinct(), { optionLabel(it) }) { mutate { addProperty("name", it) } }
             else if (rule.has("name")) OutlinedTextField(rule.text("name"), { mutate { addProperty("name", it) } }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.jpx_name)) })
-            for (key in (JpxFields.extras(type) + listOf("code", "bottomUp").filter { rule.has(it) }).distinct()) {
+            for (key in (JpxFields.extras(type) + listOf("code", "bottomUp").filter { rule.has(it) && !(type == "target" && it == "bottomUp") }).distinct()) {
                 when (key) {
-                    "priorityRule" -> Choice(fieldLabel(key), rule.text(key), JpxFields.choices(key), { optionLabel(it) }) { mutate { addProperty(key,it) } }
+                    "priorityRule" -> Choice(fieldLabel(key), rule.text(key).ifBlank { if (rule.text("bottomUp") == "true") "Bottom Up" else "Top Down" },
+                        JpxFields.choices(key), { optionLabel(it) }) { mutate { addProperty(key,it); remove("bottomUp") } }
+                    "targetCount" -> Choice(fieldLabel(key), rule.text(key).ifBlank { "3" }, listOf("3", "2", "1"), { it }) {
+                        mutate { addProperty(key, it.toInt()) }
+                    }
                     "bottomUp", "toggled" -> BoolRow(fieldLabel(key), rule.text(key) == "true") { mutate { addProperty(key,it) } }
+                    "code" -> OutlinedTextField(rule.text(key), { mutate { addProperty(key, it) } },
+                        Modifier.fillMaxWidth(), minLines = 5, maxLines = 14,
+                        label = { Text(stringResource(R.string.jpx_code)) },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false))
                     else -> {
-                        val integer = key in setOf("targetCount", "tailSkip", "minMonstersLeft", "maxAtFirst")
+                        val integer = key in setOf("tailSkip", "minMonstersLeft", "maxAtFirst")
                         OutlinedTextField(rule.text(key), { raw -> mutate {
                             if (integer && raw.toIntOrNull() != null) addProperty(key, raw.toInt()) else addProperty(key, raw)
-                        } }, Modifier.fillMaxWidth(), singleLine = key != "code", label = { Text(if (key == "code") stringResource(R.string.jpx_code) else fieldLabel(key)) })
+                        } }, Modifier.fillMaxWidth(), singleLine = true, label = { Text(fieldLabel(key)) },
+                            keyboardOptions = if (integer && key != "tailSkip") KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default)
                     }
                 }
             }
             BoolRow(stringResource(R.string.jpx_enabled), rule.text("disabled") != "true") { mutate { addProperty("disabled", !it) } }
-            HorizontalDivider()
-            Text(stringResource(R.string.jpx_conds), style = MaterialTheme.typography.titleMedium)
+            if (type != "kamisamaniNattaHi" || conditions.size() > 0) {
+                HorizontalDivider()
+                Text(stringResource(R.string.jpx_conds), style = MaterialTheme.typography.titleMedium)
+            }
             conditions.forEachIndexed { index, element ->
                 val cond = element.asJsonObject
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -120,16 +138,49 @@ internal fun JpxRuleEditor(original: JsonObject?, busy: Boolean, error: Int, onB
                         }
                         Text(summary, style = MaterialTheme.typography.bodySmall)
                     }
-                    IconButton(onClick = { mutate { getAsJsonArray("conditions").remove(index) } }) { Icon(Icons.Filled.Close, stringResource(R.string.jpx_remove)) }
+                    if (conditions.size() == 1) {
+                        IconButton(onClick = { mutate { getAsJsonArray("conditions").remove(index) } }) {
+                            Icon(Icons.Filled.Close, stringResource(R.string.jpx_remove))
+                        }
+                    } else {
+                        var menu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { menu = true }) {
+                                Icon(Icons.Filled.MoreVert, stringResource(R.string.jpx_options, fieldLabel(cond.text("key"))))
+                            }
+                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                for ((direction, label) in listOf(-1 to R.string.jpx_up, 1 to R.string.jpx_down)) {
+                                    val adjacent = index + direction
+                                    DropdownMenuItem(text = { Text(stringResource(label)) }, enabled = adjacent in 0 until conditions.size(),
+                                        onClick = {
+                                            menu = false
+                                            mutate {
+                                                val items = getAsJsonArray("conditions")
+                                                val moving = items[index]
+                                                items.set(index, items[adjacent])
+                                                items.set(adjacent, moving)
+                                            }
+                                        })
+                                }
+                                DropdownMenuItem(text = { Text(stringResource(R.string.jpx_remove)) }, onClick = {
+                                    menu = false
+                                    mutate { getAsJsonArray("conditions").remove(index) }
+                                })
+                            }
+                        }
+                    }
                 }
             }
-            OutlinedButton(onClick = { condition = conditions.size() }) { Text(stringResource(R.string.jpx_add_cond)) }
+            if (type != "kamisamaniNattaHi") {
+                OutlinedButton(onClick = { condition = conditions.size() }) { Text(stringResource(R.string.jpx_add_cond)) }
+            }
         }
         if (bad || error != 0) Text(stringResource(if (bad) R.string.jpx_invalid else error), Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.error)
         Button(enabled = !busy, onClick = {
             bad = (type in JpxFields.withNames && rule.text("name").isBlank()) ||
-                (type == "target" && rule.text("priorityRule").isBlank() && !rule.has("bottomUp")) ||
-                (type == "smartDebuff" && (rule.text("targetCount").toIntOrNull() !in 1..3 || listOf("tailSkip", "maxAtFirst", "minMonstersLeft").any { rule.has(it) && rule.text(it).toIntOrNull() == null }))
+                (type == "kamisamaniNattaHi" && rule.text("code").isBlank()) ||
+                (type == "smartDebuff" && (rule.has("targetCount") && rule.text("targetCount").toIntOrNull() !in 1..3 ||
+                    listOf("tailSkip", "maxAtFirst", "minMonstersLeft").any { rule.has(it) && rule.text(it).toIntOrNull() == null }))
             if (!bad) onSave(rule)
         }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) { Text(stringResource(R.string.jpx_save_edit)) }
     } }
@@ -146,6 +197,18 @@ private fun BoolRow(label: String, value: Boolean, change: (Boolean) -> Unit) {
 
 private fun JsonArray.getOrNull(index: Int) = if (index in 0 until size()) get(index) else null
 private fun parts(raw: JsonElement?) = raw?.takeIf { it.isJsonArray }?.asJsonArray?.map { if (it.isJsonPrimitive) it.asString else it.toString() }.orEmpty()
+
+internal fun conditionRange(field: String, low: String, high: String): JsonArray {
+    val first = low.trim().toBigDecimal()
+    val last = high.trim().toBigDecimal()
+    require(first.toDouble().isFinite() && last.toDouble().isFinite())
+    if (field in setOf("tIndex", "offset", "matched")) {
+        require(first.stripTrailingZeros().scale() <= 0 && last.stripTrailingZeros().scale() <= 0)
+    }
+    // Negative monster positions count from the end. [1, -1] covers the entire roster.
+    require(first <= last || field == "tIndex" && first.signum() >= 0 && last.signum() < 0)
+    return JsonArray().apply { add(first); add(last) }
+}
 
 @Composable
 private fun RangeFields(label: String, lo: String, hi: String, onLow: (String) -> Unit, onHigh: (String) -> Unit) {
@@ -168,7 +231,9 @@ private fun ConditionDialog(original: JsonObject?, onClose: () -> Unit, onSave: 
                 val raw = seed?.get("value"); val values = parts(raw)
                 val range = name in JpxFields.ranges || name in JpxFields.rangeLists
                 val list = name in JpxFields.rangeLists || (name in JpxFields.conditions && !range && name !in setOf("pSpiritStatus", "tName"))
-                var lo by remember { mutableStateOf(values.getOrNull(0) ?: "0") }; var hi by remember { mutableStateOf(values.getOrNull(1) ?: "1") }
+                val defaultBound = if (name == "pActionHistory") "1" else "0"
+                var lo by remember { mutableStateOf(values.getOrNull(0) ?: defaultBound) }
+                var hi by remember { mutableStateOf(values.getOrNull(1) ?: defaultBound) }
                 var names by remember { mutableStateOf(if (range) values.drop(2) else values) }
                 var text by remember { mutableStateOf(seed?.text("value").orEmpty()) }; var flag by remember { mutableStateOf(text == "true") }
                 var invalid by remember { mutableStateOf(false) }
@@ -190,20 +255,19 @@ private fun ConditionDialog(original: JsonObject?, onClose: () -> Unit, onSave: 
                 val extras = remember { mutableStateMapOf<String,String>() }
                 if (name.startsWith("t") || seed?.has("offset") == true || seed?.has("matched") == true) for (field in listOf("offset","matched")) {
                     val pair = parts(seed?.get(field))
-                    RangeFields(fieldLabel(field),extras["$field.0"] ?: pair.getOrNull(0).orEmpty(),extras["$field.1"] ?: pair.getOrNull(1).orEmpty(),{extras["$field.0"]=it},{extras["$field.1"]=it})
+                    val default = if (field == "offset") "0" else "1"
+                    RangeFields(fieldLabel(field),extras["$field.0"] ?: pair.getOrNull(0) ?: default,
+                        extras["$field.1"] ?: pair.getOrNull(1) ?: default,{extras["$field.0"]=it},{extras["$field.1"]=it})
                 }
                 if (invalid) Text(stringResource(R.string.jpx_invalid), color=MaterialTheme.colorScheme.error)
                 // Keep the confirmation button outside the scrollable fields, including with the IME open.
                 val submit: () -> Unit = {
                     try {
-                        fun pair(a:String,b:String) = JsonArray().apply {
-                            val l=a.toBigDecimal(); val h=b.toBigDecimal(); require(l<=h); add(l);add(h)
-                        }
                         val obj=original?.deepCopy() ?: JsonObject(); obj.addProperty("key",name)
                         if (seed == null) { obj.remove("value"); obj.remove("matched"); obj.remove("offset") }
                         when {
                             range || list -> {
-                                val arr=if(range) pair(lo,hi) else JsonArray()
+                                val arr=if(range) conditionRange(name,lo,hi) else JsonArray()
                                 if(list) names.forEach { arr.add(it) }
                                 obj.add("value",arr)
                             }
@@ -211,8 +275,11 @@ private fun ConditionDialog(original: JsonObject?, onClose: () -> Unit, onSave: 
                             name=="tName" || raw?.isJsonPrimitive == true && raw.asJsonPrimitive.isString -> obj.addProperty("value",text)
                         }
                         for (field in listOf("offset","matched")) if (extras.containsKey("$field.0") || extras.containsKey("$field.1")) {
-                            val old=parts(seed?.get(field)); val a=extras["$field.0"] ?: old.getOrNull(0).orEmpty(); val b=extras["$field.1"] ?: old.getOrNull(1).orEmpty()
-                            if(a.isBlank() && b.isBlank()) obj.remove(field) else obj.add(field,pair(a,b))
+                            val old=parts(seed?.get(field))
+                            val default=if(field=="offset") "0" else "1"
+                            val a=extras["$field.0"] ?: old.getOrNull(0) ?: default
+                            val b=extras["$field.1"] ?: old.getOrNull(1) ?: default
+                            if(a.isBlank() && b.isBlank()) obj.remove(field) else obj.add(field,conditionRange(field,a,b))
                         }
                         onSave(obj)
                     } catch (_: IllegalArgumentException) { invalid=true }

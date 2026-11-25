@@ -24,6 +24,126 @@ class BattleStrategyScreenTest {
     private val instrument = InstrumentationRegistry.getInstrumentation()
     private val context = instrument.targetContext
 
+    @Test fun sharingALocalProfileOpensTheAndroidWebViewAndReturnsToTheLibrary() {
+        val filename = "share-ui-${UUID.randomUUID()}.db"
+        val name = "Smoke profile"
+        try { JpxLibrary.Database(context, filename).use { db ->
+            val library = JpxLibrary(db, "fixture", "Isekai")
+            val raw = """{"battleVersion":20251216,"Staff_General":{"rules":[{"type":"stop"}]},"Staff_Item":{}}"""
+            library.save(JpxImport.read(raw.byteInputStream(), "fixture", library.world))
+            val id = library.catalog().entries.single().id
+            library.rename(id, name)
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                    BattleConfigsScreen(library, rememberStrategy(library, null, null, false)) {}
+                } } } }
+                val mode = context.getString(R.string.jpx_mode_label, context.getString(R.string.strategy_staff),
+                    context.getString(R.string.jpx_scene_general))
+                click(context.getString(R.string.jpx_options, "$mode · $name"))
+                click(context.getString(R.string.jpx_share))
+                fun webView(view: android.view.View): android.webkit.WebView? = when (view) {
+                    is android.webkit.WebView -> view
+                    is android.view.ViewGroup -> (0 until view.childCount).firstNotNullOfOrNull { webView(view.getChildAt(it)) }
+                    else -> null
+                }
+                fun js(script: String): String? {
+                    val result = java.util.concurrent.LinkedBlockingQueue<String>()
+                    scenario.onActivity { activity ->
+                        webView(activity.window.decorView)?.evaluateJavascript(script) { result.offer(it) }
+                            ?: result.offer("null")
+                    }
+                    return result.poll(2, java.util.concurrent.TimeUnit.SECONDS)
+                }
+                val title = "document.querySelector('form[data-store-editor=share] input[type=text]')"
+                await({ "Share editor did not load: ${js("document.body.innerText")}" }) {
+                    js("$title?.value") == org.json.JSONObject.quote(name)
+                }
+                assertEquals("true", js("storeCall('init').shareId === 'profile:$id' && typeof window.obeliskBack === 'function'"))
+                assertEquals("true", js("document.querySelector('.jpx-store-raw').open = true"))
+                await { js("document.querySelector('.jpx-store-raw pre')?.textContent.includes('stop')") == "true" }
+                fun enterText(field: String, value: String) {
+                    js("$field.scrollIntoView({block:'center'})")
+                    val center = org.json.JSONArray(js("""(() => {
+                        const r = $field.getBoundingClientRect(), scale = devicePixelRatio * visualViewport.scale;
+                        return [(r.x + r.width / 2) * scale, (r.y + r.height / 2) * scale];
+                    })()"""))
+                    val origin = IntArray(2)
+                    scenario.onActivity { webView(it.window.decorView)!!.getLocationOnScreen(origin) }
+                    val x = origin[0] + center.getInt(0)
+                    val y = origin[1] + center.getInt(1)
+                    android.os.ParcelFileDescriptor.AutoCloseInputStream(
+                        instrument.uiAutomation.executeShellCommand("input tap $x $y")
+                    ).use { it.readBytes() }
+                    await({ "Field did not receive touch focus" }) { js("document.activeElement === $field") == "true" }
+                    js("$field.select()")
+                    instrument.sendStringSync(value)
+                    await({ "Typed $value, field contains ${js("$field.value")}" }) {
+                        js("$field.value") == org.json.JSONObject.quote(value)
+                    }
+                }
+                enterText(title, "Review")
+                enterText("document.querySelector('form textarea')", "Offline")
+                click(context.getString(R.string.app_back))
+                await { js("!!document.querySelector('.jpx-store-querybar input[type=search]')") == "true" }
+                if (InstrumentationRegistry.getArguments().getString("jpxLiveStore") == "true") {
+                    val until = SystemClock.elapsedRealtime() + 45_000
+                    while (js("document.querySelectorAll('[data-store-id]').length") == "0" &&
+                        SystemClock.elapsedRealtime() < until) SystemClock.sleep(200)
+                    val count = js("document.querySelectorAll('[data-store-id]').length")?.toIntOrNull() ?: 0
+                    assertTrue("Public catalog: ${js("document.body.innerText")}", count > 0)
+                    android.util.Log.i("ObeliskStoreTest", "Public catalog rows: $count")
+                }
+                scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+                find(name)
+                assertEquals(name, library.catalog().entries.single().nickname)
+            }
+        } } finally { context.deleteDatabase(filename) }
+    }
+
+    @Test fun createsAndEditsAConfigurationWithoutImportingAFile() {
+        val filename = "new-profile-ui-${UUID.randomUUID()}.db"
+        try {
+            JpxLibrary.Database(context, filename).use { db ->
+                val library = JpxLibrary(db, "fixture", "Isekai")
+                ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                    scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                        BattleConfigsScreen(library, rememberStrategy(library, BattleStyle.Staff, BattleScene.Item, false)) {}
+                    } } } }
+                    click(context.getString(R.string.jpx_new_profile))
+                    val name = "Evening arena"
+                    val value = android.os.Bundle().apply {
+                        putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, name)
+                    }
+                    await {
+                        val field = instrument.uiAutomation.rootInActiveWindow?.let { root ->
+                            flattened(root).firstOrNull { it.isEditable && it.isEnabled &&
+                                it.actionList.contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_TEXT) }
+                        }
+                        field?.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, value) == true
+                    }
+                    click(context.getString(R.string.game_ui_create))
+                    click(context.getString(R.string.jpx_add_rule))
+                    click(context.getString(R.string.jpx_save_edit))
+                    await { library.catalog().entries.singleOrNull()?.let { it.rules == 1 && it.changed } == true }
+                    val entry = library.catalog().entries.single()
+                    assertEquals("Staff_Item", entry.mode)
+                    assertEquals(name, entry.nickname)
+                    assertEquals(0, entry.publishedRules)
+                    // Wait for the completed save to return to the rule list before navigating.
+                    find(context.getString(R.string.jpx_enable_row, 1))
+                    click(context.getString(R.string.app_back))
+                    click(name)
+                    find(context.getString(R.string.jpx_enable_row, 1))
+                    click(context.getString(R.string.jpx_apply))
+                    find(context.getString(R.string.game_ui_cancel))
+                    click(context.getString(R.string.jpx_apply))
+                    await { library.strategy(null, null, true).published?.rules == 1 }
+                    assertEquals(entry.id, library.catalog().manualId)
+                }
+            }
+        } finally { context.deleteDatabase(filename) }
+    }
+
     @Test fun assigningGeneralToItemWorldUpdatesTheRunningBattleAndManualPinSurvivesTheSwitchBack() {
         val filename = "strategy-ui-${UUID.randomUUID()}.db"
         try {
@@ -104,8 +224,8 @@ class BattleStrategyScreenTest {
         fun enabled() = generateSequence(find(label)) { it.parent }.any { it.isClickable && it.isEnabled }
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
-                BattleSessionScreen(null, state.value, null, "Isekai", BattleStrategy(null, null, null, true),
-                    {}, true, false, loading.value, false, null, false, 0, { byteArrayOf() },
+                BattleSessionScreen(null, { BattleSessionState(state.value, loading.value) }, null, "Isekai", BattleStrategy(null, null, null, true),
+                    {}, true, false, 0, { byteArrayOf() },
                     onRetry = { refreshes.incrementAndGet(); loading.value = true }, onRiddleAction = {},
                     onSubmitBattleAction = { _, _ -> error("Refresh must not submit a battle action") },
                     onContinue = {}, onLeaveBattle = {})
@@ -131,7 +251,7 @@ class BattleStrategyScreenTest {
         val calls = java.util.concurrent.CopyOnWriteArrayList<BattleAction>()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
-                BattleSessionScreen(null, state.value, null, "Isekai", strategy, {}, true, false, false, false, null, false, 0,
+                BattleSessionScreen(null, { BattleSessionState(state.value) }, null, "Isekai", strategy, {}, true, false, 0,
                     { byteArrayOf() }, {}, {}, { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) }, {}, {})
             } } } }
             val start = context.getString(R.string.jpx_auto_run); val pause = context.getString(R.string.jpx_pause)
@@ -153,8 +273,15 @@ class BattleStrategyScreenTest {
             scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(turnKey = Any())) }
             scenario.moveToState(Lifecycle.State.RESUMED)
             find(start); await { refreshEnabled() }; assertEquals(4, calls.size)
-            scenario.onActivity { state.value = RequestState.BattleReady(initial.copy(isComplete = true, turnKey = Any())) }
-            find(context.getString(R.string.game_ui_return_to_challenge)); assertEquals(4, calls.size)
+            click(start); await { calls.size == 5 }
+            // A fresh round may arrive without the UI ever displaying a completion page.
+            val nextRound = initial.copy(round = BattleRoundFacts(current = 2), turnKey = Any())
+            scenario.onActivity { state.value = RequestState.BattleReady(nextRound) }
+            find(context.getString(R.string.game_ui_battle_round, "2", "—"))
+            find(start); await { refreshEnabled() }; assertEquals(5, calls.size)
+            click(start); await { calls.size == 6 }
+            scenario.onActivity { state.value = RequestState.BattleReady(nextRound.copy(isComplete = true, turnKey = Any())) }
+            find(context.getString(R.string.game_ui_return_to_challenge)); assertEquals(6, calls.size)
         }
     }
 
@@ -262,9 +389,9 @@ class BattleStrategyScreenTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
                 BattleSessionScreen(
-                    playerLevel = null, state = state.value, loadout = null, world = "Isekai", strategy = strategy,
-                    onSettings = {}, settingsEnabled = true, autoNextRound = autoNext.value, loading = false, nativeBusy = false,
-                    error = null, needsRefresh = false, responseRevision = 0, loadImage = { byteArrayOf() },
+                    playerLevel = null, session = { BattleSessionState(state.value) }, loadout = null, world = "Isekai", strategy = strategy,
+                    onSettings = {}, settingsEnabled = true, autoNextRound = autoNext.value,
+                    responseRevision = 0, loadImage = { byteArrayOf() },
                     onRetry = {}, onRiddleAction = {},
                     onSubmitBattleAction = { page, action -> calls.add(action); state.value = RequestState.BattleBusy(page) },
                     onContinue = {
@@ -359,6 +486,43 @@ class BattleStrategyScreenTest {
             find("Freezing Limbs")
             click(context.getString(R.string.game_ui_close))
             find("Enemy 1")
+        }
+    }
+
+    @Test fun ruleEditorCreatesEditsAndReordersConditions() {
+        val saved = java.util.concurrent.atomic.AtomicReference<com.google.gson.JsonObject>()
+        val keys = context.resources.getStringArray(R.array.jpx_field_keys)
+        val labels = context.resources.getStringArray(R.array.jpx_field_labels)
+        val hp = labels[keys.indexOf("pHP")]
+        val add = context.getString(R.string.jpx_add_cond)
+        val save = context.getString(R.string.jpx_save_edit)
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity -> activity.setContent { ProvideLocalizedText { MaterialTheme {
+                JpxRuleEditor(null, listOf("normalAttack"), "normalAttack", false, 0, {}, saved::set)
+            } } } }
+            fun setMax(value: String) {
+                val args = android.os.Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) }
+                await({ "Could not edit the maximum bound" }) {
+                    val root = instrument.uiAutomation.rootInActiveWindow ?: return@await false
+                    val fields = flattened(root).filter { it.isVisibleToUser && it.isEditable }.toList()
+                    fields.size == 2 && fields.last().performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                }
+                await { instrument.uiAutomation.rootInActiveWindow?.let { root ->
+                    flattened(root).any { it.isEditable && it.text?.contains(value) == true }
+                } == true }
+            }
+            click(add); setMax("0.4"); click(save)
+            find("0 · 0.4")
+            click(add); setMax("0.8"); click(save)
+            click("0 · 0.4"); setMax("0.3"); click(save)
+            find("0 · 0.3")
+            click(context.getString(R.string.jpx_options, hp))
+            click(context.getString(R.string.jpx_down))
+            click(save)
+            await { saved.get() != null }
+            val conditions = saved.get().getAsJsonArray("conditions")
+            assertEquals(listOf("pHP", "pHP"), conditions.map { it.asJsonObject["key"].asString })
+            assertEquals(listOf(0.8, 0.3), conditions.map { it.asJsonObject.getAsJsonArray("value")[1].asDouble })
         }
     }
 

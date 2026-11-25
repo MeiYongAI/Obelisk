@@ -17,6 +17,13 @@ class BattleRulesTest {
     private fun program(vararg rows: String) = BattleRules(JpxImport.read("""{"version":1,"Staff_General":{"rules":[${rows.joinToString()}],"kb_a":[{"type":"stop"}]}}""".byteInputStream(), "fixture", world.name))
     private fun BattleRules.run(p: BattlePage = page, school: SpellSchool? = SpellSchool.Fire) = runBlocking { next(p, world.name, p.scene, school) { _, _ -> ScriptDecision.Error("script failed") } }
 
+    @Test fun publishedElementOverridesDetectedSchoolForTierSpellsAndConditions() {
+        val json = """{"battleVersion":20251216,"Staff_General":{"jpxPlusExecution":{"element":"fire"},
+            "rules":[$target,{"type":"spellDamage","name":"T2","conditions":[{"key":"pMaxSpellType","value":["fire"]}]}]}}"""
+        val configured = BattleRules(JpxImport.parse(json, "Staff", world.name))
+        assertEquals(RuleTurn.Submit(BattleAction("magic", 2, 112)), configured.run(school = SpellSchool.Cold))
+    }
+
     @Test fun matchedTierSpellGoesThroughRealClientAndNextPaneStopsTheLoop() = runBlocking {
         val program = program("""{"type":"stop","disabled":true}""", target, """{"type":"spellDamage","name":"T2"}""", attack)
         val turn = program.run() as RuleTurn.Submit

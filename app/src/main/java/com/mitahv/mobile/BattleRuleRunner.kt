@@ -16,13 +16,48 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mitahv.mobile.data.*
 import com.mitahv.mobile.model.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+
+internal data class BattleSessionState(
+    val request: RequestState,
+    val loading: Boolean = false,
+    val nativeBusy: Boolean = false,
+    val error: String? = null,
+    val needsRefresh: Boolean = false,
+) {
+    val page: BattlePage? get() = when (request) {
+        is RequestState.BattleReady -> request.page
+        is RequestState.BattleBusy -> request.page
+        else -> null
+    }
+    val ready get() = !loading && !nativeBusy && error == null && !needsRefresh && request is RequestState.BattleReady
+    val interrupted get() = page?.isComplete != false || nativeBusy || error != null || needsRefresh
+}
 
 internal class RuleRunner {
     var running by mutableStateOf(false); private set
     var notice by mutableStateOf<RuleTurn?>(null); private set
     private var submitted: Any? = null
-    fun start() { notice = null; running = true }
+    private var encounterKey: Any? = null
+    private var round: Int? = null
+    private var floor: Int? = null
+    var generation by mutableLongStateOf(0L); private set
+
+    fun start(page: BattlePage) {
+        encounterKey = page.encounterKey
+        round = page.round.current
+        floor = page.round.floor
+        generation++
+        notice = null
+        running = true
+    }
+
+    fun ownsRound(page: BattlePage) =
+        page.encounterKey === encounterKey && page.round.current == round && page.round.floor == floor
+
     fun pause() { running = false }
     fun accept(key: Any, result: RuleTurn, submit: (BattleAction) -> Unit) {
         if (!running) return
@@ -33,27 +68,57 @@ internal class RuleRunner {
 }
 
 @Composable
-internal fun RunBattleTurns(runner: RuleRunner, rules: BattleRules?, page: BattlePage?, world: String, scene: BattleScene?,
-    loadout: BattleLoadout?, playerLevel: Int?, playable: Boolean, interrupted: Boolean, submit: (BattlePage, BattleAction) -> Unit) {
+internal fun RunBattleTurns(runner: RuleRunner, rules: BattleRules?,
+    world: String, scene: BattleScene?, loadout: BattleLoadout?, playerLevel: Int?,
+    session: () -> BattleSessionState, submit: (BattlePage, BattleAction) -> Unit) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val context = androidx.compose.ui.platform.LocalContext.current.applicationContext
-    val scripts = remember(context) { BattleScriptSandbox(context) }
+    val scope = rememberCoroutineScope()
+    val monsters = remember(world, rules, context) {
+        if (rules?.needsMonsterInfo == true) BattleMonsterLookup(BattleMonsterDatabase.shared(context), world, scope) else null
+    }
+    val scripts = remember(context, rules, world) { BattleScriptSandbox(context) }
     DisposableEffect(scripts) { onDispose { scripts.close() } }
     val latestSubmit by rememberUpdatedState(submit)
+    val latestSession by rememberUpdatedState(session)
+    LaunchedEffect(monsters) {
+        if (monsters != null) snapshotFlow { latestSession().page }.collect { page ->
+            if (page != null && !page.isComplete) monsters.start(page)
+        }
+    }
     DisposableEffect(runner, lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_PAUSE) runner.pause() }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer); runner.pause() }
     }
-    LaunchedEffect(runner, runner.running, page?.turnKey, playable, interrupted, rules, scene, loadout, playerLevel, world) {
-        if (interrupted) { runner.pause(); return@LaunchedEffect }
-        if (!runner.running || !playable || page == null || rules == null) return@LaunchedEffect
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) { runner.pause(); return@LaunchedEffect }
-        val decision = withContext(Dispatchers.Default) {
-            rules.next(page, world, scene, loadout?.school, playerLevel) { code, ctx -> scripts.evaluate(code, ctx, loadout) }
+    LaunchedEffect(runner, lifecycle, rules, scene, loadout, playerLevel, world) {
+        if (rules == null) return@LaunchedEffect
+        // Acknowledgements can wake the runner before the HUD renders the next frame.
+        withContext(Dispatchers.Main.immediate) {
+            snapshotFlow {
+                if (runner.running) runner.generation to latestSession() else null
+            }.collectLatest { active ->
+                val (generation, state) = active ?: return@collectLatest
+                val page = state.page
+                if (state.interrupted || page == null || !runner.ownsRound(page) ||
+                    !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    runner.pause()
+                    return@collectLatest
+                }
+                if (!state.ready) return@collectLatest
+                val decision = withContext(Dispatchers.Default) {
+                    val info = monsters?.start(page)?.filterNotNull()?.first().orEmpty()
+                    rules.next(page, world, scene, loadout?.school, playerLevel, scripts::matchesName, info) { code, ctx ->
+                        scripts.evaluate(code, ctx, loadout)
+                    }
+                }
+                val current = latestSession()
+                if (current.ready && current.page?.turnKey === page.turnKey && runner.generation == generation &&
+                    lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    runner.accept(page.turnKey, decision) { latestSubmit(page, it) }
+                }
+            }
         }
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) runner.accept(page.turnKey, decision) { latestSubmit(page, it) }
-        else runner.pause()
     }
 }
 

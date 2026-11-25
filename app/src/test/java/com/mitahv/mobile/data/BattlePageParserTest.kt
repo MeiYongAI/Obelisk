@@ -8,6 +8,8 @@ import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -167,6 +169,7 @@ class BattlePageParserTest {
         assertEquals(2, page.skills.count { it.enabled })
         assertFalse(page.skills.single { it.name == "FUS RO DAH" }.enabled)
         assertEquals(4, page.skills.single { it.name == "FUS RO DAH" }.chargeCost)
+        assertEquals("sfus", page.skills.single { it.name == "FUS RO DAH" }.iconKey)
         assertEquals(10, page.skills.single { it.name == "FUS RO DAH" }.cooldown)
         assertEquals(6, page.controls.size)
         assertTrue(page.controls.all { it.enabled })
@@ -179,6 +182,9 @@ class BattlePageParserTest {
         val page = BattlePageParser.parseBattle(activeFixture("encounter"))
         assertEquals(10, page.enemies.size)
         assertEquals(16, page.quickActions.size)
+        assertEquals("0530", page.quickActions.single { it.name == "Cure" }.iconKey)
+        assertEquals("0130", page.spells.single { it.name == "Fiery Blast" }.iconKey)
+        assertTrue(page.items.all { it.iconKey == null })
         assertFalse(page.quickActions.single { it.name == "Cure" }.enabled)
         assertFalse(page.spells.single { it.name == "Cure" }.enabled)
         assertEquals(64, page.spells.single { it.name == "Cure" }.manaCost)
@@ -209,7 +215,7 @@ class BattlePageParserTest {
         assertTrue(BattlePageParser.parseBattle(activeFixture("encounter")).remainingCooldowns.isEmpty())
     }
 
-    @Test fun newMonsterEffectRetainsItsGameImageAndExpiresWhenThePaneClears() {
+    @Test fun newMonsterEffectRetainsItsIconKeyAndExpiresWhenThePaneClears() {
         val page = BattlePageParser.parseBattle(activeFixture("encounter"))
         val monsters = Jsoup.parse(activeFixture("encounter")).selectFirst("#pane_monster")!!
         val icon = monsters.selectFirst(".btm6 img[onmouseover]")!!
@@ -217,7 +223,6 @@ class BattlePageParserTest {
         val updated = applyTurn(page, JSONObject().put("pane_monster", monsters.html()))
         val effect = updated.enemies.first().effects.first()
         assertEquals("another_status", effect.iconKey)
-        assertEquals("https://hentaiverse.org/y/e/another_status.png?v=2", effect.iconUrl.toString())
         monsters.select(".btm6").empty()
         assertTrue(applyTurn(updated, JSONObject().put("pane_monster", monsters.html())).enemies.all { it.effects.isEmpty() })
         assertEquals(page.playerEffects, updated.playerEffects)
@@ -230,6 +235,37 @@ class BattlePageParserTest {
         val pane = Jsoup.parse(activeFixture("ring-of-blood")).selectFirst("#pane_item")!!.html()
         val next = applyTurn(page, JSONObject().put("pane_item", pane))
         assertEquals(page.items.single { it.name == "Health Draught" }.description, next.items.single { it.name == "Health Draught" }.description)
+        val enriched = next.copy(itemText = next.itemText +
+            ("11191" to com.mitahv.mobile.model.BattleItemText("Health Draught", "New description")))
+        assertEquals("New description", applyTurn(enriched, JSONObject().put("pane_item", pane))
+            .items.single { it.name == "Health Draught" }.description)
+    }
+
+    @Test fun repeatedPanesReuseListsButStillAcknowledgeTurnsAndChangedMarkup() {
+        val doc = Jsoup.parse(activeFixture("encounter"))
+        val original = BattlePageParser.parseBattle(doc).copy(remainingCooldowns = mapOf("Cure" to 2))
+        val monsterHtml = doc.getElementById("pane_monster")!!.html()
+        val vitalsHtml = doc.getElementById("pane_vitals")!!.html()
+        val message = "You hit Target for 10 damage."
+        val response = JSONObject().put("pane_monster", monsterHtml).put("pane_vitals", vitalsHtml)
+            .put("textlog", org.json.JSONArray().put(JSONObject().put("t", message)))
+        val first = applyTurn(original, response)
+        val second = applyTurn(first, response)
+        assertSame(first.enemies, second.enemies)
+        assertSame(first.playerVitals, second.playerVitals)
+        assertNotSame(first.turnKey, second.turnKey)
+        assertEquals(listOf(message, message), second.log.take(2))
+        assertEquals(1, first.remainingCooldowns["Cure"])
+        assertTrue(second.remainingCooldowns.isEmpty())
+
+        val reset = second.copy(enemies = emptyList())
+        assertEquals(first.enemies, applyTurn(reset, response).enemies)
+        val renamedHtml = monsterHtml.replace(second.enemies.first().name, "Updated enemy")
+        val changed = applyTurn(second, JSONObject().put("pane_monster", renamedHtml))
+        assertEquals("Updated enemy", changed.enemies.first().name)
+        assertEquals(first.enemies, applyTurn(changed, response).enemies)
+        assertTrue(applyTurn(changed, JSONObject().put("pane_monster", "")).enemies.isEmpty())
+        assertTrue(applyTurn(second, JSONObject().put("pane_completion", "")).isComplete)
     }
 
     @Test fun completionResponseStopsActionsButOnlyKnownControlEnablesContinue() {

@@ -155,6 +155,8 @@ class AbilitiesScreenTest {
     private fun find(label: String, exact: Boolean = true): AccessibilityNodeInfo {
         var result: AccessibilityNodeInfo? = null
         await(label) {
+            // The server response can update both text and its clickable parent in place under the same virtual IDs.
+            if (android.os.Build.VERSION.SDK_INT >= 34) instrument.uiAutomation.clearCache()
             result = instrument.uiAutomation.rootInActiveWindow?.let { root -> nodes(root).firstOrNull { node ->
                 node.isVisibleToUser && listOfNotNull(node.text, node.contentDescription).any { value ->
                     if (exact) value.toString().lines().contains(label) else label in value.toString()

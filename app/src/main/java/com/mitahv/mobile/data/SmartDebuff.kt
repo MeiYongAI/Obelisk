@@ -3,7 +3,7 @@ package com.mitahv.mobile.data
 import com.google.gson.JsonObject
 
 /** JPX first tries contiguous triples, then pairs, gapped triples, finally a single target. */
-internal fun RuleContext.smartTarget(rule: JsonObject, conditions: List<JsonObject>): Int? {
+internal suspend fun RuleContext.smartTarget(rule: JsonObject, conditions: List<JsonObject>): Int? {
     fun int(key: String, default: Int): Int = rule[key]?.let { v ->
         v.takeIf { it.isJsonPrimitive }?.asString?.toIntOrNull() ?: unknown(key)
     } ?: default
@@ -14,7 +14,7 @@ internal fun RuleContext.smartTarget(rule: JsonObject, conditions: List<JsonObje
     val skip = int("tailSkip", 0)
     val slots = order.take(if (skip >= 0) (order.size - skip).coerceAtLeast(0) else (-skip.toLong()).coerceAtMost(order.size.toLong()).toInt())
     val cache = mutableMapOf<Int, Boolean>()
-    fun hit(i: Int) = cache.getOrPut(i) { enemies.getOrNull(i)?.targetable == true && matches(conditions, i) }
+    suspend fun hit(i: Int) = cache.getOrPut(i) { enemies.getOrNull(i)?.targetable == true && matches(conditions, i) }
     fun center(i: Int): Int = when {
         (width == 3 || width == 2 && !reverse) && i == slots.first() && enemies.getOrNull(i + step)?.targetable == true -> i + step
         (width == 3 || width == 2 && reverse) && i == slots.last() && enemies.getOrNull(i - step)?.targetable == true -> i - step
@@ -30,6 +30,6 @@ internal fun RuleContext.smartTarget(rule: JsonObject, conditions: List<JsonObje
     val target = (if (width == 3) inner.firstOrNull { hit(it - 1) && hit(it) && hit(it + 1) } else null)
         ?: (if (width >= 2) slots.firstOrNull { hit(it - 1) && hit(it) }?.let(::center) else null)
         ?: (if (width == 3) inner.firstOrNull { hit(it - 1) && enemies[it].targetable && hit(it + 1) } else null)
-        ?: slots.firstOrNull(::hit)?.let(::center) ?: return null
+        ?: slots.firstOrNull { hit(it) }?.let(::center) ?: return null
     return target.takeIf { limit == Int.MAX_VALUE || casts(rule["name"].string ?: unknown("name")) < limit }
 }

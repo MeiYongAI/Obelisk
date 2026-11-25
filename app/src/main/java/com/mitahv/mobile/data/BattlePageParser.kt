@@ -7,6 +7,7 @@ import com.mitahv.mobile.model.BattleItemText
 import com.mitahv.mobile.model.BattleEnemy
 import com.mitahv.mobile.model.BattlePage
 import com.mitahv.mobile.model.BattleRoundFacts
+import com.mitahv.mobile.model.monsterEffectHistory
 import com.mitahv.mobile.model.BattleScene
 import com.mitahv.mobile.model.BattleVital
 import com.mitahv.mobile.model.BattleEffect
@@ -23,6 +24,7 @@ import org.jsoup.nodes.TextNode
 import org.json.JSONObject
 
 internal object BattlePageParser {
+    private val difficultyReadout = Regex("""\b(Normal|Hard|Nightmare|Hell|Nintendo|IWBTH|PFUDOR)\s+Lv\.""")
     fun isBattlePage(html: String): Boolean = isBattlePage(Jsoup.parse(html))
 
     fun isBattlePage(document: Document): Boolean = document.selectFirst("#battle_main") != null
@@ -91,25 +93,47 @@ internal object BattlePageParser {
 
         val completion = document.selectFirst("#pane_completion")
 
-        val log = document.select("#textlog tr").map { it.hvText() }.filter(String::isNotBlank)
+        val logCells = document.select("#textlog tr > td")
+        val log = logCells.map { if (it.hasClass("tls")) "" else it.hvText() }
+        var round = BattleRoundFacts()
+        val fullLogGroups = mutableListOf<List<String>>()
+        var group = mutableListOf<String>()
+        for (index in log.indices.reversed()) {
+            if (logCells[index].hasClass("tls")) {
+                if (group.isNotEmpty()) fullLogGroups.add(group)
+                group = mutableListOf()
+            } else if (log[index].isNotBlank()) group.add(log[index])
+        }
+        if (group.isNotEmpty()) fullLogGroups.add(group)
+        val messages = log.filter(String::isNotBlank)
         val skills = groupedActions(document.selectFirst("#table_skills")).ifEmpty { document.select("#pane_skill .btsd").mapNotNull(::actionOption) }
         val spells = groupedActions(document.selectFirst("#table_magic")).ifEmpty { document.select("#pane_magic .btsd").mapNotNull(::actionOption) }
         val shortcuts = document.select("#quickbar > div").mapNotNull(::actionOption)
+        val items = items(document, itemText)
+        val allOptions = skills + spells + shortcuts + items
+        var cooldowns = emptyMap<String, Int>()
+        for (turn in fullLogGroups) {
+            round = round.observe(turn.asReversed())
+            cooldowns = BattleCooldowns.observe(cooldowns, turn, allOptions)
+        }
+        val monsters = enemies(document)
         return BattlePage(
             token = token,
             playerVitals = vitals(document.selectFirst("#pane_vitals")),
-            enemies = enemies(document, currentUrl),
+            enemies = monsters,
+            monsterEffects = monsterEffectHistory(emptyMap(), monsters, fullLogGroups.lastOrNull().orEmpty().asReversed()),
             quickActions = shortcuts,
             skills = skills,
             spells = spells,
-            remainingCooldowns = BattleCooldowns.fromDocument(document, skills + spells + shortcuts),
-            items = items(document, itemText),
-            log = log,
-            round = BattleRoundFacts().observe(log),
-            scene = BattleScene.fromLog(log),
+            remainingCooldowns = cooldowns,
+            items = items,
+            log = messages,
+            round = round,
+            scene = BattleScene.fromLog(messages),
+            difficulty = difficultyReadout.find(document.selectFirst("#level_readout").hvText())?.groupValues?.get(1),
             completion = completion.hvText(),
             experienceBarWidth = document.selectFirst("#expbar")?.let(::barWidth) ?: 0f,
-            playerEffects = effects(document.selectFirst("#pane_effects"), currentUrl),
+            playerEffects = effects(document.selectFirst("#pane_effects")),
             controls = controls(document),
             isComplete = completion?.let { it.attr("data-obelisk-complete") == "true" || it.html().isNotBlank() } == true,
             continuation = completion?.let { continuation(it, world, currentUrl) },
@@ -138,7 +162,7 @@ internal object BattlePageParser {
         )
     }
 
-    private fun enemies(root: Element, currentUrl: HttpUrl) = root.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
+    private fun enemies(root: Element) = root.select("#pane_monster > [id^=mkey_]").mapNotNull { enemy ->
         val target = enemy.id().substringAfter("mkey_").toIntOrNull() ?: return@mapNotNull null
         val level = enemy.selectFirst(".btm2").hvText()
         val bars = enemy.select(".chbd img[alt]")
@@ -152,7 +176,7 @@ internal object BattlePageParser {
             level = level,
             healthFraction = health ?: 0f, healthMeasured = health != null,
             magicFraction = fraction("magic"), spiritFraction = fraction("spirit"),
-            effects = effects(enemy.selectFirst(".btm6"), currentUrl),
+            effects = effects(enemy.selectFirst(".btm6")),
             targetable = enabled(enemy) && COMMIT_TARGET.find(enemy.attr("onclick"))?.groupValues?.get(1)?.toIntOrNull() == target,
         )
     }
@@ -161,6 +185,7 @@ internal object BattlePageParser {
         val itemId = BattleTooltipParser.arguments(item.attr("onmouseover"), "set_infopane_item")?.firstOrNull()
         val metadata = itemId?.let(itemText::get)
         actionOption(item)?.let { option -> option.copy(
+            itemId = itemId?.toIntOrNull(),
             name = metadata?.name?.takeIf(String::isNotBlank) ?: option.name,
             description = metadata?.descriptionHtml?.let(::fragmentText).orEmpty(),
             group = item.closest(".bti1")?.selectFirst(".bti2").hvText().let {
@@ -212,10 +237,18 @@ internal object BattlePageParser {
         current: BattlePage, response: JSONObject, world: HvWorld, currentUrl: HttpUrl,
     ): BattlePage? {
         if (!hasActionUpdate(response)) return null
-        fun pane(id: String, tag: String = "div"): Element? = if (!response.has(id)) null
-            else Element(tag).id(id).html(response.getString(id))
+        val paneHtml = current.parsedPaneHtml.toMutableMap()
+        fun changedPane(id: String, tag: String = "div"): Element? {
+            if (!response.has(id)) return null
+            val html = response.getString(id)
+            if (paneHtml[id] == html) return null
+            paneHtml[id] = html
+            return Element(tag).id(id).html(html)
+        }
 
-        val completion = pane("pane_completion")
+        // The presence of this pane ends a round even if its content is empty or unchanged.
+        val completion = if (response.has("pane_completion"))
+            Element("div").id("pane_completion").html(response.getString("pane_completion")) else null
         val completionText = completion.hvText()
         val logBatch = response.optJSONArray("textlog")
         val additions = if (logBatch == null) emptyList() else buildList {
@@ -226,20 +259,23 @@ internal object BattlePageParser {
             }
         }
         val log = if (additions.isEmpty()) current.log else (additions + current.log).take(100)
+        val monsters = changedPane("pane_monster")?.let(::enemies) ?: current.enemies
+        val initializing = additions.any { it.startsWith("Initializing ") }
         return current.copy(
-            encounterKey = if (additions.any { it.startsWith("Initializing ") }) Any() else current.encounterKey,
+            encounterKey = if (initializing) Any() else current.encounterKey,
             turnKey = Any(),
             round = current.round.observe(additions),
             remainingCooldowns = BattleCooldowns.observe(current.remainingCooldowns, additions.asReversed(),
-                current.skills + current.spells + current.quickActions),
-            playerVitals = pane("pane_vitals")?.let(::vitals) ?: current.playerVitals,
-            enemies = pane("pane_monster")?.let { enemies(it, currentUrl) } ?: current.enemies,
-            quickActions = pane("pane_quickbar")?.select("#quickbar > div")?.mapNotNull(::actionOption) ?: current.quickActions,
-            skills = pane("table_skills", "table")?.let(::groupedActions) ?: current.skills,
-            spells = pane("table_magic", "table")?.let(::groupedActions) ?: current.spells,
-            items = pane("pane_item")?.let { items(it, current.itemText) } ?: current.items,
-            playerEffects = pane("pane_effects")?.let { effects(it, currentUrl) } ?: current.playerEffects,
-            controls = pane("pane_action")?.let(::controls) ?: current.controls,
+                current.skills + current.spells + current.quickActions + current.items),
+            playerVitals = changedPane("pane_vitals")?.let(::vitals) ?: current.playerVitals,
+            enemies = monsters,
+            monsterEffects = monsterEffectHistory(if (initializing) emptyMap() else current.monsterEffects, monsters, additions),
+            quickActions = changedPane("pane_quickbar")?.select("#quickbar > div")?.mapNotNull(::actionOption) ?: current.quickActions,
+            skills = changedPane("table_skills", "table")?.let(::groupedActions) ?: current.skills,
+            spells = changedPane("table_magic", "table")?.let(::groupedActions) ?: current.spells,
+            items = changedPane("pane_item")?.let { items(it, current.itemText) } ?: current.items,
+            playerEffects = changedPane("pane_effects")?.let(::effects) ?: current.playerEffects,
+            controls = changedPane("pane_action")?.let(::controls) ?: current.controls,
             experienceBarWidth = response.optDouble("exp", Double.NaN).takeIf { it.isFinite() && it >= 0 }?.toFloat() ?: current.experienceBarWidth,
             log = log,
             scene = current.scene ?: BattleScene.fromLog(log),
@@ -248,7 +284,7 @@ internal object BattlePageParser {
             completionLines = completion?.select("#btcp > div")?.map { it.hvText() }.orEmpty()
                 .filter(String::isNotBlank).ifEmpty { listOfNotNull(completionText.takeIf(String::isNotBlank)) },
             continuation = completion?.let { continuation(it, world, currentUrl) },
-        )
+        ).also { it.parsedPaneHtml = paneHtml }
     }
 
     fun hasCombatPane(response: JSONObject): Boolean = ACTION_UPDATE_IDS.any(response::has)
@@ -267,6 +303,10 @@ internal object BattlePageParser {
         document.selectFirst("#textlog tbody")?.let { logBody ->
             val newEntries = response.optJSONArray("textlog")
             if (newEntries != null) {
+                if (newEntries.length() > 0 && !logBody.selectFirst("tr > td").let { it == null || it.hasClass("tls") } &&
+                    (0 until newEntries.length()).none { newEntries.optJSONObject(it)?.optString("c") == "s" }) {
+                    logBody.prependElement("tr").appendElement("td").addClass("tls").appendElement("hr")
+                }
                 for (index in 0 until newEntries.length()) {
                     val entry = newEntries.optJSONObject(index) ?: continue
                     val row = document.createElement("tr")
@@ -308,6 +348,7 @@ internal object BattlePageParser {
             manaCost = tooltip?.getOrNull(3)?.toIntOrNull(),
             chargeCost = tooltip?.getOrNull(4)?.toIntOrNull(),
             cooldown = tooltip?.getOrNull(5)?.toIntOrNull(),
+            iconKey = tooltip?.getOrNull(2)?.takeIf(ACTION_ICON_KEY::matches),
         )
     }
 
@@ -327,16 +368,13 @@ internal object BattlePageParser {
         }.ifEmpty { table.select(".btsd").mapNotNull(::actionOption) }
     }
 
-    private fun effects(container: Element?, currentUrl: HttpUrl): List<BattleEffect> = container?.select("[onmouseover]")?.mapNotNull {
+    private fun effects(container: Element?): List<BattleEffect> = container?.select("[onmouseover]")?.mapNotNull {
         val arguments = BattleTooltipParser.arguments(it.attr("onmouseover"), "set_infopane_effect") ?: return@mapNotNull null
         if (arguments.size != 3) return@mapNotNull null
         val src = (if (it.tagName() == "img") it else it.selectFirst("img[src]"))?.attr("src").orEmpty()
         val file = src.substringBefore('?').substringBefore('#').substringAfterLast('/')
-        val url = currentUrl.resolve(src)?.takeIf { image -> image.host == currentUrl.host &&
-            image.scheme == "https" && image.port == 443 && image.username.isEmpty() && image.password.isEmpty() &&
-            image.encodedPath.startsWith("/y/") && image.encodedPath.endsWith(".png") }
         BattleEffect(arguments[0], fragmentText(arguments[1]), arguments[2],
-            iconKey = file.takeIf { name -> name.endsWith(".png") }?.removeSuffix(".png"), iconUrl = url)
+            iconKey = file.takeIf { name -> name.endsWith(".png") }?.removeSuffix(".png"))
     }.orEmpty()
 
     private fun fragmentText(html: String, logCell: Boolean = false): String {
@@ -376,6 +414,7 @@ internal object BattlePageParser {
     private val WIDTH = Regex("width\\s*:\\s*([0-9.]+)px")
     private val CONTROL_ACTION = Regex("""battle\.lock_action\(\s*this\s*,\s*0\s*,\s*['"]([^'"]+)['"]\s*\)""")
     private val CONTROL_MODES = setOf("attack", "skill", "items", "spirit", "defend", "focus")
+    private val ACTION_ICON_KEY = Regex("[a-z0-9_]{1,32}")
     private val COMMIT_TARGET = Regex("""battle\.commit_target\(\s*(\d+)\s*\)""")
     private val CONTINUE_BATTLE = Regex("""\s*battle\.battle_continue\(\s*\)\s*;?\s*""")
     private val GRINDFEST_RETURN = Regex("""\s*common\.goto_grindfest\(\s*\)\s*;?\s*""")

@@ -88,6 +88,7 @@ import com.mitahv.mobile.data.HentaiVerseClient
 import com.mitahv.mobile.data.JpxLibrary
 import com.mitahv.mobile.data.AppPreferences
 import com.mitahv.mobile.data.BattlePageParser
+import com.mitahv.mobile.data.BattleMonsterDatabase
 import com.mitahv.mobile.data.RiddlePageParser
 import com.mitahv.mobile.data.CharacterAction
 import com.mitahv.mobile.data.verify
@@ -624,40 +625,32 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
         scope.launch {
             try {
                 val started = SystemClock.elapsedRealtime()
-                val response = client.submitBattleAction(
-                    world = requestWorld,
-                    referer = requestUrl,
-                    token = page.token,
-                    action = action,
-                )
-                val received = SystemClock.elapsedRealtime()
+                // Keep the reply on a worker until the new field is ready. The main thread
+                // can still be drawing the busy field when the HTTP callback arrives.
+                val (updated, hasCombatPane) = withContext(Dispatchers.Default) {
+                    val response = client.submitBattleAction(requestWorld, requestUrl, page.token, action)
+                    val received = SystemClock.elapsedRealtime()
+                    val refresh = response.has("error") || response.has("reload") || response.has("login")
+                    val next = if (refresh) null else BattlePageParser.parseActionResponse(page, response, requestWorld, requestUrl)
+                    if (next != null && page.round.monsterIds.isNotEmpty()) {
+                        val logs = response.optJSONArray("textlog")
+                        for (i in 0 until (logs?.length() ?: 0)) {
+                            val row = BattleMonsterDatabase.scan(logs?.optJSONObject(i)?.optString("t").orEmpty(), page.round.monsterIds) ?: continue
+                            try { BattleMonsterDatabase.shared(context).saveScan(requestWorld.name, row) }
+                            catch (_: android.database.SQLException) { /* A cache error cannot invalidate a battle reply. */ }
+                        }
+                    }
+                    Log.d("HvLoading", "battle reply=${received - started}ms apply=${SystemClock.elapsedRealtime() - received}ms refresh=${next == null}")
+                    next to BattlePageParser.hasCombatPane(response)
+                }
                 if (serial != loadSerial) return@launch
-                if (response.has("error") || response.has("reload") || response.has("login")) {
-                    Log.d("HvLoading", "battle reply=${received - started}ms refresh=true (server)")
+                if (updated == null) {
                     val refreshed = client.fetchPage(requestWorld, requestUrl, forceNetwork = true)
                     requestState = acceptPage(requestRoute, requestWorld, refreshed.html, refreshed.url, requestSerial = serial)
                 } else {
-                    val updated = withContext(Dispatchers.Default) {
-                        BattlePageParser.parseActionResponse(page, response, requestWorld, requestUrl)
-                    }
-                    if (serial != loadSerial) return@launch
-                    Log.d("HvLoading", "battle reply=${received - started}ms apply=${SystemClock.elapsedRealtime() - received}ms refresh=${updated == null}")
-                    if (updated != null) {
-                        // Keep the battle session and its current URL intact. The JSON
-                        // endpoint already returned the panes that changed; sending the
-                        // result through acceptPage would parse the whole page again and
-                        // briefly present it as a normal page load.
-                        updated.scene?.let { battleScene = it }
-                        requestState = RequestState.BattleReady(updated)
-                        nativeError = if (!updated.isComplete && !BattlePageParser.hasCombatPane(response))
-                            resources.getString(R.string.jpx_refresh_run) else null
-                    } else {
-                        // An unknown successful response cannot safely update the local
-                        // battle model. Refresh once so the next action uses authoritative
-                        // server state.
-                        val refreshed = client.fetchPage(requestWorld, requestUrl, forceNetwork = true)
-                        requestState = acceptPage(requestRoute, requestWorld, refreshed.html, refreshed.url, requestSerial = serial)
-                    }
+                    updated.scene?.let { battleScene = it }
+                    nativeError = if (!updated.isComplete && !hasCombatPane) resources.getString(R.string.jpx_refresh_run) else null
+                    requestState = RequestState.BattleReady(updated)
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -792,7 +785,8 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                 battle = requestState is RequestState.BattleReady || requestState is RequestState.BattleBusy) {
                 if (battleSessionActive) BattleSessionScreen(
                     playerLevel = playerLevel,
-                    state = requestState,
+                    session = { BattleSessionState(requestState, pageLoading, nativeBusy || challengeBusy,
+                        nativeError, nativeNeedsRefresh || nativeSubmissionUnconfirmed) },
                     loadout = loadout,
                     world = world.name,
                     strategy = strategy,
@@ -800,10 +794,6 @@ private fun ObeliskApp(cookieJar: PersistentCookieJar, window: Window) {
                     onSettings = ::openSettings,
                     settingsEnabled = !pageLoading && !nativeBusy && !challengeBusy &&
                         requestState !is RequestState.BattleBusy && requestState !is RequestState.Loading,
-                    loading = pageLoading,
-                    nativeBusy = nativeBusy || challengeBusy,
-                    error = nativeError,
-                    needsRefresh = nativeNeedsRefresh || nativeSubmissionUnconfirmed,
                     responseRevision = characterRevision,
                     loadImage = { image -> client.fetchImage(world, currentUrl.toHttpUrl(), image) },
                     onRetry = ::retryPage,

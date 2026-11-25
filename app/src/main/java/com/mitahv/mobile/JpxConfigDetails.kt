@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.gson.JsonObject
 import com.mitahv.mobile.data.JpxDocument
+import com.mitahv.mobile.data.JpxFields
 
 internal data class RuleAddress(val group: String, val index: Int) {
     val key get() = "$group#$index"
@@ -42,7 +43,10 @@ internal fun JpxConfigDetails(doc: JpxDocument, subtitle: String, busy: Boolean,
         if (!busy && from.index != to) onEdit(from.group, { it.add(to, it.removeAt(from.index)) }, {})
     }
     editing?.let { at ->
-        JpxRuleEditor(groups.getValue(at.group).getOrNull(at.index), busy, error, onBack = { editing = null }) { value ->
+        val rows = groups.getValue(at.group)
+        val types = JpxFields.typesForGroup(at.group)
+        val defaultType = if (rows.lastOrNull()?.text("type") == "target" && "normalAttack" in types) "normalAttack" else types.first()
+        JpxRuleEditor(rows.getOrNull(at.index), types, defaultType, busy, error, onBack = { editing = null }) { value ->
             onEdit(at.group, { if (at.index < 0) it.add(value) else it[at.index] = value }, { editing = null })
         }
         return

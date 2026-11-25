@@ -1,0 +1,5 @@
+<resources>
+    <string name="jpx_store">Config store</string>
+    <string name="jpx_share">Share</string>
+    <string name="jpx_store_browser_error">Could not open GitHub in your browser.</string>
+</resources>

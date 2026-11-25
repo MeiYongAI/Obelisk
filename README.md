@@ -9,7 +9,7 @@ Obelisk is an unofficial native Android client for HentaiVerse. It presents supp
 - A focused battle screen with a scrollable enemy list, action selection, and controls placed for portrait use.
 - English and Simplified Chinese interface options.
 - Searchable selectors, dialogs, and confirmation prompts for supported forms and consequential actions.
-- Page parsing and requests handled with Jsoup and OkHttp; the optional forum sign-in opens a WebView.
+- Jsoup and OkHttp handle game pages and actions. The config store and optional forum sign-in use WebViews.
 
 Supported actions and page availability depend on the response returned by HentaiVerse. Obelisk is not affiliated with, endorsed by, or supported by E-Hentai or HentaiVerse.
 
@@ -47,30 +47,41 @@ The gear icon in the battle top bar opens **Obelisk settings**; use Back to retu
 
 Open **Character → Abilities**. Tap a category above the list, or use the grid button to see all categories grouped by weapon, armor, and magic. Each ability shows its rank. Tap **Unlock** or **Upgrade** beside the name to spend the displayed AP; tap the **name** instead to inspect effects or choose a slot without spending points. Locked rows show known level or point shortfalls. **Equipped upgrades** checks equipped abilities across categories and lists only upgrades offered by the game. Spending AP is always a separate tap. **Slots** manages equipped abilities; unlocking a slot uses mastery points, not AP.
 
-### Choose a JPX battle configuration
+### Create and edit battle rules
 
-Open **Obelisk settings → Battle configurations → Import file** and choose a JPX `.txt` or `.json` (up to 2 MiB). Check the preview and tap **Add to library**. A file such as `battle.json` is just a container: **One-handed · General**, **Two-handed · General**, and other modes with rules appear directly in your list. Empty slots are omitted from the preview and the library. If you imported that file before, re-importing the same file also clears its untouched empty entries; it preserves renamed, edited, or assigned entries. No presets are bundled.
+Open **Obelisk settings → Battle configurations → New configuration**. Enter a name, choose a fighting style and battlefield, then tap **Create**. For a basic attack configuration:
 
-- **Edit:** tap a configuration to go straight to its rules. Drag the handle on the left to reorder rules within a group. Use the switch to enable or disable a rule, tap its name to edit it, or use **⋮** to move it one place or delete it. **Apply configuration** publishes the draft; until then, battles use the previously applied rules.
-- **Manage variants:** different imports can supply alternatives for the same mode. Use **⋮ → Set alias** to tell them apart. Re-importing the same file restores missing modes without resetting existing edits.
-- **Automatic (default):** the library shows the detected style and battlefield separately from the chosen strategy. It tries the battlefield-specific configuration first, then **General** for the same style. Empty modes are skipped; if multiple imports match, the first nonempty variant imported wins. Without a verified style, nothing is automatically selected.
-- **Assign by battlefield:** open **Battlefield strategies**, choose a style, then tap a battlefield. For example, assign **Staff · General** to Item World and a different staff variant to the Arena. Set a row back to **Match automatically** to remove its assignment. You can also assign a **General** fallback. These settings are per world and can be changed before or during battle.
-- **Manual:** choose **Apply configuration** on a profile to publish its edits and pin it across battlefields and styles. Turning off **Apply automatically** pins the current choice without publishing edits; turn it back on to resume routing. The battle screen does not open a separate strategy panel. Selecting or publishing a strategy never starts combat on its own.
-- **Export or remove:** either action in a configuration’s **⋮** menu affects only that entry. The exported JSON contains its saved rules, including unapplied edits, and can be imported again. Removing a variant clears its assignments and any manual pin to it; other modes and the original file stay intact. For example, choose **Staff · General → ⋮ → Export configuration** to save only that profile. Use **Import file** to add it back on its own; no full battle file is required.
+1. Tap **Add rule**, choose **Target**, set the target order and tap **Save changes**.
+2. Add a **Normal attack** rule below it and save. Target selection does not spend a turn. The attack acts on the selected monster.
+3. Tap **Apply configuration** to publish and pin this configuration. Tap **Auto** in battle when you want to start the round.
+
+Tap any rule to edit its action, conditions or custom JavaScript. Drag a rule by its handle to reorder it within its group, use its switch to enable or disable it, or open **⋮** to move or delete it. Saved edits stay in the draft until you apply them.
+
+### Import, share and select configurations
+
+- **Import file** accepts JPX `.txt` and `.json` files up to 2 MiB. Check the preview and tap **Add to library**. Each mode containing rules becomes a separate entry, such as **Two-handed · General**. Importing the same file again restores missing modes and preserves edits. Use **⋮ → Set alias** to distinguish variants.
+- Open **Config store** to browse shared configurations. Open an entry and tap **Save**. Obelisk checks the download against its published SHA-256 digest and adds compatible battle modes to your drafts. Statistics and configurations for another world remain available in the store’s local library. When saving an entry again, you can update your existing copy or save another. Browse while signed out. Sign in to GitHub to share a configuration, rate it or post a comment. A profile’s **⋮ → Share** opens the sharing form.
+- With **Apply automatically** enabled, Obelisk uses the detected fighting style and tries the battlefield-specific configuration before **General**. When several variants match, it uses the first nonempty one in library order. Open **Battlefield strategies** to assign a particular variant or a **General** fallback for that world. **Match automatically** clears a battlefield assignment.
+- **Apply configuration** pins a profile across battlefields and styles. Turning off **Apply automatically** pins the current selection. Turn it back on to resume automatic selection.
+- **⋮ → Export configuration** saves one profile, including its draft edits, as an importable JSON file. Removing a profile clears its assignments and manual pin.
 
 ### Run rules during a fight
 
 Tap **Auto** at the start of each round to run the selected rules. Obelisk submits one action at a time and uses the server’s reply to choose the next move. Enable **Auto-advance rounds** in settings to load the next wave in place. Each new round waits for a manual action or another tap on **Auto**. **Pause** is available while a combat action is in flight. Opening settings, leaving the foreground, or receiving an uncertain result pauses the strategy. Riddles and final results wait for you.
 
-Rules can select targets, attack, cast skills or spells, use items, switch stances, apply smart debuffs, or stop. Put a **Target** rule before a normal attack or offensive spell; selecting a target does not itself spend a turn. `T1`–`T3` use the detected spell school. Keyboard groups are kept for editing and export, not executed by the loop. JPX custom JavaScript runs on a supported Android System WebView in an isolated engine, not the login browser. See **Custom scripts** below. Monster-database filters have no matches without the external database, as in JPX. If a built-in rule needs an unavailable input (for example historical action totals, an unknown spell school, or a player level not yet observed), the app pauses and identifies the rule instead of guessing.
+Rules can select targets, attack, cast skills or spells, use items, switch stances, apply smart debuffs, or stop. Put a **Target** rule before an offensive spell or normal attack. `T1`–`T3` and spell-school conditions use the element selected in the JPX-PLUS profile, falling back to the detected school when the profile uses automatic selection. Conditions can use vitals, effects, cooldowns, difficulty, rounds, recent actions and observed cast counts. If a built-in rule requires a value the app has yet to observe, such as the player’s level or the start of a round, Auto can pause and identify the rule. Monster class, power level and last-update conditions use the same public Sukka database as JPX-PLUS. Obelisk caches a daily snapshot per world and saves confirmed Scan results. It looks up spawned IDs first and uses an exact name only when the spawn ID is missing. An offline first run can have no matching records. Keyboard shortcut groups are available for editing and export. Auto evaluates the battle rules.
 
-**Custom scripts:** Enable the rule, apply the configuration and tap **Auto** in battle. For example, this JPX rule body attacks the first living monster; `false` lets the next rule run:
+### Custom scripts
+
+Enable the script rule, apply the configuration and tap **Auto** in battle. This rule attacks the first living monster. Returning `false` lets the next rule run.
 
 ```js
 return jpx.doAttackGoNext(jpx.monstersObj.activeMonsters[0]);
 ```
 
-Scripts can read vitals, rounds, cooldown availability, equipped spell school and monster effects, and call `doAttackGoNext`, `doSpellGoNext` or `doToggleGoNext`. The bridge only accepts actions currently available in the game; at most one is submitted per turn. Each invocation has fresh globals, no DOM, network, cookies or persistent storage. `localStorage.getItem` supports only JPX’s player-level key (null until observed). Like JPX, script cast counts start from the observed log, and missing monster spawn HP uses a relative 100-point scale. Browser plugins, nested handler conditions and the full JPX-PLUS API are not emulated. Errors and timeouts pause on the displayed rule number; they never fall through to an attack.
+Scripts can read vitals, rounds, cooldowns, the equipped spell school and each monster’s effects. They can call JPX action handlers with conditions or use helpers such as `doAttackGoNext`, `doSpellGoNext` and `doToggleGoNext`. The bridge accepts one available game action per turn. Cast counts come from the observed log. When the spawn record is missing, monster HP uses a relative 100-point scale.
+
+The isolated JavaScript engine keeps globals and in-memory `localStorage` and `sessionStorage` across script rows and turns for the active configuration and encounter. The `document` adapter exposes item slots, effect icons and the battle log to common JPX helpers. Scripts that depend on other page elements, browser plugins, network access, browser cookies, persistent browser storage or an asynchronous result need adaptation. Script errors and timeouts pause Auto at the affected rule.
 
 The app needs an internet connection and a valid HentaiVerse session. Account cookies are sensitive credentials: do not share exported or imported cookie values, and use only an account you are authorized to access. The app disables Android backup and does not allow cleartext network traffic.
 

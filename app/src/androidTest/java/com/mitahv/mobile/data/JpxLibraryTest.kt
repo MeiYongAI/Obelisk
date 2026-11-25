@@ -27,6 +27,37 @@ class JpxLibraryTest {
     private fun published(id: Long) = lib.load(id, published = true).source
     @After fun cleanUp() { db.close(); context.deleteDatabase(filename) }
 
+    @Test fun authoredProfilesKeepIndependentDraftsAndPublishIntoTheSelectedMode() {
+        val mode = BattleStyle.OneMage.slot(BattleScene.Item)
+        val first = lib.create("  Mana cycle  ", BattleStyle.OneMage, BattleScene.Item)
+        val second = lib.create("Healing", BattleStyle.OneMage, BattleScene.Item)
+        assertNotEquals(first, second)
+        assertNull(lib.strategy(BattleStyle.OneMage, BattleScene.Item, true).match)
+        assertFalse(lib.catalog().manual)
+        assertTrue(JpxLibrary(db, "sample", "Persistent").catalog().entries.isEmpty())
+        val empty = lib.load(first)
+        assertEquals(listOf(mode), empty.modes)
+        assertEquals("Mana cycle", empty.name)
+        val edited = JpxDocument(empty).update(mode, "rules", lib.world) {
+            it.add(JsonParser.parseString("""{"type":"normalAttack"}""").asJsonObject)
+        }
+        lib.update(first, edited)
+        JpxLibrary.Database(context, filename).use { reopened ->
+            val saved = JpxLibrary(reopened, "sample", "Isekai")
+            assertEquals(edited, saved.load(first))
+            assertEquals(0, saved.load(second).rules)
+            assertNull(saved.strategy(BattleStyle.OneMage, BattleScene.Item, true).match)
+            saved.apply(first)
+            val active = saved.strategy(BattleStyle.OneMage, BattleScene.Item, true)
+            assertEquals(first, active.match?.entry?.id)
+            assertEquals("Mana cycle", active.match?.entry?.nickname)
+            assertEquals(edited, active.published)
+            val exported = JpxImport.read(saved.load(first).source.byteInputStream(), "mana.json", saved.world)
+            assertEquals(1, exported.rules)
+            assertEquals(20251216, JpxDocument(exported).config["battleVersion"].asInt)
+        }
+    }
+
     @Test fun importingEditingExportingAndRemovingTargetOnlyOneMode() {
         assertEquals(2, lib.save(parse(bundle)))
         val entries = profiles(); assertEquals(setOf(one,two), entries.keys)

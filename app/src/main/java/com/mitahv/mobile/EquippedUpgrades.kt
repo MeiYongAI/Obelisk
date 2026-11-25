@@ -64,13 +64,15 @@ internal fun EquippedUpgradeDialog(page: CharacterSectionsPage, busy: Boolean, l
             else -> LazyColumn(Modifier.weight(1f, fill = false), contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(data.rows, key = { it.ability!!.id }) { row ->
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                    val info = requireNotNull(row.ability)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AbilityArtwork(row.title, info.family, size = 28.dp)
+                        Column(Modifier.weight(1f)) {
                             Text(messageText(row.title), style = MaterialTheme.typography.titleSmall)
-                            val info = requireNotNull(row.ability)
                             if (info.maxTier > 0) Text(stringResource(R.string.ability_ui_rank, info.currentTier, info.maxTier), style = MaterialTheme.typography.bodySmall)
                         }
-                        AbilityAdvanceButton(row, row.actions.first { it.method == "POST" && ("unlock_ability" to row.ability!!.id) in it.fields }, busy, onAction)
+                        AbilityAdvanceButton(row, row.actions.first { it.method == "POST" && ("unlock_ability" to info.id) in it.fields }, busy, onAction)
                     }
                 }
                 if (data.incomplete) item { Row(verticalAlignment = Alignment.CenterVertically) {
