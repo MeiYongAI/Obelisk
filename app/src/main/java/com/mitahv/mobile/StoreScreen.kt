@@ -33,11 +33,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.edit
 import com.google.gson.JsonParser
 import com.mitahv.mobile.data.StoreLibrary
 import com.mitahv.mobile.data.StoreTransport
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
@@ -50,8 +54,12 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
 
 private const val storeHome = "https://appassets.androidplatform.net/store/index.html"
+private const val catalogUrl = "https://raw.githubusercontent.com/MeiYongAI/JPX-PLUS-Configs/main/catalog/index.json"
+private const val publicCatalogPreferences = "jpx-public-catalog-v1"
 private val storeFiles = setOf("index.html", "android.css", "manager.css", "languages.js", "store.js",
     "ratings.js", "downloads.js", "comments.js", "android.js")
 
@@ -89,14 +97,43 @@ private class StoreAssets(private val context: Context) : WebViewClient() {
     }
 }
 
+private fun Response.storeResult(): JSONObject = use {
+    val content = body ?: throw IOException()
+    require(!content.source().request(6_000_001L))
+    JSONObject().put("status", code).put("responseText", content.string())
+        .put("finalUrl", request.url.toString()).put("responseHeaders", headers.toString())
+}
+
+/** Overlap the first public GET with WebView startup. An existing snapshot is handled by the page's freshness policy. */
+private class InitialStoreCatalog(context: Context, scope: CoroutineScope) {
+    private val claimed = AtomicBoolean()
+    private val result = scope.async(Dispatchers.IO) {
+        if (context.getSharedPreferences(publicCatalogPreferences, Context.MODE_PRIVATE).contains("snapshot")) null
+        else suspendCancellableCoroutine<JSONObject> { continuation ->
+            val call = StoreTransport().call(JSONObject().put("url", catalogUrl).put("method", "GET"))
+            continuation.invokeOnCancellation { call.cancel() }
+            val response = try { call.execute().storeResult() } catch (_: Exception) { JSONObject().put("error", "networkError") }
+            continuation.resume(response)
+        }
+    }
+
+    fun claim(request: Call) = request.request().url.toString() == catalogUrl &&
+        request.request().method == "GET" && claimed.compareAndSet(false, true)
+
+    suspend fun await() = result.await()
+    fun close() { result.cancel() }
+}
+
 /** The only document this view can load is the bundled store. The native HTTP client owns all remote calls. */
 private class StoreBridge(
     private val view: WebView, private val store: StoreLibrary, private val language: String, private val shareId: String?,
     initialTheme: String, private val onNavigation: (StoreNavigation) -> Unit,
+    private val scope: CoroutineScope, private val initialCatalog: InitialStoreCatalog?,
     private val download: (String, String) -> String,
 ) {
     private val transport = StoreTransport()
     private val preferences = view.context.getSharedPreferences("jpx-store-" + store.storageNamespace, Context.MODE_PRIVATE)
+    private val publicCatalog = view.context.getSharedPreferences(publicCatalogPreferences, Context.MODE_PRIVATE)
     private val requests = ConcurrentHashMap<String, Call>()
     @Volatile private var closed = false
     @Volatile private var theme = initialTheme
@@ -109,6 +146,15 @@ private class StoreBridge(
 
     @JavascriptInterface fun navigation(page: String, user: String) {
         view.post { if (!closed) onNavigation(StoreNavigation(page, user)) }
+    }
+
+    @JavascriptInterface fun readCatalog(): String? = publicCatalog.getString("snapshot", null)
+
+    @JavascriptInterface fun writeCatalog(snapshot: String?) {
+        if (closed) return
+        // A large catalog can still be fetched and browsed without retaining a large preference in memory.
+        val value = snapshot?.takeIf { it.length <= 512 * 1024 }
+        publicCatalog.edit { putString("snapshot", value) }
     }
 
     @JavascriptInterface fun call(method: String, payload: String): String = try {
@@ -171,23 +217,23 @@ private class StoreBridge(
             val call = transport.call(JSONObject(payload))
             check(requests.putIfAbsent(id, call) == null)
             if (closed) { requests.remove(id)?.cancel(); return }
-            call.enqueue(object : Callback {
+            fun enqueue() = call.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) { if (requests.remove(id, call)) reply(failed) }
                 override fun onResponse(call: Call, response: Response) {
-                    val result = try { response.use {
-                        val body = it.body ?: throw IOException()
-                        require(!body.source().request(6_000_001L))
-                        JSONObject().put("status", it.code).put("responseText", body.string())
-                            .put("finalUrl", it.request.url.toString()).put("responseHeaders", it.headers.toString())
-                    } } catch (_: Exception) { failed }
+                    val result = try { response.storeResult() } catch (_: Exception) { failed }
                     if (requests.remove(id, call)) reply(result)
                 }
             })
+            if (initialCatalog != null && initialCatalog.claim(call)) scope.launch {
+                val result = initialCatalog.await()
+                if (requests[id] !== call) return@launch
+                if (result == null) enqueue() else if (requests.remove(id, call)) reply(result)
+            } else enqueue()
         } catch (_: Exception) { reply(failed) }
     }
 
     @JavascriptInterface fun abort(id: String) { requests.remove(id)?.cancel() }
-    fun close() { closed = true; requests.values.forEach(Call::cancel); requests.clear() }
+    fun close() { closed = true; initialCatalog?.close(); requests.values.forEach(Call::cancel); requests.clear() }
 }
 
 private fun WebView.finishStoreExport(ticket: String, saved: Boolean) {
@@ -271,6 +317,7 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
         }
         key(store, language, shareId) {
             AndroidView(modifier = Modifier.widthIn(max = 720.dp).fillMaxSize(), factory = { ctx ->
+                val initialCatalog = if (shareId == null) InitialStoreCatalog(ctx.applicationContext, scope) else null
                 WebView(ctx).apply {
                     settings.javaScriptEnabled = true
                     settings.allowFileAccess = false
@@ -280,7 +327,7 @@ internal fun StoreScreen(store: StoreLibrary, shareId: String?, onBack: () -> Un
                     CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
                     webViewClient = StoreAssets(ctx)
                     val web = this
-                    val host = StoreBridge(this, store, language, shareId, theme, { navigation = it }) { filename, text ->
+                    val host = StoreBridge(this, store, language, shareId, theme, { navigation = it }, scope, initialCatalog) { filename, text ->
                         val file = File.createTempFile("store-export-", ".json", ctx.cacheDir)
                         try { file.writeText(text) } catch (e: IOException) { file.delete(); throw e }
                         web.post {

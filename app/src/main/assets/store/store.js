@@ -332,23 +332,69 @@ const jpxConfigStore = (() => {
             (entry.modes === undefined || Array.isArray(entry.modes) && entry.modes.length <= modes.length && new Set(entry.modes).size === entry.modes.length &&
                 entry.modes.every(mode => modes.includes(mode)) && (entry.kind === 'stats' ? !entry.modes.length : entry.kind !== 'battle-mode' || entry.modes.length === 1 && entry.modes[0] === entry.mode));
     }
-    async function catalog({ refresh = false } = {}) {
-        if (!refresh && cache && Date.now() - cache.at < 60000) return clone(cache.value);
-        // Raw GitHub can lag behind a publication even with a cache-busting query.
-        const url = refresh ? api + '/repos/' + repository + '/contents/catalog/index.json?ref=main' : raw + 'catalog/index.json';
-        const value = parse(await request(url, refresh ? { accept: 'application/vnd.github.raw+json' } : {}), 6000000);
+    function parseCatalog(source) {
+        const value = parse(source, 6000000);
         if (!object(value) || value.schemaVersion !== 1 || !Array.isArray(value.entries) || value.entries.length > 5000 || !text(value.updatedAt, 64)) fail('invalidResponse');
         const ids = new Set();
         for (const entry of value.entries) { if (!entryValid(entry) || ids.has(entry.id)) fail('invalidResponse'); ids.add(entry.id); }
-        cache = { at: Date.now(), value }; return clone(value);
+        return value;
     }
+    let catalogRequest;
+    function invalidateCatalog() {
+        cache = null;
+        catalogRequest = null;
+        try { host.writeCatalog?.(null); } catch { /* The in-memory cache is already invalidated. */ }
+    }
+    async function catalog({ refresh = false, onCached } = {}) {
+        if (cache === undefined) {
+            cache = null;
+            try {
+                const snapshot = JSON.parse(host.readCatalog?.() || 'null');
+                if (snapshot && Number.isSafeInteger(snapshot.at) && snapshot.at > 0 && snapshot.at <= Date.now())
+                    cache = { at: snapshot.at, value: parseCatalog(snapshot.source) };
+            } catch { /* A cache miss or an old format falls through to the network. */ }
+        }
+        if (!refresh && cache) {
+            if (Date.now() - cache.at < 60000 && !catalogRequest) return clone(cache.value);
+            onCached?.(clone(cache.value));
+        }
+        if (!catalogRequest || refresh && !catalogRequest.refresh) {
+            const current = { refresh };
+            catalogRequest = current;
+            // Explicit refresh reads GitHub's current branch rather than its raw CDN.
+            const url = refresh ? api + '/repos/' + repository + '/contents/catalog/index.json?ref=main' : raw + 'catalog/index.json';
+            current.promise = request(url, refresh ? { accept: 'application/vnd.github.raw+json' } : {}).then(source => {
+                const value = parseCatalog(source);
+                if (catalogRequest === current) {
+                    const at = Date.now();
+                    cache = { at, value };
+                    try { host.writeCatalog?.(JSON.stringify({ at, source })); } catch { /* Keep the usable memory copy. */ }
+                }
+                return value;
+            }).finally(() => { if (catalogRequest === current) catalogRequest = null; });
+        }
+        return clone(await catalogRequest.promise);
+    }
+    const packages = new Map();
     async function load(entry) {
         if (!entryValid(entry)) fail('invalidResponse');
-        const source = await request(raw + entry.configPath, { limit: 60000 });
-        if (await hash(source) !== entry.sha256) fail('integrityFailed');
-        const value = validate(parse(source));
+        const key = entry.configPath;
+        let pending = packages.get(key);
+        if (!pending) {
+            pending = (async () => {
+                const source = await request(raw + key, { limit: 60000 });
+                if (await hash(source) !== entry.sha256) fail('integrityFailed');
+                return validate(parse(source));
+            })();
+        }
+        packages.delete(key);
+        packages.set(key, pending);
+        if (packages.size > 16) packages.delete(packages.keys().next().value);
+        let value;
+        try { value = await pending; }
+        catch (cause) { if (packages.get(key) === pending) packages.delete(key); throw cause; }
         if (['kind', 'title', 'description', 'world', 'mode', 'scriptVersion'].some(key => value[key] !== entry[key])) fail('integrityFailed');
-        return value;
+        return clone(value);
     }
     async function ownIssue(id) {
         if (!integer(id)) fail('invalidResponse');
@@ -399,7 +445,7 @@ const jpxConfigStore = (() => {
     async function withdraw(id) {
         const issue = await ownIssue(id); if (!issue.body?.startsWith(marker)) fail('invalidConfig');
         await authenticated(issuesPath + '/' + id, { method: 'PATCH', data: { state: 'closed' } });
-        cache = null;
+        invalidateCatalog();
     }
     async function archive(id) {
         const generation = sessionGeneration, issue = await ownIssue(id);
@@ -412,7 +458,7 @@ const jpxConfigStore = (() => {
         const body = archivedMarker + issue.body.slice(marker.length);
         const result = await authenticated(issuesPath + '/' + id, { method: 'PATCH', data: { state: 'closed', body } });
         if (result.number !== id || result.html_url !== issueURL(id) || result.user?.id !== issue.user.id || result.state !== 'closed' || result.body !== body) fail('invalidResponse');
-        cache = null;
+        invalidateCatalog();
     }
     async function feedback(id) {
         const issue = await ownIssue(id), envelope = parseSubmission(issue.body), revision = await hash(JSON.stringify(envelope) + '\n');
@@ -555,7 +601,7 @@ const jpxConfigStore = (() => {
                     records = records.filter(row => row.id !== saved.id); records.push(saved);
                 }
             }
-            cache = null; return ratingState(records, expectedUserId);
+            invalidateCatalog(); return ratingState(records, expectedUserId);
         });
     }
     return Object.freeze({ catalog, load, user, login, logout, mine, submit, withdraw, archive, parseSubmission, feedback,
@@ -1001,26 +1047,41 @@ function renderConfigStore(parent, hooks, options = {}) {
         search.addEventListener('input', event => { state.query = search.value; if (!event.isComposing) render(true); });
         search.addEventListener('compositionend', () => { state.query = search.value; render(true); });
         updateFilters();
+        let restorePosition = true;
+        function showCatalog(catalog) {
+            if (!live(request)) return;
+            orderedBy = null;
+            index = catalog.entries.map(entry => {
+                const modes = entry.mode ? [entry.mode] : entry.modes || [];
+                const labels = modes.flatMap(mode => { const [style, battle] = splitMode(mode);
+                    return [mode, modeName(mode), tr(style), tr(battle), translations.en[style], translations.en[battle]]; });
+                return { entry, modes, updated: Date.parse(entry.updatedAt) || 0,
+                    text: normalize([entry.title, entry.description, entry.author, entry.kind, kindName(entry.kind), entry.world,
+                        worldName(entry.world), entry.world === 'Any' ? t('cM.anyWorld') : '',
+                        entry.kind === 'stats' ? t('cM.stats') : entry.kind === 'battle' ? modes.length ? t('cM.groupCount').replace('${count}',String(modes.length)) : t('cM.allBattle') : '',
+                        ...labels].join(' ')) };
+            });
+            const scroll = restorePosition ? backScroll : scroller().scrollTop;
+            render();
+            if (restorePosition && backEntry) focusEntry(backEntry);
+            scroller().scrollTop = scroll;
+            restorePosition = false;
+        }
         async function loadCatalog(force) {
             refreshButton.disabled = true; refreshButton.setAttribute('aria-busy', 'true'); labelled(refreshButton, tr('loading'));
             list.setAttribute('aria-busy', 'true'); message('');
             try {
                 savedVersions = hooks.savedVersions();
-                const catalog = await jpxConfigStore.catalog({ refresh: force });
+                let displayed;
+                const catalog = await jpxConfigStore.catalog({ refresh: force, onCached(snapshot) {
+                    displayed = snapshot;
+                    showCatalog(snapshot);
+                    list.setAttribute('aria-busy', 'false');
+                } });
                 if (!live(request)) return;
                 if (force) ratingTotals.clear();
-                orderedBy = null;
-                index = catalog.entries.map(entry => {
-                    const modes = entry.mode ? [entry.mode] : entry.modes || [];
-                    const labels = modes.flatMap(mode => { const [style, battle] = splitMode(mode);
-                        return [mode, modeName(mode), tr(style), tr(battle), translations.en[style], translations.en[battle]]; });
-                    return { entry, modes, updated: Date.parse(entry.updatedAt) || 0,
-                        text: normalize([entry.title, entry.description, entry.author, entry.kind, kindName(entry.kind), entry.world,
-                            worldName(entry.world), entry.world === 'Any' ? t('cM.anyWorld') : '',
-                            entry.kind === 'stats' ? t('cM.stats') : entry.kind === 'battle' ? modes.length ? t('cM.groupCount').replace('${count}',String(modes.length)) : t('cM.allBattle') : '',
-                            ...labels].join(' ')) };
-                });
-                const scroll = scroller().scrollTop; render(); scroller().scrollTop = scroll;
+                // Keep existing rows (including focus and pending button actions) when revalidation changed nothing.
+                if (!displayed || JSON.stringify(displayed.entries) !== JSON.stringify(catalog.entries)) showCatalog(catalog);
             } catch (error) {
                 if (!live(request)) return;
                 message(errorMessage(error), true);
@@ -1031,10 +1092,6 @@ function renderConfigStore(parent, hooks, options = {}) {
             }
         }
         await loadCatalog(refresh);
-        if (live(request)) {
-            if (backEntry) focusEntry(backEntry);
-            scroller().scrollTop = backScroll;
-        }
     }
     function configSummary(envelope) {
         const values = envelope.config;

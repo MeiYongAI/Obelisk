@@ -11,8 +11,13 @@ import java.util.concurrent.TimeUnit
 
 /** Separate dispatcher, no game cookies, and no redirects for GitHub's device flow/API. */
 internal class StoreTransport {
-    private val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
-        .retryOnConnectionFailure(false).callTimeout(25, TimeUnit.SECONDS).build()
+    private companion object {
+        // Every store WebView can reuse established connections. Requests still have separate headers and cancellation.
+        val client by lazy {
+            OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
+                .retryOnConnectionFailure(false).callTimeout(25, TimeUnit.SECONDS).build()
+        }
+    }
 
     fun call(args: JSONObject): Call {
         val url = args.getString("url").toHttpUrl()

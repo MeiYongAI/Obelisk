@@ -172,6 +172,8 @@ function GM_xmlhttpRequest(request) {
     const pack = storeLanguages[zh ? 'zh' : 'en'];
     document.documentElement.lang = zh ? 'zh-CN' : 'en';
     const store = createJpxIntegratedStore({ jpxI18N: pack,
+        readCatalog: () => window.ObeliskStore.readCatalog?.(),
+        writeCatalog: snapshot => window.ObeliskStore.writeCatalog?.(snapshot),
         createCategoryHooks: (styles, scenes, text) => storeCategoryHooks(pack.cM, styles, scenes, text),
     }, key => {
         const [group, name] = key.split('.');
